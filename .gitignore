@@ -1,0 +1,31 @@
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Variables privadas
+.env
+backend/.env
+frontend/.env
+.env.local
+*.env.local
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Generated projects
+workspace/
+generated_projects/
