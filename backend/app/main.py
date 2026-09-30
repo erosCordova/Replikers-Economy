@@ -1,55 +1,101 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import (
+    CORSMiddleware,
+)
 
-from app.api.routes.auth import router as auth_router
-from app.api.routes.projects import router as projects_router
-from app.api.routes.replikers import router as replikers_router
-from app.api.routes.tasks import router as tasks_router
-from app.api.routes.users import router as users_router
+from app.api.routes.auth import (
+    router as auth_router,
+)
+from app.api.routes.users import (
+    router as users_router,
+)
+from app.api.routes.replikers import (
+    router as replikers_router,
+)
+from app.api.routes.projects import (
+    router as projects_router,
+)
+from app.api.routes.tasks import (
+    router as tasks_router,
+)
+from app.api.routes.coordinator import (
+    router as coordinator_router,
+)
+from app.api.routes.market import (
+    router as market_router,
+)
 
-from app.core.config import settings
 from app.database.base import Base
 from app.database.session import engine
 
-import app.models
+import app.models  # noqa: F401
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    Base.metadata.create_all(
-        bind=engine
-    )
-
-    yield
+Base.metadata.create_all(
+    bind=engine
+)
 
 
 app = FastAPI(
-    title=settings.APP_NAME,
-    version="0.4.0",
-    lifespan=lifespan,
+    title="Repliker Economy API",
+    version="0.7.0",
+    description=(
+        "Backend de Repliker Economy: "
+        "coordinacion, mercado y economia "
+        "autonoma de agentes."
+    ),
 )
+
+
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.FRONTEND_URL,
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-@app.get("/")
-def root():
-    return {
-        "app": settings.APP_NAME,
-        "version": "0.4.0",
-        "status": "online",
-    }
+app.include_router(
+    auth_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    users_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    replikers_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    projects_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    tasks_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    coordinator_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    market_router,
+    prefix="/api/v1",
+)
 
 
 @app.get("/api/v1/health")
@@ -57,30 +103,14 @@ def health():
     return {
         "status": "ok",
         "service": "backend",
+        "version": "0.7.0",
     }
 
 
-app.include_router(
-    auth_router,
-    prefix=settings.API_V1_PREFIX,
-)
-
-app.include_router(
-    users_router,
-    prefix=settings.API_V1_PREFIX,
-)
-
-app.include_router(
-    replikers_router,
-    prefix=settings.API_V1_PREFIX,
-)
-
-app.include_router(
-    projects_router,
-    prefix=settings.API_V1_PREFIX,
-)
-
-app.include_router(
-    tasks_router,
-    prefix=settings.API_V1_PREFIX,
-)
+@app.get("/")
+def root():
+    return {
+        "name": "Repliker Economy",
+        "status": "online",
+        "api": "/api/v1",
+    }

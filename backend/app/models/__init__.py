@@ -1,6 +1,26 @@
 from app.models.user import User
-from app.models.repliker import Repliker, ReplikerSkill
-from app.models.project import Project, ProjectRequirement
+
+from app.models.repliker import (
+    Repliker,
+    ReplikerSkill,
+)
+
+from app.models.project import (
+    Project,
+    ProjectRequirement,
+)
+
+from app.models.task import (
+    Task,
+    TaskSkillRequirement,
+    TaskAcceptanceCriterion,
+    TaskBid,
+)
+
+from app.models.market import (
+    ReplikerTaskDecision,
+)
+
 
 __all__ = [
     "User",
@@ -8,4 +28,9 @@ __all__ = [
     "ReplikerSkill",
     "Project",
     "ProjectRequirement",
+    "Task",
+    "TaskSkillRequirement",
+    "TaskAcceptanceCriterion",
+    "TaskBid",
+    "ReplikerTaskDecision",
 ]

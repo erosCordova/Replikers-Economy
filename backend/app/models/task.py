@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Integer,
@@ -23,7 +24,10 @@ class Task(Base):
     )
 
     project_id: Mapped[int] = mapped_column(
-        ForeignKey("projects.id", ondelete="CASCADE"),
+        ForeignKey(
+            "projects.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
@@ -41,7 +45,7 @@ class Task(Base):
     status: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
-        default="open",
+        default="planned",
     )
 
     complexity: Mapped[int] = mapped_column(
@@ -73,6 +77,13 @@ class Task(Base):
         lazy="selectin",
     )
 
+    acceptance_criteria = relationship(
+        "TaskAcceptanceCriterion",
+        back_populates="task",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
     bids = relationship(
         "TaskBid",
         back_populates="task",
@@ -89,7 +100,10 @@ class TaskSkillRequirement(Base):
     )
 
     task_id: Mapped[int] = mapped_column(
-        ForeignKey("tasks.id", ondelete="CASCADE"),
+        ForeignKey(
+            "tasks.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
@@ -111,6 +125,51 @@ class TaskSkillRequirement(Base):
     )
 
 
+class TaskAcceptanceCriterion(Base):
+    __tablename__ = "task_acceptance_criteria"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+    )
+
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "tasks.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    description: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="pending",
+    )
+
+    evidence: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="",
+    )
+
+    is_mandatory: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    task = relationship(
+        "Task",
+        back_populates="acceptance_criteria",
+    )
+
+
 class TaskBid(Base):
     __tablename__ = "task_bids"
 
@@ -127,13 +186,19 @@ class TaskBid(Base):
     )
 
     task_id: Mapped[int] = mapped_column(
-        ForeignKey("tasks.id", ondelete="CASCADE"),
+        ForeignKey(
+            "tasks.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
 
     repliker_id: Mapped[int] = mapped_column(
-        ForeignKey("replikers.id", ondelete="CASCADE"),
+        ForeignKey(
+            "replikers.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )

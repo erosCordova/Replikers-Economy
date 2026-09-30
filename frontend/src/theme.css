@@ -1,0 +1,1001 @@
+/* =========================================================
+   REPLIKER ECONOMY
+   PREMIUM CORPORATE THEME
+   ========================================================= */
+
+:root {
+  --premium-navy: #0f172a;
+  --premium-navy-2: #162033;
+
+  --premium-blue: #2563eb;
+  --premium-blue-dark: #1d4ed8;
+  --premium-blue-soft: #eff6ff;
+
+  --premium-cyan: #0891b2;
+  --premium-cyan-soft: #ecfeff;
+
+  --premium-bg: #f5f7fb;
+  --premium-panel: #ffffff;
+
+  --premium-text: #172033;
+  --premium-muted: #64748b;
+
+  --premium-border: #e2e8f0;
+
+  --premium-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 8px 22px rgba(15, 23, 42, 0.055);
+
+  --premium-shadow-hover:
+    0 4px 8px rgba(15, 23, 42, 0.04),
+    0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
+
+/* =========================================================
+   GENERAL
+   ========================================================= */
+
+.app-shell {
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(37, 99, 235, 0.055),
+      transparent 420px
+    ),
+    #f5f7fb;
+}
+
+
+.content-area {
+  padding-top: 28px;
+}
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.sidebar {
+  background:
+    linear-gradient(
+      180deg,
+      #111827 0%,
+      #0f172a 100%
+    );
+
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+
+
+.sidebar-logo {
+  border: 0;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+
+  box-shadow:
+    0 8px 18px rgba(37, 99, 235, .25);
+}
+
+
+.sidebar-header strong {
+  letter-spacing: -.015em;
+}
+
+
+.sidebar-user {
+  border-color: rgba(255,255,255,.07);
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,.025)
+    );
+}
+
+
+.user-avatar {
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #475569,
+      #334155
+    );
+}
+
+
+.nav-item {
+  border-radius: 8px;
+}
+
+
+.nav-item:hover {
+  background:
+    rgba(255,255,255,.055);
+}
+
+
+.nav-item.active {
+  position: relative;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(37,99,235,.22),
+      rgba(37,99,235,.06)
+    );
+}
+
+
+.nav-item.active::before {
+  content: '';
+
+  width: 3px;
+
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 0;
+
+  border-radius: 5px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #60a5fa,
+      #22d3ee
+    );
+}
+
+
+.nav-item.active svg {
+  color: #93c5fd;
+}
+
+
+/* =========================================================
+   TOPBAR
+   ========================================================= */
+
+.topbar {
+  min-height: 76px;
+
+  background:
+    rgba(255,255,255,.92);
+
+  box-shadow:
+    0 1px 2px rgba(15,23,42,.025);
+}
+
+
+.topbar h2 {
+  font-size: 19px;
+}
+
+
+.refresh-button,
+.mobile-menu {
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #f8fafc
+    );
+}
+
+
+.refresh-button:hover {
+  border-color: #bfdbfe;
+
+  color: var(--premium-blue);
+
+  background: #eff6ff;
+}
+
+
+/* =========================================================
+   PRIMARY BUTTONS
+   ========================================================= */
+
+.new-project-button,
+.primary-button {
+  min-height: 40px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #1d4ed8
+    );
+
+  box-shadow:
+    0 5px 13px rgba(37,99,235,.20);
+}
+
+
+.new-project-button:hover,
+.primary-button:hover {
+  background:
+    linear-gradient(
+      135deg,
+      #1d4ed8,
+      #1e40af
+    );
+
+  box-shadow:
+    0 7px 18px rgba(37,99,235,.25);
+
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   DASHBOARD HERO
+   ========================================================= */
+
+.hero-panel {
+  min-height: 225px;
+
+  padding: 34px 38px;
+
+  border: 0;
+
+  border-radius: 14px;
+
+  background:
+    radial-gradient(
+      circle at 86% 50%,
+      rgba(34,211,238,.16),
+      transparent 230px
+    ),
+    radial-gradient(
+      circle at 60% -30%,
+      rgba(96,165,250,.17),
+      transparent 300px
+    ),
+    linear-gradient(
+      125deg,
+      #172554 0%,
+      #172b4d 48%,
+      #164e63 130%
+    );
+
+  box-shadow:
+    0 14px 32px rgba(15,23,42,.11);
+}
+
+
+.hero-label {
+  padding: 6px 9px;
+
+  border-radius: 7px;
+
+  color: #dbeafe;
+
+  background:
+    rgba(255,255,255,.07);
+
+  backdrop-filter: blur(8px);
+}
+
+
+.hero-panel h1 {
+  font-size:
+    clamp(30px, 3vw, 42px);
+}
+
+
+.hero-panel p {
+  color: #cbd5e1;
+}
+
+
+.hero-action {
+  border: 0;
+
+  border-radius: 8px;
+
+  box-shadow:
+    0 5px 15px rgba(0,0,0,.12);
+
+  transition:
+    transform .15s ease,
+    box-shadow .15s ease;
+}
+
+
+.hero-action:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 20px rgba(0,0,0,.18);
+}
+
+
+/* =========================================================
+   ORBIT
+   ========================================================= */
+
+.economy-orbit {
+  border-color:
+    rgba(255,255,255,.16);
+}
+
+
+.economy-orbit::before {
+  border-color:
+    rgba(255,255,255,.18);
+}
+
+
+.orbit-center {
+  border: 0;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+
+  box-shadow:
+    0 12px 32px rgba(37,99,235,.35);
+}
+
+
+.orbit-node {
+  border-radius: 11px;
+
+  background:
+    rgba(255,255,255,.1);
+
+  backdrop-filter: blur(8px);
+}
+
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.metric-card,
+.panel,
+.project-card,
+.agent-card,
+.plan-hero,
+.plan-money-grid > div,
+.task-card,
+.strategy-card {
+  border-color:
+    var(--premium-border);
+
+  box-shadow:
+    var(--premium-shadow);
+}
+
+
+.metric-card {
+  min-height: 112px;
+
+  border-radius: 12px;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
+}
+
+
+.metric-card:hover {
+  transform: translateY(-2px);
+
+  border-color: #cbd5e1;
+
+  box-shadow:
+    var(--premium-shadow-hover);
+}
+
+
+.metric-icon {
+  width: 43px;
+  height: 43px;
+
+  border: 0;
+
+  border-radius: 10px;
+}
+
+
+.metric-icon.purple {
+  color: #4f46e5;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eef2ff,
+      #e0e7ff
+    );
+}
+
+
+.metric-icon.blue {
+  color: #2563eb;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eff6ff,
+      #dbeafe
+    );
+}
+
+
+.metric-icon.green {
+  color: #059669;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ecfdf5,
+      #d1fae5
+    );
+}
+
+
+.metric-icon.orange {
+  color: #d97706;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fffbeb,
+      #fef3c7
+    );
+}
+
+
+.metric-card strong {
+  font-size: 23px;
+}
+
+
+.panel {
+  border-radius: 12px;
+}
+
+
+.panel-header {
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #fcfdff
+    );
+}
+
+
+/* =========================================================
+   TIMELINE
+   ========================================================= */
+
+.timeline-icon {
+  border: 0;
+
+  border-radius: 8px;
+
+  color: #2563eb;
+
+  background: #eff6ff;
+}
+
+
+.timeline-icon.r00 {
+  border: 0;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+
+  box-shadow:
+    0 4px 12px rgba(37,99,235,.18);
+}
+
+
+/* =========================================================
+   AGENTS
+   ========================================================= */
+
+.agent-avatar {
+  border: 0;
+
+  border-radius: 9px;
+
+  color: #2563eb;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eff6ff,
+      #ecfeff
+    );
+}
+
+
+.agent-score {
+  border-radius: 7px;
+}
+
+
+.large-agent-avatar {
+  border: 0;
+
+  border-radius: 11px;
+
+  color: #ffffff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0e7490
+    );
+
+  box-shadow:
+    0 7px 17px rgba(37,99,235,.18);
+}
+
+
+.agent-card {
+  border-radius: 12px;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+
+.agent-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    var(--premium-shadow-hover);
+}
+
+
+/* =========================================================
+   PROJECT CARDS
+   ========================================================= */
+
+.project-card {
+  border-radius: 12px;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease;
+}
+
+
+.project-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    var(--premium-shadow-hover);
+}
+
+
+.project-number {
+  padding: 4px 7px;
+
+  border-radius: 6px;
+
+  background: #f1f5f9;
+}
+
+
+.status-badge {
+  border-radius: 6px;
+}
+
+
+.status-badge.planned {
+  color: #1d4ed8;
+
+  border-color: #bfdbfe;
+
+  background: #eff6ff;
+}
+
+
+/* =========================================================
+   TAGS
+   ========================================================= */
+
+.skills > span {
+  border-color: #e2e8f0;
+
+  border-radius: 6px;
+
+  color: #475569;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #f8fafc
+    );
+}
+
+
+/* =========================================================
+   NEW PROJECT FORM
+   ========================================================= */
+
+.project-form-panel {
+  border-radius: 12px;
+}
+
+
+.project-form input,
+.project-form textarea,
+.auth-form input {
+  border-radius: 8px;
+
+  background: #ffffff;
+}
+
+
+.project-form input:hover,
+.project-form textarea:hover,
+.auth-form input:hover {
+  border-color: #cbd5e1;
+}
+
+
+.project-form input:focus,
+.project-form textarea:focus,
+.auth-form input:focus {
+  border-color: #60a5fa;
+
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.09);
+}
+
+
+/* =========================================================
+   R00 PANEL
+   ========================================================= */
+
+.r00-preview {
+  border: 0;
+
+  border-radius: 14px;
+
+  background:
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(59,130,246,.17),
+      transparent 190px
+    ),
+    linear-gradient(
+      155deg,
+      #172033,
+      #111827
+    );
+
+  box-shadow:
+    0 14px 30px rgba(15,23,42,.11);
+}
+
+
+.r00-glow {
+  width: 104px;
+  height: 104px;
+
+  border: 0;
+
+  border-radius: 22px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37,99,235,.28),
+      rgba(8,145,178,.18)
+    );
+
+  box-shadow:
+    0 0 40px rgba(37,99,235,.16);
+}
+
+
+.r00-character > svg {
+  color: #dbeafe;
+}
+
+
+/* =========================================================
+   R00 PLAN
+   ========================================================= */
+
+.plan-hero {
+  border-radius: 12px;
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(37,99,235,.07),
+      transparent 300px
+    ),
+    #ffffff;
+}
+
+
+.r00-badge {
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+
+  box-shadow:
+    0 6px 16px rgba(37,99,235,.20);
+}
+
+
+.plan-money-grid > div {
+  border-radius: 11px;
+
+  transition:
+    transform .17s ease,
+    box-shadow .17s ease;
+}
+
+
+.plan-money-grid > div:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    var(--premium-shadow-hover);
+}
+
+
+.strategy-card {
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      110deg,
+      #ffffff,
+      #f8fbff
+    );
+}
+
+
+.strategy-card > div {
+  border: 0;
+
+  border-radius: 8px;
+
+  color: #2563eb;
+
+  background: #eff6ff;
+}
+
+
+/* =========================================================
+   TASKS
+   ========================================================= */
+
+.task-card {
+  border-radius: 12px;
+
+  transition:
+    border-color .17s ease,
+    box-shadow .17s ease;
+}
+
+
+.task-card:hover {
+  border-color: #cbd5e1;
+
+  box-shadow:
+    var(--premium-shadow-hover);
+}
+
+
+.task-number {
+  color: #2563eb;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f8fbff,
+      #f8fafc
+    );
+}
+
+
+/* =========================================================
+   MARKET GAPS
+   ========================================================= */
+
+.market-gap-card {
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      110deg,
+      #fffbeb,
+      #ffffff
+    );
+}
+
+
+.market-gap-icon {
+  border-radius: 8px;
+}
+
+
+/* =========================================================
+   NEXT PHASE
+   ========================================================= */
+
+.next-phase-card {
+  border: 0;
+
+  border-radius: 12px;
+
+  background:
+    radial-gradient(
+      circle at 90% 20%,
+      rgba(14,165,233,.12),
+      transparent 230px
+    ),
+    linear-gradient(
+      120deg,
+      #172033,
+      #1e293b
+    );
+
+  box-shadow:
+    0 12px 26px rgba(15,23,42,.09);
+}
+
+
+.next-phase-card > div {
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+.auth-page {
+  background:
+    radial-gradient(
+      circle at 18% 20%,
+      rgba(37,99,235,.16),
+      transparent 420px
+    ),
+    radial-gradient(
+      circle at 70% 110%,
+      rgba(8,145,178,.10),
+      transparent 420px
+    ),
+    #101828;
+}
+
+
+.brand-pill {
+  border-radius: 7px;
+
+  background:
+    rgba(255,255,255,.04);
+}
+
+
+.auth-brand-logo {
+  border: 0;
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+
+  box-shadow:
+    0 12px 30px rgba(37,99,235,.28);
+}
+
+
+.auth-brand h1 span {
+  color: #60a5fa;
+}
+
+
+.auth-flow > div {
+  border-radius: 7px;
+
+  background:
+    rgba(255,255,255,.035);
+}
+
+
+.auth-card {
+  border-radius: 14px;
+
+  box-shadow:
+    0 30px 70px rgba(0,0,0,.28);
+}
+
+
+.auth-icon {
+  border: 0;
+
+  border-radius: 10px;
+
+  color: #2563eb;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eff6ff,
+      #ecfeff
+    );
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background: #cbd5e1;
+}
+
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
