@@ -12,6 +12,10 @@ from app.models.ecosystem import (
     AgentMessage,
     ReplikerAppearance,
 )
+from app.models.contract import (
+    ACTIVE_CONTRACT_STATUSES,
+    TaskContract,
+)
 from app.models.project import Project
 from app.models.repliker import Repliker
 from app.models.task import Task
@@ -230,9 +234,59 @@ def build_ecosystem_snapshot(
             ).all()
         )
 
+        contract_rows = list(
+            db.execute(
+                select(
+                    TaskContract,
+                    Task,
+                )
+                .join(
+                    Task,
+                    Task.id
+                    == TaskContract.task_id,
+                )
+                .where(
+                    TaskContract.project_id
+                    .in_(
+                        project_ids
+                    ),
+                    TaskContract.status.in_(
+                        ACTIVE_CONTRACT_STATUSES
+                    ),
+                )
+                .order_by(
+                    TaskContract.created_at
+                    .desc(),
+                    TaskContract.id.desc(),
+                )
+            ).all()
+        )
+
     else:
         events = []
         messages = []
+        contract_rows = []
+
+    active_contract_by_repliker: dict[
+        int,
+        tuple[
+            TaskContract,
+            Task,
+        ],
+    ] = {}
+
+    for contract, task in contract_rows:
+        if (
+            contract.repliker_id
+            not in
+            active_contract_by_repliker
+        ):
+            active_contract_by_repliker[
+                contract.repliker_id
+            ] = (
+                contract,
+                task,
+            )
 
     active_activity_by_repliker: dict[
         int,
@@ -272,6 +326,25 @@ def build_ecosystem_snapshot(
             .get(
                 repliker.id
             )
+        )
+
+        contract_entry = (
+            active_contract_by_repliker
+            .get(
+                repliker.id
+            )
+        )
+
+        active_contract = (
+            contract_entry[0]
+            if contract_entry
+            else None
+        )
+
+        contracted_task = (
+            contract_entry[1]
+            if contract_entry
+            else None
         )
 
         agents.append(
@@ -317,22 +390,39 @@ def build_ecosystem_snapshot(
                     )
                 ),
                 current_project_id=(
-                    active_event
+                    active_contract
                     .project_id
-                    if active_event
-                    else None
+                    if active_contract
+                    else (
+                        active_event
+                        .project_id
+                        if active_event
+                        else None
+                    )
                 ),
                 current_task_id=(
-                    active_event
+                    active_contract
                     .task_id
-                    if active_event
-                    else None
+                    if active_contract
+                    else (
+                        active_event
+                        .task_id
+                        if active_event
+                        else None
+                    )
                 ),
                 current_activity=(
-                    active_event
-                    .title
-                    if active_event
-                    else None
+                    (
+                        f"Contratado: "
+                        f"{contracted_task.title}"
+                    )
+                    if contracted_task
+                    else (
+                        active_event
+                        .title
+                        if active_event
+                        else None
+                    )
                 ),
             )
         )
@@ -369,6 +459,16 @@ def build_ecosystem_snapshot(
                 is not None
             )
         }
+
+        involved_ids.update(
+            contract.repliker_id
+            for contract, _task
+            in contract_rows
+            if (
+                contract.project_id
+                == project.id
+            )
+        )
 
         ecosystem_projects.append(
             EcosystemProject(

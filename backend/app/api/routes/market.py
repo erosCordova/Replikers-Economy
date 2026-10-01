@@ -100,8 +100,6 @@ def _decision_public(
         ),
         message=
             decision.message,
-        reasoning=
-            decision.reasoning,
         created_at=
             decision.created_at,
     )
@@ -290,7 +288,9 @@ def run_autonomous_market(
             )
             .where(
                 Repliker.is_active
-                .is_(True)
+                .is_(True),
+                Repliker.owner_id
+                != project.client_id,
             )
             .order_by(
                 Repliker.id

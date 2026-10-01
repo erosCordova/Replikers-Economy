@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import (
+    BaseModel,
+    Field,
+)
 
 
 class AgentDecisionAI(BaseModel):
@@ -30,6 +33,8 @@ class AgentDecisionAI(BaseModel):
         max_length=1500,
     )
 
+    # Campo interno. Nunca se expone
+    # a clientes ni al Ecosistema.
     reasoning: str = Field(
         default="",
         max_length=4000,
@@ -54,7 +59,6 @@ class DecisionPublic(BaseModel):
     estimated_minutes: int | None
 
     message: str
-    reasoning: str
 
     created_at: datetime
 

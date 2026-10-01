@@ -27,6 +27,10 @@ from app.models.ecosystem import (
     AgentMessage,
 )
 
+from app.models.contract import (
+    TaskContract,
+)
+
 
 __all__ = [
     "User",
@@ -42,4 +46,5 @@ __all__ = [
     "ReplikerAppearance",
     "AgentActivityEvent",
     "AgentMessage",
+    "TaskContract",
 ]
