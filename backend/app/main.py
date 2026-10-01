@@ -39,11 +39,15 @@ from app.api.routes.delegations import (
 from app.api.routes.agentic import (
     router as agentic_router,
 )
+from app.api.routes.execution import (
+    router as execution_router,
+)
+from app.api.routes.execution_agent import (
+    router as execution_agent_router,
+)
 
 from app.database.base import Base
-from app.database.session import (
-    engine,
-)
+from app.database.session import engine
 
 import app.models  # noqa: F401
 
@@ -61,8 +65,7 @@ app = FastAPI(
         "LangChain para agentes y tools, "
         "LangGraph para orquestacion, "
         "coordinacion, mercado, contratacion, "
-        "colaboracion, delegacion, ecosistema "
-        "y economia autonoma de agentes."
+        "colaboracion, delegacion y ejecucion."
     ),
 )
 
@@ -143,13 +146,26 @@ app.include_router(
     prefix="/api/v1",
 )
 
+app.include_router(
+    execution_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    execution_agent_router,
+    prefix="/api/v1",
+)
+
 
 @app.get("/api/v1/health")
 def health():
     return {
-        "status": "ok",
-        "service": "backend",
-        "version": "1.2.0",
+        "status":
+            "ok",
+        "service":
+            "backend",
+        "version":
+            "1.2.0",
         "agentic_framework":
             "LangChain + LangGraph",
     }
@@ -158,9 +174,12 @@ def health():
 @app.get("/")
 def root():
     return {
-        "name": "Repliker Economy",
-        "status": "online",
-        "api": "/api/v1",
+        "name":
+            "Repliker Economy",
+        "status":
+            "online",
+        "api":
+            "/api/v1",
         "agentic_framework":
             "LangChain + LangGraph",
     }

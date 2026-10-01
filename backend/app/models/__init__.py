@@ -51,6 +51,13 @@ from app.models.agentic import (
 )
 
 
+from app.models.execution import (
+    ExecutionWorkspace,
+    ExecutionArtifact,
+    ToolExecutionLog,
+)
+
+
 __all__ = [
     "User",
     "Repliker",
@@ -74,4 +81,7 @@ __all__ = [
     "DelegatedTask",
     "DelegationOffer",
     "Subcontract",
+    "ExecutionWorkspace",
+    "ExecutionArtifact",
+    "ToolExecutionLog",
 ]
