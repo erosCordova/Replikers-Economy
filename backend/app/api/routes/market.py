@@ -32,6 +32,12 @@ from app.schemas.market import (
     MarketSnapshotResponse,
     MarketTaskResult,
 )
+from app.services.activity_service import (
+    record_activity,
+)
+from app.services.message_service import (
+    record_message,
+)
 from app.services.gemini_client import (
     GeminiConfigurationError,
     GeminiResponseError,
@@ -66,19 +72,23 @@ def _check_project_access(
 
 
 def _decision_public(
-    decision: ReplikerTaskDecision,
+    decision:
+        ReplikerTaskDecision,
     repliker: Repliker,
 ) -> DecisionPublic:
-
     return DecisionPublic(
         id=decision.id,
-        task_id=decision.task_id,
-        repliker_id=decision.repliker_id,
-        repliker_name=repliker.name,
+        task_id=
+            decision.task_id,
+        repliker_id=
+            decision.repliker_id,
+        repliker_name=
+            repliker.name,
         repliker_specialty=(
             repliker.specialty
         ),
-        decision=decision.decision,
+        decision=
+            decision.decision,
         amount_cents=(
             decision.amount_cents
         ),
@@ -88,9 +98,12 @@ def _decision_public(
         estimated_minutes=(
             decision.estimated_minutes
         ),
-        message=decision.message,
-        reasoning=decision.reasoning,
-        created_at=decision.created_at,
+        message=
+            decision.message,
+        reasoning=
+            decision.reasoning,
+        created_at=
+            decision.created_at,
     )
 
 
@@ -99,7 +112,6 @@ def _snapshot(
     db: Session,
     project: Project,
 ) -> MarketSnapshotResponse:
-
     tasks = list(
         db.scalars(
             select(Task)
@@ -115,7 +127,9 @@ def _snapshot(
                 Task.project_id
                 == project.id
             )
-            .order_by(Task.id)
+            .order_by(
+                Task.id
+            )
         ).all()
     )
 
@@ -125,7 +139,6 @@ def _snapshot(
     pass_count = 0
 
     for task in tasks:
-
         rows = db.execute(
             select(
                 ReplikerTaskDecision,
@@ -134,7 +147,8 @@ def _snapshot(
             .join(
                 Repliker,
                 Repliker.id
-                == ReplikerTaskDecision
+                ==
+                ReplikerTaskDecision
                 .repliker_id,
             )
             .where(
@@ -143,15 +157,18 @@ def _snapshot(
                 == task.id
             )
             .order_by(
-                ReplikerTaskDecision.id
+                ReplikerTaskDecision
+                .id
             )
         ).all()
 
         decisions = []
 
         for decision, repliker in rows:
-
-            if decision.decision == "bid":
+            if (
+                decision.decision
+                == "bid"
+            ):
                 bid_count += 1
             else:
                 pass_count += 1
@@ -173,21 +190,29 @@ def _snapshot(
         )
 
     return MarketSnapshotResponse(
-        project_id=project.id,
-        project_status=project.status,
-        bid_count=bid_count,
-        pass_count=pass_count,
-        tasks=task_results,
+        project_id=
+            project.id,
+        project_status=
+            project.status,
+        bid_count=
+            bid_count,
+        pass_count=
+            pass_count,
+        tasks=
+            task_results,
     )
 
 
 @router.post(
     "/projects/{project_id}/run",
-    response_model=MarketRunResponse,
+    response_model=
+        MarketRunResponse,
 )
 def run_autonomous_market(
     project_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(
+        get_db
+    ),
     current_user: User = Depends(
         get_current_user
     ),
@@ -207,14 +232,17 @@ def run_autonomous_market(
             ),
         )
         .where(
-            Project.id == project_id
+            Project.id
+            == project_id
         )
     )
 
     if project is None:
         raise HTTPException(
             status_code=404,
-            detail="Proyecto no encontrado.",
+            detail=(
+                "Proyecto no encontrado."
+            ),
         )
 
     _check_project_access(
@@ -226,13 +254,15 @@ def run_autonomous_market(
         raise HTTPException(
             status_code=400,
             detail=(
-                "El proyecto no contiene tareas."
+                "El proyecto no "
+                "contiene tareas."
             ),
         )
 
     eligible_tasks = [
         task
-        for task in project.tasks
+        for task
+        in project.tasks
         if task.status
         in {
             "planned",
@@ -244,8 +274,9 @@ def run_autonomous_market(
         raise HTTPException(
             status_code=400,
             detail=(
-                "No existen tareas disponibles "
-                "para abrir al mercado."
+                "No existen tareas "
+                "disponibles para "
+                "abrir al mercado."
             ),
         )
 
@@ -271,20 +302,84 @@ def run_autonomous_market(
         raise HTTPException(
             status_code=400,
             detail=(
-                "No existen Replikers activos "
-                "en el mercado."
+                "No existen Replikers "
+                "activos en el mercado."
             ),
         )
 
-    # =====================================================
-    # Abrir tareas
-    # =====================================================
+    market_was_open = (
+        project.status
+        == "market_open"
+    )
 
     for task in eligible_tasks:
-        if task.status == "planned":
+        if (
+            task.status
+            == "planned"
+        ):
             task.status = "open"
 
-    project.status = "market_open"
+            record_activity(
+                db=db,
+                actor_type="system",
+                event_type=(
+                    "task_opened"
+                ),
+                project_id=
+                    project.id,
+                task_id=
+                    task.id,
+                title=(
+                    "Tarea abierta "
+                    "al mercado"
+                ),
+                description=(
+                    f"{task.title} "
+                    f"ya puede recibir "
+                    f"decisiones y ofertas "
+                    f"de Replikers."
+                ),
+            )
+
+    project.status = (
+        "market_open"
+    )
+
+    if not market_was_open:
+        record_activity(
+            db=db,
+            actor_type="system",
+            event_type=(
+                "market_opened"
+            ),
+            project_id=
+                project.id,
+            title=(
+                "Mercado autonomo abierto"
+            ),
+            description=(
+                f"{len(eligible_tasks)} "
+                f"tareas fueron puestas "
+                f"a disposicion de "
+                f"{len(replikers)} "
+                f"Replikers activos."
+            ),
+        )
+
+        record_message(
+            db=db,
+            project_id=project.id,
+            sender_type="market",
+            receiver_type="replikers",
+            message_type="market_open",
+            content=(
+                f"El proyecto '{project.title}' "
+                f"ha abierto {len(eligible_tasks)} "
+                f"tareas al mercado. "
+                f"Los Replikers disponibles ya "
+                f"pueden evaluarlas."
+            ),
+        )
 
     db.commit()
 
@@ -294,17 +389,16 @@ def run_autonomous_market(
 
     errors: list[str] = []
 
-    # =====================================================
-    # Cada tarea es evaluada por cada Repliker
-    # =====================================================
-
     for task in eligible_tasks:
-
         task_data = {
-            "id": task.id,
-            "title": task.title,
-            "description": task.description,
-            "complexity": task.complexity,
+            "id":
+                task.id,
+            "title":
+                task.title,
+            "description":
+                task.description,
+            "complexity":
+                task.complexity,
             "max_budget_cents": (
                 task.max_budget_cents
             ),
@@ -321,49 +415,57 @@ def run_autonomous_market(
             "acceptance_criteria": [
                 criterion.description
                 for criterion
-                in task.acceptance_criteria
+                in task
+                .acceptance_criteria
             ],
         }
 
         project_data = {
-            "id": project.id,
-            "title": project.title,
+            "id":
+                project.id,
+            "title":
+                project.title,
             "description":
                 project.description,
             "currency":
                 project.currency,
             "budget_limit_cents":
-                project.budget_limit_cents,
+                project
+                .budget_limit_cents,
             "quoted_amount_cents":
-                project.quoted_amount_cents,
+                project
+                .quoted_amount_cents,
         }
 
         for repliker in replikers:
-
-            existing_decision = db.scalar(
-                select(
-                    ReplikerTaskDecision
-                )
-                .where(
-                    ReplikerTaskDecision
-                    .task_id
-                    == task.id,
-                    ReplikerTaskDecision
-                    .repliker_id
-                    == repliker.id,
+            existing_decision = (
+                db.scalar(
+                    select(
+                        ReplikerTaskDecision
+                    )
+                    .where(
+                        ReplikerTaskDecision
+                        .task_id
+                        == task.id,
+                        ReplikerTaskDecision
+                        .repliker_id
+                        == repliker.id,
+                    )
                 )
             )
 
             if existing_decision:
                 continue
 
-            existing_bid = db.scalar(
-                select(TaskBid)
-                .where(
-                    TaskBid.task_id
-                    == task.id,
-                    TaskBid.repliker_id
-                    == repliker.id,
+            existing_bid = (
+                db.scalar(
+                    select(TaskBid)
+                    .where(
+                        TaskBid.task_id
+                        == task.id,
+                        TaskBid.repliker_id
+                        == repliker.id,
+                    )
                 )
             )
 
@@ -371,22 +473,28 @@ def run_autonomous_market(
                 continue
 
             repliker_data = {
-                "id": repliker.id,
-                "name": repliker.name,
+                "id":
+                    repliker.id,
+                "name":
+                    repliker.name,
                 "specialty":
                     repliker.specialty,
                 "description":
                     repliker.description,
                 "reputation_score":
-                    repliker.reputation_score,
+                    repliker
+                    .reputation_score,
                 "jobs_completed":
-                    repliker.jobs_completed,
+                    repliker
+                    .jobs_completed,
                 "status":
                     repliker.status,
                 "skills": [
                     {
-                        "name": skill.name,
-                        "level": skill.level,
+                        "name":
+                            skill.name,
+                        "level":
+                            skill.level,
                     }
                     for skill
                     in repliker.skills
@@ -413,24 +521,59 @@ def run_autonomous_market(
                     detail=str(exc),
                 ) from exc
 
-            except GeminiResponseError as exc:
+            except (
+                GeminiResponseError
+            ) as exc:
+                error_text = (
+                    f"Task {task.id} / "
+                    f"Repliker "
+                    f"{repliker.id}: "
+                    f"{exc}"
+                )
 
                 errors.append(
-                    (
-                        f"Task {task.id} / "
-                        f"Repliker {repliker.id}: "
-                        f"{exc}"
-                    )
+                    error_text
                 )
+
+                record_activity(
+                    db=db,
+                    actor_type=
+                        "repliker",
+                    event_type=(
+                        "evaluation_failed"
+                    ),
+                    project_id=
+                        project.id,
+                    task_id=
+                        task.id,
+                    repliker_id=
+                        repliker.id,
+                    title=(
+                        f"{repliker.name} "
+                        f"no pudo completar "
+                        f"la evaluacion"
+                    ),
+                    description=(
+                        "La evaluacion "
+                        "autonoma de la "
+                        "tarea encontro "
+                        "un error temporal."
+                    ),
+                )
+
+                db.commit()
 
                 continue
 
             decision = (
                 ReplikerTaskDecision(
-                    task_id=task.id,
-                    repliker_id=repliker.id,
+                    task_id=
+                        task.id,
+                    repliker_id=
+                        repliker.id,
                     decision=(
-                        ai_decision.decision
+                        ai_decision
+                        .decision
                     ),
                     amount_cents=(
                         ai_decision
@@ -445,15 +588,20 @@ def run_autonomous_market(
                         .estimated_minutes
                     ),
                     message=(
-                        ai_decision.message
+                        ai_decision
+                        .message
                     ),
                     reasoning=(
-                        ai_decision.reasoning
+                        ai_decision
+                        .reasoning
                     ),
                 )
             )
 
-            db.add(decision)
+            db.add(
+                decision
+            )
+
             db.flush()
 
             new_decisions += 1
@@ -465,8 +613,10 @@ def run_autonomous_market(
                 bid_count += 1
 
                 bid = TaskBid(
-                    task_id=task.id,
-                    repliker_id=repliker.id,
+                    task_id=
+                        task.id,
+                    repliker_id=
+                        repliker.id,
                     amount_cents=(
                         ai_decision
                         .amount_cents
@@ -480,17 +630,151 @@ def run_autonomous_market(
                         .estimated_minutes
                     ),
                     message=(
-                        ai_decision.message
+                        ai_decision
+                        .message
                     ),
                     status="pending",
                 )
 
-                db.add(bid)
+                db.add(
+                    bid
+                )
+
+                amount = (
+                    (
+                        ai_decision
+                        .amount_cents
+                        or 0
+                    )
+                    / 100
+                )
+
+                record_activity(
+                    db=db,
+                    actor_type=
+                        "repliker",
+                    event_type=(
+                        "bid_created"
+                    ),
+                    project_id=
+                        project.id,
+                    task_id=
+                        task.id,
+                    repliker_id=
+                        repliker.id,
+                    title=(
+                        f"{repliker.name} "
+                        f"envio una oferta"
+                    ),
+                    description=(
+                        f"Oferta: "
+                        f"{project.currency} "
+                        f"{amount:.2f}. "
+                        f"Confianza: "
+                        f"{ai_decision.confidence_score}%. "
+                        f"Tiempo estimado: "
+                        f"{ai_decision.estimated_minutes} "
+                        f"minutos."
+                    ),
+                )
+
+                record_message(
+                    db=db,
+                    project_id=project.id,
+                    task_id=task.id,
+                    sender_type="repliker",
+                    sender_repliker_id=repliker.id,
+                    receiver_type="r00",
+                    message_type="bid",
+                    content=ai_decision.message,
+                )
 
             else:
                 pass_count += 1
 
+                record_activity(
+                    db=db,
+                    actor_type=
+                        "repliker",
+                    event_type=(
+                        "task_passed"
+                    ),
+                    project_id=
+                        project.id,
+                    task_id=
+                        task.id,
+                    repliker_id=
+                        repliker.id,
+                    title=(
+                        f"{repliker.name} "
+                        f"decidio no ofertar"
+                    ),
+                    description=(
+                        f"El Repliker evaluo "
+                        f"la tarea "
+                        f"'{task.title}' y "
+                        f"decidio no competir "
+                        f"por ella. "
+                        f"Confianza declarada: "
+                        f"{ai_decision.confidence_score}%."
+                    ),
+                )
+
+                record_message(
+                    db=db,
+                    project_id=project.id,
+                    task_id=task.id,
+                    sender_type="repliker",
+                    sender_repliker_id=repliker.id,
+                    receiver_type="r00",
+                    message_type="pass",
+                    content=ai_decision.message,
+                )
+
             db.commit()
+
+    if (
+        new_decisions > 0
+        or errors
+    ):
+        record_activity(
+            db=db,
+            actor_type="system",
+            event_type=(
+                "market_cycle_completed"
+            ),
+            project_id=
+                project.id,
+            title=(
+                "Ciclo del mercado "
+                "completado"
+            ),
+            description=(
+                f"{new_decisions} nuevas "
+                f"decisiones procesadas. "
+                f"{bid_count} ofertas, "
+                f"{pass_count} rechazos "
+                f"y {len(errors)} errores."
+            ),
+        )
+
+        record_message(
+            db=db,
+            project_id=project.id,
+            sender_type="market",
+            receiver_type="r00",
+            message_type="market_summary",
+            content=(
+                f"El ciclo del mercado termino. "
+                f"Se procesaron {new_decisions} "
+                f"nuevas decisiones: "
+                f"{bid_count} ofertas, "
+                f"{pass_count} rechazos y "
+                f"{len(errors)} errores."
+            ),
+        )
+
+        db.commit()
 
     snapshot = _snapshot(
         db=db,
@@ -498,37 +782,42 @@ def run_autonomous_market(
     )
 
     return MarketRunResponse(
-        project_id=project.id,
+        project_id=
+            project.id,
         project_status=(
             project.status
         ),
-        tasks_processed=len(
-            eligible_tasks
-        ),
-        agents_considered=len(
-            replikers
-        ),
-        new_decisions=(
-            new_decisions
-        ),
-        bid_count=(
-            snapshot.bid_count
-        ),
-        pass_count=(
-            snapshot.pass_count
-        ),
-        errors=errors,
-        tasks=snapshot.tasks,
+        tasks_processed=
+            len(
+                eligible_tasks
+            ),
+        agents_considered=
+            len(
+                replikers
+            ),
+        new_decisions=
+            new_decisions,
+        bid_count=
+            snapshot.bid_count,
+        pass_count=
+            snapshot.pass_count,
+        errors=
+            errors,
+        tasks=
+            snapshot.tasks,
     )
 
 
 @router.get(
     "/projects/{project_id}",
-    response_model=MarketSnapshotResponse,
+    response_model=
+        MarketSnapshotResponse,
 )
 def get_market_snapshot(
     project_id: int,
-    db: Session = Depends(get_db),
+    db: Session = Depends(
+        get_db
+    ),
     current_user: User = Depends(
         get_current_user
     ),
@@ -541,7 +830,9 @@ def get_market_snapshot(
     if project is None:
         raise HTTPException(
             status_code=404,
-            detail="Proyecto no encontrado.",
+            detail=(
+                "Proyecto no encontrado."
+            ),
         )
 
     _check_project_access(

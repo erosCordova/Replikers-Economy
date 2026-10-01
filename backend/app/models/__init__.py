@@ -21,6 +21,12 @@ from app.models.market import (
     ReplikerTaskDecision,
 )
 
+from app.models.ecosystem import (
+    ReplikerAppearance,
+    AgentActivityEvent,
+    AgentMessage,
+)
+
 
 __all__ = [
     "User",
@@ -33,4 +39,7 @@ __all__ = [
     "TaskAcceptanceCriterion",
     "TaskBid",
     "ReplikerTaskDecision",
+    "ReplikerAppearance",
+    "AgentActivityEvent",
+    "AgentMessage",
 ]

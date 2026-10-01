@@ -1,6 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+)
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import (
+    Session,
+    selectinload,
+)
 
 from app.auth.dependencies import (
     get_current_user,
@@ -14,10 +21,18 @@ from app.models.task import (
     TaskSkillRequirement,
 )
 from app.models.user import User
-from app.orchestration.coordinator import build_project_plan
+from app.orchestration.coordinator import (
+    build_project_plan,
+)
 from app.schemas.coordinator import (
     CoordinatorPlanResponse,
     PlannedTaskResponse,
+)
+from app.services.activity_service import (
+    record_activity,
+)
+from app.services.message_service import (
+    record_message,
 )
 from app.services.gemini_client import (
     GeminiConfigurationError,
@@ -38,32 +53,49 @@ router = APIRouter(
 def plan_project(
     project_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        get_current_user
+    ),
 ):
     statement = (
         select(Project)
         .options(
-            selectinload(Project.requirements),
-            selectinload(Project.tasks),
+            selectinload(
+                Project.requirements
+            ),
+            selectinload(
+                Project.tasks
+            ),
         )
-        .where(Project.id == project_id)
+        .where(
+            Project.id == project_id
+        )
     )
 
-    project = db.scalar(statement)
+    project = db.scalar(
+        statement
+    )
 
     if project is None:
         raise HTTPException(
             status_code=404,
-            detail="Proyecto no encontrado.",
+            detail=(
+                "Proyecto no encontrado."
+            ),
         )
 
     if (
-        project.client_id != current_user.id
-        and current_user.role != "admin"
+        project.client_id
+        != current_user.id
+        and current_user.role
+        != "admin"
     ):
         raise HTTPException(
             status_code=403,
-            detail="No tienes acceso a este proyecto.",
+            detail=(
+                "No tienes acceso "
+                "a este proyecto."
+            ),
         )
 
     if project.tasks:
@@ -78,10 +110,13 @@ def plan_project(
         db.scalars(
             select(Repliker)
             .options(
-                selectinload(Repliker.skills)
+                selectinload(
+                    Repliker.skills
+                )
             )
             .where(
-                Repliker.is_active.is_(True)
+                Repliker.is_active
+                .is_(True)
             )
         ).all()
     )
@@ -90,15 +125,19 @@ def plan_project(
         {
             "id": repliker.id,
             "name": repliker.name,
-            "specialty": repliker.specialty,
-            "reputation": repliker.reputation_score,
-            "jobs_completed": repliker.jobs_completed,
+            "specialty":
+                repliker.specialty,
+            "reputation":
+                repliker.reputation_score,
+            "jobs_completed":
+                repliker.jobs_completed,
             "skills": [
                 {
                     "name": skill.name,
                     "level": skill.level,
                 }
-                for skill in repliker.skills
+                for skill
+                in repliker.skills
             ],
         }
         for repliker in replikers
@@ -107,25 +146,30 @@ def plan_project(
     project_data = {
         "id": project.id,
         "title": project.title,
-        "description": project.description,
-        "currency": project.currency,
-        "budget_limit_cents": (
-            project.budget_limit_cents
-        ),
+        "description":
+            project.description,
+        "currency":
+            project.currency,
+        "budget_limit_cents":
+            project.budget_limit_cents,
         "requirements": [
             {
-                "title": req.title,
-                "description": req.description,
-                "mandatory": req.is_mandatory,
+                "title": requirement.title,
+                "description":
+                    requirement.description,
+                "mandatory":
+                    requirement.is_mandatory,
             }
-            for req in project.requirements
+            for requirement
+            in project.requirements
         ],
     }
 
     try:
         plan = build_project_plan(
             project_data=project_data,
-            marketplace_data=marketplace_data,
+            marketplace_data=
+                marketplace_data,
         )
 
     except GeminiConfigurationError as exc:
@@ -149,15 +193,17 @@ def plan_project(
     created_task_ids = []
 
     for planned_task in plan.tasks:
-
         task = Task(
             project_id=project.id,
             title=planned_task.title,
-            description=planned_task.description,
+            description=
+                planned_task.description,
             status="planned",
-            complexity=planned_task.complexity,
+            complexity=
+                planned_task.complexity,
             max_budget_cents=(
-                planned_task.max_budget_cents
+                planned_task
+                .max_budget_cents
             ),
         )
 
@@ -174,13 +220,16 @@ def plan_project(
             db.add(
                 TaskSkillRequirement(
                     task_id=task.id,
-                    skill_name=skill.skill_name,
-                    minimum_level=skill.minimum_level,
+                    skill_name=
+                        skill.skill_name,
+                    minimum_level=
+                        skill.minimum_level,
                 )
             )
 
         for criterion in (
-            planned_task.acceptance_criteria
+            planned_task
+            .acceptance_criteria
         ):
             db.add(
                 TaskAcceptanceCriterion(
@@ -191,9 +240,30 @@ def plan_project(
                 )
             )
 
+        record_activity(
+            db=db,
+            actor_type="r00",
+            event_type="task_created",
+            project_id=project.id,
+            task_id=task.id,
+            title=(
+                "R00 creo una nueva tarea"
+            ),
+            description=(
+                f"{task.title}. "
+                f"Complejidad: "
+                f"{task.complexity}/100. "
+                f"Presupuesto maximo: "
+                f"{project.currency} "
+                f"{task.max_budget_cents / 100:.2f}."
+            ),
+        )
+
     planned_budget = sum(
-        task.max_budget_cents
-        for task in plan.tasks
+        planned_task
+        .max_budget_cents
+        for planned_task
+        in plan.tasks
     )
 
     project.quoted_amount_cents = (
@@ -201,6 +271,42 @@ def plan_project(
     )
 
     project.status = "planned"
+
+    record_activity(
+        db=db,
+        actor_type="r00",
+        event_type=(
+            "project_planned"
+        ),
+        project_id=project.id,
+        title=(
+            "R00 termino la planificacion"
+        ),
+        description=(
+            f"El proyecto fue dividido en "
+            f"{len(plan.tasks)} tareas con "
+            f"un presupuesto planificado de "
+            f"{project.currency} "
+            f"{planned_budget / 100:.2f}."
+        ),
+    )
+
+    record_message(
+        db=db,
+        project_id=project.id,
+        sender_type="r00",
+        receiver_type="project",
+        message_type="planning_summary",
+        content=(
+            f"He terminado la planificacion de "
+            f"'{project.title}'. "
+            f"{plan.summary} "
+            f"Se definieron {len(plan.tasks)} "
+            f"tareas con un presupuesto total de "
+            f"{project.currency} "
+            f"{planned_budget / 100:.2f}."
+        ),
+    )
 
     db.commit()
 
@@ -220,14 +326,15 @@ def plan_project(
                     created_task_ids
                 )
             )
-            .order_by(Task.id)
+            .order_by(
+                Task.id
+            )
         ).all()
     )
 
     response_tasks = []
 
     for task in tasks:
-
         criteria = [
             criterion.description
             for criterion
@@ -237,7 +344,8 @@ def plan_project(
         response_tasks.append(
             PlannedTaskResponse(
                 task=task,
-                acceptance_criteria=criteria,
+                acceptance_criteria=
+                    criteria,
             )
         )
 
@@ -246,10 +354,12 @@ def plan_project(
         coordinator="R00",
         summary=plan.summary,
         strategy=plan.strategy,
-        planned_budget_cents=planned_budget,
+        planned_budget_cents=
+            planned_budget,
         client_budget_cents=(
             project.budget_limit_cents
         ),
-        market_gaps=plan.market_gaps,
+        market_gaps=
+            plan.market_gaps,
         tasks=response_tasks,
     )

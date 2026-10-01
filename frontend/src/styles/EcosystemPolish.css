@@ -1,0 +1,742 @@
+/* =========================================================
+   REPLIKER ECONOMY
+   ECOSYSTEM VISUAL POLISH
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   PAGE
+   --------------------------------------------------------- */
+
+.ecosystem-page {
+  position: relative;
+}
+
+.ecosystem-page::before {
+  content: '';
+
+  position: absolute;
+  top: 110px;
+  right: 3%;
+  z-index: -1;
+
+  width: 420px;
+  height: 420px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(59,130,246,.06),
+      transparent 70%
+    );
+
+  pointer-events: none;
+}
+
+
+/* ---------------------------------------------------------
+   HERO
+   --------------------------------------------------------- */
+
+.ecosystem-hero {
+  position: relative;
+
+  isolation: isolate;
+
+  border:
+    1px solid rgba(255,255,255,.08);
+
+  background:
+    radial-gradient(
+      circle at 92% 20%,
+      rgba(34,211,238,.18),
+      transparent 260px
+    ),
+    radial-gradient(
+      circle at 60% -70%,
+      rgba(139,92,246,.18),
+      transparent 350px
+    ),
+    linear-gradient(
+      120deg,
+      #101827 0%,
+      #172554 52%,
+      #164e63 120%
+    );
+
+  box-shadow:
+    0 18px 45px
+      rgba(15,23,42,.12);
+}
+
+.ecosystem-hero::before {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  opacity: .22;
+
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.045) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    32px 32px;
+
+  mask-image:
+    linear-gradient(
+      90deg,
+      transparent,
+      black 35%,
+      black
+    );
+}
+
+.ecosystem-hero::after {
+  content: '';
+
+  width: 190px;
+  height: 190px;
+
+  position: absolute;
+  right: 15%;
+  top: 50%;
+
+  z-index: -1;
+
+  transform:
+    translateY(-50%);
+
+  border:
+    1px solid
+    rgba(56,189,248,.16);
+
+  border-radius: 50%;
+
+  box-shadow:
+    0 0 0 30px
+      rgba(56,189,248,.025),
+    0 0 0 65px
+      rgba(139,92,246,.018);
+}
+
+
+/* ---------------------------------------------------------
+   METRICS
+   --------------------------------------------------------- */
+
+.ecosystem-metrics article {
+  position: relative;
+
+  overflow: hidden;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    border-color .2s ease;
+}
+
+.ecosystem-metrics article::after {
+  content: '';
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 2px;
+
+  opacity: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      #2563eb,
+      #22d3ee,
+      #8b5cf6
+    );
+
+  transition:
+    opacity .2s ease;
+}
+
+.ecosystem-metrics article:hover {
+  transform:
+    translateY(-3px);
+
+  border-color:
+    #bfdbfe;
+
+  box-shadow:
+    0 14px 30px
+      rgba(15,23,42,.08);
+}
+
+.ecosystem-metrics article:hover::after {
+  opacity: 1;
+}
+
+.ecosystem-metric-icon {
+  transition:
+    transform .22s ease;
+}
+
+.ecosystem-metrics article:hover
+.ecosystem-metric-icon {
+  transform:
+    scale(1.08)
+    rotate(-3deg);
+}
+
+
+/* ---------------------------------------------------------
+   FILTER BAR
+   --------------------------------------------------------- */
+
+.ecosystem-controlbar {
+  position: relative;
+
+  box-shadow:
+    0 5px 20px
+      rgba(15,23,42,.035);
+}
+
+.ecosystem-filters button {
+  transition:
+    color .18s ease,
+    background .18s ease,
+    transform .18s ease;
+}
+
+.ecosystem-filters button:hover {
+  transform:
+    translateY(-1px);
+}
+
+
+/* ---------------------------------------------------------
+   AGENT GRID
+   --------------------------------------------------------- */
+
+.ecosystem-agent-card {
+  position: relative;
+
+  isolation: isolate;
+}
+
+.ecosystem-agent-card::before {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  border-radius: inherit;
+
+  opacity: 0;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37,99,235,.045),
+      transparent 40%,
+      rgba(34,211,238,.045)
+    );
+
+  transition:
+    opacity .2s ease;
+}
+
+.ecosystem-agent-card:hover::before {
+  opacity: 1;
+}
+
+.ecosystem-agent-card:hover {
+  transform:
+    translateY(-5px);
+
+  border-color:
+    rgba(59,130,246,.35);
+
+  box-shadow:
+    0 18px 40px
+      rgba(15,23,42,.1);
+}
+
+
+/* ---------------------------------------------------------
+   AGENT VISUAL AREA
+   --------------------------------------------------------- */
+
+.ecosystem-agent-visual {
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      rgba(255,255,255,.98),
+      rgba(239,246,255,.94) 55%,
+      rgba(226,232,240,.82)
+    );
+}
+
+.ecosystem-agent-visual::before {
+  content: '';
+
+  width: 250px;
+  height: 250px;
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  border:
+    1px solid rgba(59,130,246,.08);
+
+  box-shadow:
+    0 0 0 35px
+      rgba(59,130,246,.025),
+    0 0 0 70px
+      rgba(14,165,233,.015);
+}
+
+.ecosystem-agent-visual::after {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  opacity: .18;
+
+  background-image:
+    linear-gradient(
+      rgba(37,99,235,.08) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(37,99,235,.08) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    24px 24px;
+
+  mask-image:
+    radial-gradient(
+      circle,
+      black,
+      transparent 75%
+    );
+}
+
+
+/* ---------------------------------------------------------
+   STATUS
+   --------------------------------------------------------- */
+
+.ecosystem-agent-status {
+  z-index: 20;
+
+  backdrop-filter:
+    blur(10px);
+
+  box-shadow:
+    0 4px 12px
+      rgba(15,23,42,.06);
+}
+
+.ecosystem-agent-status.available > span {
+  animation:
+    ecosystemStatusPulse
+    2.2s infinite;
+}
+
+.ecosystem-live-dot {
+  animation:
+    ecosystemStatusPulse
+    2.2s infinite;
+}
+
+@keyframes ecosystemStatusPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0
+      rgba(34,197,94,.25);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 5px
+      rgba(34,197,94,0);
+  }
+}
+
+
+/* ---------------------------------------------------------
+   AVATARS
+   --------------------------------------------------------- */
+
+.repliker-ai-avatar {
+  z-index: 3;
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.ecosystem-agent-card:hover
+.repliker-ai-avatar {
+  transform:
+    translateY(-4px)
+    scale(1.035);
+}
+
+.avatar-large.avatar-agent-active {
+  animation:
+    replikerFloat
+    4.5s ease-in-out infinite;
+
+  animation-delay:
+    var(--avatar-delay);
+}
+
+@keyframes replikerFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+
+.avatar-energy-ring {
+  width: 82%;
+  height: 82%;
+
+  position: absolute;
+  top: 9%;
+  left: 9%;
+
+  z-index: 1;
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--avatar-secondary) 38%,
+      transparent
+    );
+
+  border-radius: 50%;
+
+  opacity: .45;
+
+  animation:
+    avatarEnergyRing
+    5s linear infinite;
+}
+
+@keyframes avatarEnergyRing {
+  from {
+    transform:
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+
+.avatar-auto-1
+.avatar-head {
+  border-radius:
+    25% 25% 45% 45%;
+
+  transform:
+    scaleX(.94);
+}
+
+.avatar-auto-1
+.avatar-face-panel {
+  border-radius:
+    18% 18% 36% 36%;
+}
+
+
+.avatar-auto-2
+.avatar-head {
+  border-radius:
+    45% 45% 38% 38%;
+
+  transform:
+    scaleX(1.04);
+}
+
+.avatar-auto-2
+.avatar-temple {
+  height: 38%;
+}
+
+
+.avatar-auto-3
+.avatar-head {
+  clip-path:
+    polygon(
+      14% 0,
+      86% 0,
+      100% 22%,
+      88% 100%,
+      12% 100%,
+      0 22%
+    );
+
+  border-radius:
+    16%;
+}
+
+.avatar-auto-3
+.avatar-face-panel {
+  border-radius:
+    12%;
+}
+
+
+/* ---------------------------------------------------------
+   SKILLS
+   --------------------------------------------------------- */
+
+.ecosystem-skills > span {
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    background .16s ease;
+}
+
+.ecosystem-skills > span:hover {
+  transform:
+    translateY(-1px);
+
+  border-color:
+    #bfdbfe;
+
+  background:
+    #eff6ff;
+}
+
+
+/* ---------------------------------------------------------
+   AVAILABLE BAR
+   --------------------------------------------------------- */
+
+.ecosystem-available-note {
+  position: relative;
+
+  overflow: hidden;
+
+  border:
+    1px solid rgba(16,185,129,.07);
+}
+
+.ecosystem-available-note::after {
+  content: '';
+
+  width: 100px;
+  height: 100%;
+
+  position: absolute;
+  top: 0;
+  left: -110px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,.7),
+      transparent
+    );
+
+  animation:
+    replikerAvailabilitySweep
+    5s ease-in-out infinite;
+}
+
+@keyframes replikerAvailabilitySweep {
+  0%,
+  65% {
+    left: -110px;
+  }
+
+  100% {
+    left: calc(100% + 110px);
+  }
+}
+
+
+/* ---------------------------------------------------------
+   PROJECTS
+   --------------------------------------------------------- */
+
+.ecosystem-project-card {
+  position: relative;
+
+  overflow: hidden;
+
+  transition:
+    transform .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.ecosystem-project-card::before {
+  content: '';
+
+  width: 3px;
+
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+
+  border-radius:
+    0 4px 4px 0;
+
+  opacity: .45;
+
+  background:
+    linear-gradient(
+      #2563eb,
+      #06b6d4
+    );
+}
+
+.ecosystem-project-card:hover {
+  transform:
+    translateY(-2px);
+
+  border-color:
+    #bfdbfe;
+
+  box-shadow:
+    0 10px 24px
+      rgba(15,23,42,.06);
+}
+
+.ecosystem-project-card.selected {
+  background:
+    linear-gradient(
+      135deg,
+      #fff,
+      #f5f9ff
+    );
+}
+
+
+/* ---------------------------------------------------------
+   EVENTS / MESSAGES
+   --------------------------------------------------------- */
+
+.ecosystem-panel {
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.ecosystem-panel:hover {
+  border-color:
+    #cbd5e1;
+
+  box-shadow:
+    0 10px 26px
+      rgba(15,23,42,.055);
+}
+
+.ecosystem-event-line::before {
+  box-shadow:
+    0 0 0 4px
+      rgba(37,99,235,.07);
+}
+
+.ecosystem-message {
+  border-radius:
+    8px;
+
+  transition:
+    background .16s ease;
+}
+
+.ecosystem-message:hover {
+  background:
+    #f8fafc;
+}
+
+
+/* ---------------------------------------------------------
+   PROFILE
+   --------------------------------------------------------- */
+
+.ecosystem-profile {
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      rgba(219,234,254,.48),
+      transparent 260px
+    ),
+    #fff;
+}
+
+.ecosystem-customizer {
+  box-shadow:
+    inset 0 1px 0
+      rgba(255,255,255,.8);
+}
+
+
+/* ---------------------------------------------------------
+   REDUCED MOTION
+   --------------------------------------------------------- */
+
+@media (
+  prefers-reduced-motion:
+  reduce
+) {
+  .avatar-large.avatar-agent-active,
+  .avatar-energy-ring,
+  .ecosystem-live-dot,
+  .ecosystem-agent-status.available > span,
+  .ecosystem-available-note::after {
+    animation:
+      none !important;
+  }
+
+  .ecosystem-agent-card,
+  .repliker-ai-avatar,
+  .ecosystem-metrics article {
+    transition:
+      none !important;
+  }
+}

@@ -29,6 +29,7 @@ import {
 import axios from 'axios'
 
 import { api } from './api'
+import Ecosystem from './pages/Ecosystem'
 import './App.css'
 import './theme.css'
 
@@ -38,6 +39,7 @@ type Section =
   | 'new-project'
   | 'projects'
   | 'marketplace'
+  | 'ecosystem'
   | 'plan'
 
 
@@ -893,6 +895,20 @@ function App() {
             Marketplace
           </button>
 
+          <button
+            className={
+              section === 'ecosystem'
+                ? 'nav-item active'
+                : 'nav-item'
+            }
+            onClick={() =>
+              navigate('ecosystem')
+            }
+          >
+            <Network size={19} />
+            Ecosistema
+          </button>
+
           {plan && (
             <button
               className={
@@ -981,6 +997,9 @@ function App() {
 
                 {section === 'marketplace' &&
                   'Marketplace'}
+
+                {section === 'ecosystem' &&
+                  'Ecosistema'}
 
                 {section === 'plan' &&
                   'Plan autonomo de R00'}
@@ -1626,6 +1645,14 @@ function App() {
                 </div>
               )}
             </section>
+          )}
+
+
+          {section === 'ecosystem' && (
+            <Ecosystem
+              currentUserId={user.id}
+              currentUserRole={user.role}
+            />
           )}
 
 
