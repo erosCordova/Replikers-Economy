@@ -23,6 +23,10 @@ from app.models.task import (
 from app.services.activity_service import (
     record_activity,
 )
+from app.services.collaboration_service import (
+    ensure_task_execution_thread,
+    send_collaboration_message,
+)
 from app.services.message_service import (
     record_message,
 )
@@ -713,10 +717,21 @@ def select_contracts_for_project(
             ),
         )
 
-        record_message(
+        collaboration_thread = (
+            ensure_task_execution_thread(
+                db=db,
+                project=project,
+                task=task,
+                contract=contract,
+                repliker=
+                    winner.repliker,
+            )
+        )
+
+        send_collaboration_message(
             db=db,
-            project_id=project.id,
-            task_id=task.id,
+            thread=
+                collaboration_thread,
             sender_type="r00",
             receiver_type="repliker",
             receiver_repliker_id=
@@ -731,6 +746,8 @@ def select_contracts_for_project(
                 f"{contract.amount_cents / 100:.2f}. "
                 f"{summary}"
             ),
+            priority="high",
+            requires_ack=True,
         )
 
         created.append(

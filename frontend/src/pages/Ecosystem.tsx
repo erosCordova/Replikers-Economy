@@ -2,7 +2,6 @@ import {
   Activity,
   BriefcaseBusiness,
   Gauge,
-  MessageSquare,
   Palette,
   Radio,
   RefreshCw,
@@ -19,6 +18,7 @@ import {
 
 import { api } from '../api'
 import ReplikerAvatar from '../components/ReplikerAvatar'
+import CollaborationPanel from '../components/CollaborationPanel'
 import type {
   ReplikerAppearance,
 } from '../components/ReplikerAvatar'
@@ -384,25 +384,6 @@ export default function Ecosystem({
   )
 
 
-  const filteredMessages = useMemo(
-    () => {
-      if (
-        selectedProjectId === 'all'
-      ) {
-        return snapshot.messages
-      }
-
-      return snapshot.messages.filter(
-        (message) =>
-          message.project_id ===
-          selectedProjectId,
-      )
-    },
-    [
-      snapshot.messages,
-      selectedProjectId,
-    ],
-  )
 
 
   function agentName(
@@ -1108,129 +1089,17 @@ export default function Ecosystem({
         </article>
 
 
-        <article className="ecosystem-panel messages">
-          <div className="ecosystem-panel-header">
-            <div>
-              <span>
-                COMUNICACIONES
-              </span>
-
-              <h3>
-                Conversaciones entre agentes
-              </h3>
-            </div>
-
-            <MessageSquare size={19} />
-          </div>
-
-          <div className="ecosystem-message-list">
-            {filteredMessages.length === 0 ? (
-              <div className="ecosystem-panel-empty">
-                <MessageSquare size={28} />
-
-                <strong>
-                  Todavia no hay mensajes
-                </strong>
-
-                <p>
-                  Aqui apareceran mensajes
-                  reales enviados por R00 y los
-                  Replikers durante el trabajo.
-                </p>
-              </div>
-            ) : (
-              filteredMessages
-                .slice(0, 20)
-                .map(
-                  (message) => {
-                    const sender =
-                      agentName(
-                        message.sender_repliker_id,
-                        message.sender_type,
-                      )
-
-                    const receiver =
-                      message.receiver_type ===
-                      'project'
-                        ? 'Equipo'
-                        : agentName(
-                            message.receiver_repliker_id,
-                            message.receiver_type,
-                          )
-
-                    const senderAgent =
-                      snapshot.agents.find(
-                        (agent) =>
-                          agent.id ===
-                          message.sender_repliker_id,
-                      )
-
-                    return (
-                      <div
-                        key={message.id}
-                        className="ecosystem-message"
-                      >
-                        {senderAgent ? (
-                          <ReplikerAvatar
-                            appearance={
-                              senderAgent.appearance
-                            }
-                            name={
-                              senderAgent.name
-                            }
-                            size="small"
-                            active={
-                              senderAgent.is_active
-                            }
-                          />
-                        ) : (
-                          <div className="ecosystem-system-avatar">
-                            R00
-                          </div>
-                        )}
-
-                        <div className="ecosystem-message-body">
-                          <div className="ecosystem-message-top">
-                            <strong>
-                              {sender}
-                            </strong>
-
-                            <span>
-                              →
-                            </span>
-
-                            <b>
-                              {receiver}
-                            </b>
-
-                            <time>
-                              {dateTimeLabel(
-                                message.created_at,
-                              )}
-                            </time>
-                          </div>
-
-                          <p>
-                            {message.content}
-                          </p>
-
-                          <small>
-                            {projectName(
-                              message.project_id,
-                            )}
-
-                            {message.task_id
-                              ? ` · Tarea #${message.task_id}`
-                              : ''}
-                          </small>
-                        </div>
-                      </div>
-                    )
-                  },
-                )
-            )}
-          </div>
-        </article>
+        <CollaborationPanel
+          selectedProjectId={
+            selectedProjectId
+          }
+          agents={
+            snapshot.agents
+          }
+          projects={
+            snapshot.projects
+          }
+        />
       </section>
 
 

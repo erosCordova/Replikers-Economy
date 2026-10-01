@@ -27,6 +27,12 @@ from app.models.ecosystem import (
     AgentMessage,
 )
 
+from app.models.collaboration import (
+    CollaborationThread,
+    CollaborationParticipant,
+    CollaborationMessageState,
+)
+
 from app.models.contract import (
     TaskContract,
 )
@@ -47,4 +53,7 @@ __all__ = [
     "AgentActivityEvent",
     "AgentMessage",
     "TaskContract",
+    "CollaborationThread",
+    "CollaborationParticipant",
+    "CollaborationMessageState",
 ]

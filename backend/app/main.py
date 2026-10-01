@@ -32,6 +32,10 @@ from app.api.routes.contracts import (
     router as contracts_router,
 )
 
+from app.api.routes.collaboration import (
+    router as collaboration_router,
+)
+
 from app.database.base import Base
 from app.database.session import engine
 
@@ -45,12 +49,12 @@ Base.metadata.create_all(
 
 app = FastAPI(
     title="Repliker Economy API",
-    version="0.9.0",
+    version="1.0.0",
     description=(
         "Backend de Repliker Economy: "
         "coordinacion, mercado, contratacion, "
-        "ecosistema y economia autonoma "
-        "de agentes."
+        "colaboracion, ecosistema y economia "
+        "autonoma de agentes."
     ),
 )
 
@@ -116,13 +120,18 @@ app.include_router(
     prefix="/api/v1",
 )
 
+app.include_router(
+    collaboration_router,
+    prefix="/api/v1",
+)
+
 
 @app.get("/api/v1/health")
 def health():
     return {
         "status": "ok",
         "service": "backend",
-        "version": "0.9.0",
+        "version": "1.0.0",
     }
 
 
