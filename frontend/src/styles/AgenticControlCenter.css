@@ -74,7 +74,7 @@
 
 .agentic-header h2 {
   margin: 13px 0 7px;
-  color: #172033;
+  color: #30343f;
   font-size: clamp(
     24px,
     3vw,
@@ -208,7 +208,7 @@
   display: block;
   overflow: hidden;
   margin: 2px 0;
-  color: #172033;
+  color: #30343f;
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -243,7 +243,7 @@
 }
 
 .agentic-project-strip > div:first-child strong {
-  color: #172033;
+  color: #30343f;
   font-size: 17px;
 }
 
@@ -320,7 +320,7 @@
 }
 
 .agentic-stage-main strong {
-  color: #172033;
+  color: #30343f;
   font-size: 16px;
 }
 
@@ -356,7 +356,7 @@
 }
 
 .agentic-section-title strong {
-  color: #172033;
+  color: #30343f;
 }
 
 .agentic-section-title > span {
@@ -521,7 +521,7 @@
 
 .agentic-agent-name strong {
   overflow: hidden;
-  color: #172033;
+  color: #30343f;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

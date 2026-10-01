@@ -1,72 +1,121 @@
 :root {
-  --agentic-violet: #7c3aed;
-  --agentic-indigo: #4f46e5;
-  --agentic-blue: #2563eb;
-  --agentic-cyan: #06b6d4;
-  --agentic-green: #22c55e;
-  --agentic-orange: #f59e0b;
+  --rk-blue: #2563eb;
+  --rk-blue-bright: #3b82f6;
+
+  --rk-sky: #0ea5e9;
+  --rk-cyan: #06b6d4;
+
+  --rk-violet: #8b5cf6;
+  --rk-purple: #7c3aed;
+
+  --rk-green: #22c55e;
+  --rk-emerald: #10b981;
+
+  --rk-orange: #f97316;
+  --rk-amber: #f59e0b;
+
+  --rk-pink: #ec4899;
+
+  --rk-navy: #30343f;
+  --rk-text: #334155;
+  --rk-muted: #64748b;
+
+  --rk-page: #f4f8ff;
+  --rk-surface: #ffffff;
+  --rk-border: #dce6f2;
+}
+
+
+/* =========================================================
+   FONDO GENERAL
+   ========================================================= */
+
+body {
+  color: var(--rk-text);
+  background: var(--rk-page);
 }
 
 .app-shell {
   background:
     radial-gradient(
-      circle at 82% 4%,
-      rgba(6, 182, 212, 0.055),
-      transparent 24%
+      circle at 8% 8%,
+      rgba(59, 130, 246, 0.10),
+      transparent 26%
     ),
     radial-gradient(
-      circle at 34% 0%,
-      rgba(124, 58, 237, 0.05),
-      transparent 22%
+      circle at 90% 8%,
+      rgba(6, 182, 212, 0.11),
+      transparent 25%
     ),
-    #f7f9fd !important;
+    radial-gradient(
+      circle at 82% 88%,
+      rgba(139, 92, 246, 0.075),
+      transparent 24%
+    ),
+    linear-gradient(
+      145deg,
+      #f8fbff,
+      #f2f8ff
+    )
+    !important;
 }
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
 .sidebar {
   border-right:
-    1px solid
-    rgba(99, 102, 241, 0.10)
+    1px solid rgba(59, 130, 246, 0.10)
     !important;
 
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.99),
-      rgba(248, 250, 255, 0.99)
+      rgba(255,255,255,0.99),
+      rgba(247,251,255,0.98)
     )
     !important;
 
   box-shadow:
-    15px 0 48px
-    rgba(49, 46, 129, 0.045);
+    12px 0 38px
+    rgba(37, 99, 235, 0.045)
+    !important;
 }
 
-.sidebar-logo,
-.user-avatar,
-.auth-brand-logo {
+.sidebar-logo {
   background:
     linear-gradient(
       135deg,
-      var(--agentic-violet),
-      var(--agentic-blue),
-      var(--agentic-cyan)
+      #2563eb 0%,
+      #0ea5e9 48%,
+      #06b6d4 100%
     )
     !important;
 
   box-shadow:
-    0 10px 26px
-    rgba(79, 70, 229, 0.21)
+    0 10px 25px
+    rgba(14, 165, 233, 0.28)
     !important;
 }
 
+
+/* =========================================================
+   NAVEGACION
+   ========================================================= */
+
 .nav-item {
   border:
-    1px solid transparent;
+    1px solid transparent
+    !important;
 
-  transition:
-    transform 150ms ease,
-    background 150ms ease,
-    border-color 150ms ease
+  border-radius:
+    12px
+    !important;
+
+  color:
+    #526176
     !important;
 }
 
@@ -75,48 +124,100 @@
     translateX(3px);
 
   border-color:
-    rgba(99, 102, 241, 0.10);
+    rgba(14, 165, 233, 0.17)
+    !important;
 
   background:
     linear-gradient(
       90deg,
-      rgba(124, 58, 237, 0.06),
-      rgba(6, 182, 212, 0.035)
+      rgba(59, 130, 246, 0.08),
+      rgba(6, 182, 212, 0.07)
     )
+    !important;
+
+  color:
+    #0369a1
     !important;
 }
 
 .nav-item.active {
   border-color:
-    rgba(99, 102, 241, 0.14)
+    rgba(37, 99, 235, 0.18)
     !important;
 
   background:
     linear-gradient(
       90deg,
-      rgba(124, 58, 237, 0.10),
-      rgba(37, 99, 235, 0.075)
+      rgba(37, 99, 235, 0.12),
+      rgba(6, 182, 212, 0.10)
     )
     !important;
+
+  color:
+    #1d4ed8
+    !important;
 }
+
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+
+.primary-button,
+.hero-action {
+  border: 0 !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0ea5e9,
+      #06b6d4
+    )
+    !important;
+
+  color:
+    #ffffff
+    !important;
+
+  box-shadow:
+    0 10px 24px
+    rgba(14, 165, 233, 0.24)
+    !important;
+}
+
+.primary-button:hover,
+.hero-action:hover {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 15px 30px
+    rgba(37, 99, 235, 0.26)
+    !important;
+}
+
+
+/* =========================================================
+   DASHBOARD CARDS
+   ========================================================= */
 
 .metric-card,
 .project-card,
 .agent-card,
 .task-card {
-  border-color:
-    rgba(99, 102, 241, 0.10)
+  border:
+    1px solid
+    rgba(99, 144, 190, 0.15)
+    !important;
+
+  background:
+    rgba(255,255,255,0.97)
     !important;
 
   box-shadow:
-    0 12px 34px
-    rgba(30, 41, 59, 0.045)
-    !important;
-
-  transition:
-    transform 170ms ease,
-    box-shadow 170ms ease,
-    border-color 170ms ease
+    0 10px 28px
+    rgba(30, 64, 175, 0.055)
     !important;
 }
 
@@ -128,77 +229,205 @@
     translateY(-3px);
 
   border-color:
-    rgba(99, 102, 241, 0.20)
+    rgba(14, 165, 233, 0.30)
     !important;
 
   box-shadow:
-    0 18px 42px
-    rgba(55, 48, 163, 0.08)
+    0 17px 38px
+    rgba(14, 165, 233, 0.11)
     !important;
 }
 
-.primary-button,
-.hero-action {
+
+/* =========================================================
+   ICONOS DE METRICAS
+   ========================================================= */
+
+.metric-icon.blue {
   background:
     linear-gradient(
-      135deg,
-      var(--agentic-violet),
-      var(--agentic-blue)
+      145deg,
+      #dbeafe,
+      #e0f2fe
     )
     !important;
 
-  box-shadow:
-    0 10px 24px
-    rgba(79, 70, 229, 0.18)
+  color:
+    #2563eb
     !important;
 }
+
+.metric-icon.green {
+  background:
+    linear-gradient(
+      145deg,
+      #dcfce7,
+      #d1fae5
+    )
+    !important;
+
+  color:
+    #059669
+    !important;
+}
+
+.metric-icon.orange {
+  background:
+    linear-gradient(
+      145deg,
+      #ffedd5,
+      #fef3c7
+    )
+    !important;
+
+  color:
+    #ea580c
+    !important;
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
 
 .plan-hero,
 .ecosystem-hero {
-  border-color:
-    rgba(99, 102, 241, 0.12)
+  border:
+    1px solid
+    rgba(14, 165, 233, 0.15)
     !important;
 
   background:
     radial-gradient(
-      circle at 15% 0%,
-      rgba(124, 58, 237, 0.10),
-      transparent 36%
+      circle at 10% 0%,
+      rgba(59, 130, 246, 0.14),
+      transparent 32%
     ),
     radial-gradient(
-      circle at 100% 100%,
-      rgba(6, 182, 212, 0.09),
-      transparent 34%
+      circle at 92% 5%,
+      rgba(6, 182, 212, 0.13),
+      transparent 30%
     ),
-    linear-gradient(
-      145deg,
-      #ffffff,
-      #f8fbff
-    )
+    radial-gradient(
+      circle at 90% 100%,
+      rgba(139, 92, 246, 0.08),
+      transparent 32%
+    ),
+    #ffffff
     !important;
 
   box-shadow:
-    0 20px 55px
-    rgba(49, 46, 129, 0.07)
+    0 18px 45px
+    rgba(37, 99, 235, 0.08)
     !important;
 }
+
+
+/* =========================================================
+   ECOSYSTEM
+   ========================================================= */
+
+.ecosystem-page {
+  background: transparent
+    !important;
+}
+
+.ecosystem-agent-card {
+  border:
+    1px solid
+    rgba(59, 130, 246, 0.13)
+    !important;
+
+  background:
+    #ffffff
+    !important;
+
+  box-shadow:
+    0 9px 24px
+    rgba(37, 99, 235, 0.055)
+    !important;
+}
+
+.ecosystem-agent-card:hover {
+  transform:
+    translateY(-4px)
+    !important;
+
+  border-color:
+    rgba(6, 182, 212, 0.30)
+    !important;
+
+  box-shadow:
+    0 16px 38px
+    rgba(14, 165, 233, 0.12)
+    !important;
+}
+
+.ecosystem-live-pill {
+  border-color:
+    #a5f3fc
+    !important;
+
+  background:
+    #ecfeff
+    !important;
+
+  color:
+    #0e7490
+    !important;
+}
+
+.ecosystem-auto-refresh {
+  border-color:
+    #bbf7d0
+    !important;
+
+  background:
+    #f0fdf4
+    !important;
+
+  color:
+    #15803d
+    !important;
+}
+
+.ecosystem-live-dot {
+  background:
+    #22c55e
+    !important;
+
+  box-shadow:
+    0 0 0 5px
+    rgba(34, 197, 94, 0.12)
+    !important;
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
 
 .auth-page {
   background:
     radial-gradient(
-      circle at 15% 10%,
-      rgba(124, 58, 237, 0.13),
-      transparent 27%
+      circle at 6% 10%,
+      rgba(59, 130, 246, 0.15),
+      transparent 28%
     ),
     radial-gradient(
-      circle at 85% 85%,
+      circle at 95% 12%,
       rgba(6, 182, 212, 0.12),
       transparent 27%
     ),
+    radial-gradient(
+      circle at 90% 88%,
+      rgba(139, 92, 246, 0.09),
+      transparent 26%
+    ),
     linear-gradient(
       145deg,
-      #f8faff,
-      #f5fbff
+      #f7faff,
+      #edf8ff
     )
     !important;
 }
@@ -206,14 +435,392 @@
 .auth-card {
   border:
     1px solid
-    rgba(99, 102, 241, 0.12)
+    rgba(59, 130, 246, 0.13)
+    !important;
+
+  background:
+    rgba(255,255,255,0.98)
     !important;
 
   box-shadow:
-    0 28px 80px
-    rgba(49, 46, 129, 0.10)
+    0 30px 75px
+    rgba(37, 99, 235, 0.12)
     !important;
 }
+
+.auth-brand-logo,
+.user-avatar {
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0ea5e9,
+      #06b6d4
+    )
+    !important;
+}
+
+
+/* =========================================================
+   FORMULARIOS
+   ========================================================= */
+
+input,
+textarea,
+select {
+  border-color:
+    #d5e1ee
+    !important;
+
+  background:
+    #ffffff
+    !important;
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+  border-color:
+    #93c5fd
+    !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color:
+    #38bdf8
+    !important;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(14, 165, 233, 0.11)
+    !important;
+}
+
+
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
+
+.status-badge {
+  border:
+    1px solid
+    #dbeafe
+    !important;
+
+  background:
+    #f0f7ff
+    !important;
+
+  color:
+    #2563eb
+    !important;
+}
+
+
+/* =========================================================
+   AGENTIC CONTROL CENTER
+   COLORES MÁS ALEGRES
+   ========================================================= */
+
+.agentic-control-center {
+  border-color:
+    rgba(14, 165, 233, 0.18)
+    !important;
+
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(59, 130, 246, 0.12),
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(6, 182, 212, 0.12),
+      transparent 29%
+    ),
+    radial-gradient(
+      circle at 85% 100%,
+      rgba(139, 92, 246, 0.08),
+      transparent 29%
+    ),
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8fcff
+    )
+    !important;
+
+  box-shadow:
+    0 22px 58px
+    rgba(14, 165, 233, 0.10)
+    !important;
+}
+
+.agentic-eyebrow {
+  border-color:
+    #bfdbfe
+    !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      #eff6ff,
+      #ecfeff
+    )
+    !important;
+
+  color:
+    #2563eb
+    !important;
+}
+
+.agentic-runtime-icon.violet {
+  background:
+    linear-gradient(
+      145deg,
+      #ede9fe,
+      #f5f3ff
+    )
+    !important;
+
+  color:
+    #7c3aed
+    !important;
+}
+
+.agentic-runtime-icon.blue {
+  background:
+    linear-gradient(
+      145deg,
+      #dbeafe,
+      #eff6ff
+    )
+    !important;
+
+  color:
+    #2563eb
+    !important;
+}
+
+.agentic-runtime-icon.cyan {
+  background:
+    linear-gradient(
+      145deg,
+      #cffafe,
+      #ecfeff
+    )
+    !important;
+
+  color:
+    #0891b2
+    !important;
+}
+
+.agentic-runtime-icon.green {
+  background:
+    linear-gradient(
+      145deg,
+      #dcfce7,
+      #ecfdf5
+    )
+    !important;
+
+  color:
+    #059669
+    !important;
+}
+
+.agentic-stage-icon {
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0ea5e9,
+      #06b6d4
+    )
+    !important;
+
+  box-shadow:
+    0 10px 24px
+    rgba(14, 165, 233, 0.22)
+    !important;
+}
+
+.agentic-node.active
+.agentic-node-circle {
+  border-color:
+    #0ea5e9
+    !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #06b6d4
+    )
+    !important;
+
+  box-shadow:
+    0 0 0 6px
+    rgba(14, 165, 233, 0.10)
+    !important;
+}
+
+.agentic-node.complete
+.agentic-node-circle {
+  border-color:
+    #4ade80
+    !important;
+
+  background:
+    #ecfdf5
+    !important;
+
+  color:
+    #16a34a
+    !important;
+}
+
+.agentic-node.complete
+.agentic-node-line {
+  background:
+    linear-gradient(
+      90deg,
+      #22c55e,
+      #06b6d4,
+      #3b82f6
+    )
+    !important;
+}
+
+.agentic-node.skipped
+.agentic-node-circle {
+  border-color:
+    #fbbf24
+    !important;
+
+  background:
+    #fffbeb
+    !important;
+
+  color:
+    #d97706
+    !important;
+}
+
+.agentic-agent-avatar {
+  background:
+    linear-gradient(
+      145deg,
+      #dbeafe,
+      #cffafe
+    )
+    !important;
+
+  color:
+    #2563eb
+    !important;
+}
+
+.agentic-langchain-pill {
+  border-color:
+    #ddd6fe
+    !important;
+
+  background:
+    #f5f3ff
+    !important;
+
+  color:
+    #7c3aed
+    !important;
+}
+
+.agentic-tool-list > span:nth-child(3n + 1) {
+  border-color:
+    #bfdbfe
+    !important;
+
+  background:
+    #eff6ff
+    !important;
+
+  color:
+    #2563eb
+    !important;
+}
+
+.agentic-tool-list > span:nth-child(3n + 2) {
+  border-color:
+    #a5f3fc
+    !important;
+
+  background:
+    #ecfeff
+    !important;
+
+  color:
+    #0e7490
+    !important;
+}
+
+.agentic-tool-list > span:nth-child(3n + 3) {
+  border-color:
+    #ddd6fe
+    !important;
+
+  background:
+    #f5f3ff
+    !important;
+
+  color:
+    #7c3aed
+    !important;
+}
+
+.agentic-activity-dot {
+  background:
+    linear-gradient(
+      135deg,
+      #f97316,
+      #ec4899
+    )
+    !important;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(249, 115, 22, 0.09)
+    !important;
+}
+
+.agentic-save {
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #06b6d4
+    )
+    !important;
+}
+
+
+/* =========================================================
+   TITULOS
+   ========================================================= */
+
+h1,
+h2,
+h3 {
+  color:
+    #30343f;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
 
 @media (
   prefers-reduced-motion: reduce
@@ -222,8 +829,11 @@
   .metric-card,
   .project-card,
   .agent-card,
-  .task-card {
+  .task-card,
+  .primary-button,
+  .hero-action {
     transition:
-      none !important;
+      none
+      !important;
   }
 }
