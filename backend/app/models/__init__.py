@@ -37,6 +37,14 @@ from app.models.contract import (
     TaskContract,
 )
 
+from app.models.delegation import (
+    DelegationRequest,
+    DelegatedTask,
+    DelegationOffer,
+    Subcontract,
+)
+
+
 
 __all__ = [
     "User",
@@ -56,4 +64,8 @@ __all__ = [
     "CollaborationThread",
     "CollaborationParticipant",
     "CollaborationMessageState",
+    "DelegationRequest",
+    "DelegatedTask",
+    "DelegationOffer",
+    "Subcontract",
 ]

@@ -16,6 +16,11 @@ from app.models.contract import (
     ACTIVE_CONTRACT_STATUSES,
     TaskContract,
 )
+from app.models.delegation import (
+    ACTIVE_SUBCONTRACT_STATUSES,
+    DelegatedTask,
+    Subcontract,
+)
 from app.models.project import Project
 from app.models.repliker import Repliker
 from app.models.task import Task
@@ -262,10 +267,40 @@ def build_ecosystem_snapshot(
             ).all()
         )
 
+        subcontract_rows = list(
+            db.execute(
+                select(
+                    Subcontract,
+                    DelegatedTask,
+                )
+                .join(
+                    DelegatedTask,
+                    DelegatedTask.id
+                    == Subcontract
+                    .delegated_task_id,
+                )
+                .where(
+                    Subcontract.project_id
+                    .in_(
+                        project_ids
+                    ),
+                    Subcontract.status.in_(
+                        ACTIVE_SUBCONTRACT_STATUSES
+                    ),
+                )
+                .order_by(
+                    Subcontract.created_at
+                    .desc(),
+                    Subcontract.id.desc(),
+                )
+            ).all()
+        )
+
     else:
         events = []
         messages = []
         contract_rows = []
+        subcontract_rows = []
 
     active_contract_by_repliker: dict[
         int,
@@ -286,6 +321,32 @@ def build_ecosystem_snapshot(
             ] = (
                 contract,
                 task,
+            )
+
+    active_subcontract_by_repliker: dict[
+        int,
+        tuple[
+            Subcontract,
+            DelegatedTask,
+        ],
+    ] = {}
+
+    for (
+        subcontract,
+        delegated_task,
+    ) in subcontract_rows:
+        if (
+            subcontract
+            .subcontractor_repliker_id
+            not in
+            active_subcontract_by_repliker
+        ):
+            active_subcontract_by_repliker[
+                subcontract
+                .subcontractor_repliker_id
+            ] = (
+                subcontract,
+                delegated_task,
             )
 
     active_activity_by_repliker: dict[
@@ -347,6 +408,25 @@ def build_ecosystem_snapshot(
             else None
         )
 
+        subcontract_entry = (
+            active_subcontract_by_repliker
+            .get(
+                repliker.id
+            )
+        )
+
+        active_subcontract = (
+            subcontract_entry[0]
+            if subcontract_entry
+            else None
+        )
+
+        delegated_task = (
+            subcontract_entry[1]
+            if subcontract_entry
+            else None
+        )
+
         agents.append(
             EcosystemAgent(
                 id=
@@ -390,38 +470,55 @@ def build_ecosystem_snapshot(
                     )
                 ),
                 current_project_id=(
-                    active_contract
+                    active_subcontract
                     .project_id
-                    if active_contract
+                    if active_subcontract
                     else (
-                        active_event
+                        active_contract
                         .project_id
-                        if active_event
-                        else None
+                        if active_contract
+                        else (
+                            active_event
+                            .project_id
+                            if active_event
+                            else None
+                        )
                     )
                 ),
                 current_task_id=(
-                    active_contract
-                    .task_id
-                    if active_contract
+                    active_subcontract
+                    .parent_task_id
+                    if active_subcontract
                     else (
-                        active_event
+                        active_contract
                         .task_id
-                        if active_event
-                        else None
+                        if active_contract
+                        else (
+                            active_event
+                            .task_id
+                            if active_event
+                            else None
+                        )
                     )
                 ),
                 current_activity=(
                     (
-                        f"Contratado: "
-                        f"{contracted_task.title}"
+                        f"Subcontratado: "
+                        f"{delegated_task.title}"
                     )
-                    if contracted_task
+                    if delegated_task
                     else (
-                        active_event
-                        .title
-                        if active_event
-                        else None
+                        (
+                            f"Contratado: "
+                            f"{contracted_task.title}"
+                        )
+                        if contracted_task
+                        else (
+                            active_event
+                            .title
+                            if active_event
+                            else None
+                        )
                     )
                 ),
             )
@@ -466,6 +563,34 @@ def build_ecosystem_snapshot(
             in contract_rows
             if (
                 contract.project_id
+                == project.id
+            )
+        )
+
+        involved_ids.update(
+            subcontract
+            .subcontractor_repliker_id
+            for (
+                subcontract,
+                _delegated_task,
+            )
+            in subcontract_rows
+            if (
+                subcontract.project_id
+                == project.id
+            )
+        )
+
+        involved_ids.update(
+            subcontract
+            .delegator_repliker_id
+            for (
+                subcontract,
+                _delegated_task,
+            )
+            in subcontract_rows
+            if (
+                subcontract.project_id
                 == project.id
             )
         )

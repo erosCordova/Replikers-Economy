@@ -14,6 +14,10 @@ from app.models.contract import (
     ACTIVE_CONTRACT_STATUSES,
     TaskContract,
 )
+from app.models.delegation import (
+    ACTIVE_SUBCONTRACT_STATUSES,
+    Subcontract,
+)
 from app.models.project import Project
 from app.models.repliker import Repliker
 from app.models.task import (
@@ -363,7 +367,7 @@ def _busy_repliker_ids(
     *,
     db: Session,
 ) -> set[int]:
-    return set(
+    principal_ids = set(
         db.scalars(
             select(
                 TaskContract.repliker_id
@@ -374,6 +378,25 @@ def _busy_repliker_ids(
                 )
             )
         ).all()
+    )
+
+    subcontractor_ids = set(
+        db.scalars(
+            select(
+                Subcontract
+                .subcontractor_repliker_id
+            )
+            .where(
+                Subcontract.status.in_(
+                    ACTIVE_SUBCONTRACT_STATUSES
+                )
+            )
+        ).all()
+    )
+
+    return (
+        principal_ids
+        | subcontractor_ids
     )
 
 

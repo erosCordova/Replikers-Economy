@@ -1222,3 +1222,76 @@ def build_collaboration_snapshot(
                 serialized_messages,
         )
     )
+
+
+def ensure_delegation_thread(
+    *,
+    db: Session,
+    project: Project,
+    task: Task,
+    delegator: Repliker,
+    subcontractor: Repliker,
+    subject: str,
+) -> CollaborationThread:
+    thread = CollaborationThread(
+        project_id=project.id,
+        task_id=task.id,
+        contract_id=None,
+        kind="delegation",
+        subject=subject,
+        status="open",
+        created_by_type="repliker",
+        created_by_repliker_id=
+            delegator.id,
+    )
+
+    db.add(
+        thread
+    )
+
+    db.flush()
+
+    _add_participant(
+        db=db,
+        thread=thread,
+        participant_type="project",
+        role="client_observer",
+    )
+
+    _add_participant(
+        db=db,
+        thread=thread,
+        participant_type="r00",
+        role="coordinator",
+    )
+
+    add_repliker_participant(
+        db=db,
+        thread=thread,
+        repliker=delegator,
+        role="delegator",
+    )
+
+    add_repliker_participant(
+        db=db,
+        thread=thread,
+        repliker=subcontractor,
+        role="subcontractor",
+    )
+
+    record_activity(
+        db=db,
+        actor_type="repliker",
+        event_type="delegation_thread_opened",
+        project_id=project.id,
+        task_id=task.id,
+        repliker_id=delegator.id,
+        title=(
+            "Canal de delegacion abierto"
+        ),
+        description=subject,
+    )
+
+    db.flush()
+
+    return thread
