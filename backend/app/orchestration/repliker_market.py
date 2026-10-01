@@ -1,93 +1,16 @@
-import json
-
+from app.agentic.model import (
+    AgenticConfigurationError,
+)
+from app.agentic.repliker_runtime import (
+    run_market_agent,
+)
 from app.schemas.market import (
     AgentDecisionAI,
 )
 from app.services.gemini_client import (
-    generate_structured,
+    GeminiConfigurationError,
+    GeminiResponseError,
 )
-
-
-SYSTEM_INSTRUCTION = """
-Eres un Repliker autonomo dentro de Repliker Economy.
-
-NO eres el coordinador R00.
-
-Representas exclusivamente los intereses,
-capacidades y limitaciones del Repliker cuyo
-perfil recibiras.
-
-Tu tarea es analizar una oportunidad de trabajo
-y decidir autonomamente si deseas competir por ella.
-
-Solo existen dos decisiones:
-
-- bid
-- pass
-
-REGLAS:
-
-1. No debes ofertar por todas las tareas.
-
-2. Evalua honestamente si tus habilidades son
-   suficientes para completar el trabajo.
-
-3. Considera las habilidades requeridas,
-   complejidad, criterios de aceptacion y
-   presupuesto disponible.
-
-4. Si tus capacidades son claramente insuficientes,
-   debes elegir pass.
-
-5. Si eliges bid, propone un precio razonable.
-
-6. No tienes obligacion de utilizar todo el
-   presupuesto disponible.
-
-7. El precio ofertado nunca puede superar
-   el presupuesto maximo de la tarea.
-
-8. confidence_score representa tu confianza real
-   de poder entregar correctamente el trabajo.
-
-9. No infles artificialmente tu confianza.
-
-10. estimated_minutes debe ser una estimacion
-    razonable del esfuerzo necesario.
-
-11. reasoning debe explicar por que la tarea
-    tiene o no sentido para ti.
-
-12. message es el mensaje comercial breve que
-    podria ver el cliente o coordinador.
-
-13. Tu reputacion y trabajos completados son
-    contexto, no una orden para aceptar trabajo.
-
-14. Una habilidad similar puede ser relevante,
-    pero no debes fingir experiencia inexistente.
-
-15. No asumas que posteriormente otro agente
-    arreglara tu trabajo.
-
-16. En etapas futuras podras delegar partes,
-    pero para esta decision debes evaluar si eres
-    un contratista principal razonable.
-
-17. No inventes capacidades que no aparecen
-    en tu perfil.
-
-18. Si el presupuesto es demasiado bajo para
-    ejecutar razonablemente el trabajo,
-    debes elegir pass.
-
-19. Si eliges pass:
-    amount_cents debe ser null.
-
-20. Si eliges bid:
-    amount_cents y estimated_minutes deben
-    contener valores.
-"""
 
 
 def evaluate_repliker_for_task(
@@ -95,44 +18,45 @@ def evaluate_repliker_for_task(
     repliker_data: dict,
     task_data: dict,
     project_data: dict,
+    allowed_tool_names:
+        tuple[str, ...]
+        | None = None,
 ) -> AgentDecisionAI:
-
-    context = {
-        "repliker": repliker_data,
-        "project": project_data,
-        "task": task_data,
-    }
-
-    prompt = (
-        "Analiza esta oportunidad de trabajo y "
-        "toma tu decision economica autonomamente.\n\n"
-        + json.dumps(
-            context,
-            ensure_ascii=False,
-            indent=2,
+    try:
+        decision = run_market_agent(
+            repliker_data=
+                repliker_data,
+            task_data=
+                task_data,
+            project_data=
+                project_data,
+            allowed_tool_names=
+                allowed_tool_names,
         )
-    )
 
-    decision = generate_structured(
-        system_instruction=SYSTEM_INSTRUCTION,
-        prompt=prompt,
-        response_model=AgentDecisionAI,
-    )
+    except AgenticConfigurationError as exc:
+        raise GeminiConfigurationError(
+            str(exc)
+        ) from exc
 
-    # =====================================================
-    # PASS
-    # =====================================================
+    except GeminiConfigurationError:
+        raise
+
+    except GeminiResponseError:
+        raise
+
+    except Exception as exc:
+        raise GeminiResponseError(
+            "El Repliker no pudo completar "
+            "su evaluacion mediante LangChain. "
+            f"Detalle: {exc}"
+        ) from exc
 
     if decision.decision == "pass":
-
         decision.amount_cents = None
         decision.estimated_minutes = None
 
         return decision
-
-    # =====================================================
-    # BID
-    # =====================================================
 
     max_budget = task_data.get(
         "max_budget_cents"
@@ -143,7 +67,8 @@ def evaluate_repliker_for_task(
 
         decision.reasoning += (
             " La decision fue convertida a PASS "
-            "porque no se proporciono un precio."
+            "porque el agente no proporciono "
+            "un precio valido."
         )
 
         decision.estimated_minutes = None
@@ -157,7 +82,21 @@ def evaluate_repliker_for_task(
 
         decision.reasoning += (
             " La decision fue convertida a PASS "
-            "porque no se estimo el tiempo."
+            "porque el agente no proporciono "
+            "una estimacion de tiempo."
+        )
+
+        return decision
+
+    if decision.amount_cents <= 0:
+        decision.decision = "pass"
+
+        decision.amount_cents = None
+        decision.estimated_minutes = None
+
+        decision.reasoning += (
+            " La decision fue convertida a PASS "
+            "porque el precio era invalido."
         )
 
         return decision

@@ -1,11 +1,27 @@
 import json
 
-from app.schemas.coordinator import AIProjectPlan
-from app.services.gemini_client import generate_structured
+from langchain_core.messages import (
+    HumanMessage,
+    SystemMessage,
+)
+
+from app.agentic.model import (
+    AgenticConfigurationError,
+    get_chat_model,
+)
+from app.schemas.coordinator import (
+    AIProjectPlan,
+)
+from app.services.gemini_client import (
+    GeminiConfigurationError,
+    GeminiResponseError,
+)
 
 
 SYSTEM_INSTRUCTION = """
 Eres R00, el Coordinador autonomo de Repliker Economy.
+
+Funcionas mediante LangChain.
 
 Tu responsabilidad es transformar el objetivo de un cliente humano
 en un plan de trabajo que pueda ser ejecutado por Replikers.
@@ -44,14 +60,16 @@ REGLAS:
     originales del cliente.
 25. No prometas perfeccion absoluta.
 26. Los importes monetarios se expresan en centimos.
-"""
+27. No expongas razonamiento privado paso a paso.
+28. summary y strategy deben contener solamente conclusiones
+    operativas utiles para el proyecto.
+""".strip()
 
 
 def normalize_budgets(
     plan: AIProjectPlan,
     budget_limit_cents: int | None,
 ) -> AIProjectPlan:
-
     if not plan.tasks:
         raise ValueError(
             "R00 no genero ninguna tarea."
@@ -59,6 +77,11 @@ def normalize_budgets(
 
     if budget_limit_cents is None:
         return plan
+
+    if budget_limit_cents <= 0:
+        raise ValueError(
+            "El presupuesto limite debe ser positivo."
+        )
 
     total = sum(
         task.max_budget_cents
@@ -68,13 +91,17 @@ def normalize_budgets(
     if total <= budget_limit_cents:
         return plan
 
-    factor = budget_limit_cents / total
+    factor = (
+        budget_limit_cents
+        / total
+    )
 
     amounts = [
         max(
             100,
             round(
-                task.max_budget_cents * factor
+                task.max_budget_cents
+                * factor
             ),
         )
         for task in plan.tasks
@@ -97,7 +124,36 @@ def normalize_budgets(
             amount,
         )
 
+    final_total = sum(
+        task.max_budget_cents
+        for task in plan.tasks
+    )
+
+    if final_total > budget_limit_cents:
+        raise ValueError(
+            "No fue posible normalizar "
+            "el presupuesto generado por R00."
+        )
+
     return plan
+
+
+def _build_r00_chain():
+    """
+    R00 deja de utilizar directamente google.genai.
+
+    LangChain construye el modelo y exige una
+    respuesta validada mediante AIProjectPlan.
+    """
+
+    model = get_chat_model(
+        temperature=0.1
+    )
+
+    return model.with_structured_output(
+        AIProjectPlan,
+        method="json_schema",
+    )
 
 
 def build_project_plan(
@@ -105,30 +161,33 @@ def build_project_plan(
     project_data: dict,
     marketplace_data: list[dict],
 ) -> AIProjectPlan:
-
     context = {
         "project": project_data,
         "current_market": {
-            "available_replikers": marketplace_data,
+            "available_replikers":
+                marketplace_data,
             "rules": [
                 (
-                    "Primero determina lo que necesita "
-                    "el proyecto."
+                    "Primero determina lo que "
+                    "necesita el proyecto."
                 ),
                 (
-                    "No adaptes artificialmente el proyecto "
-                    "para utilizar agentes existentes."
+                    "No adaptes artificialmente "
+                    "el proyecto para utilizar "
+                    "agentes existentes."
                 ),
                 (
-                    "Usa market_gaps solamente para habilidades "
-                    "necesarias que el mercado actual no cubre."
+                    "Usa market_gaps solamente "
+                    "para habilidades necesarias "
+                    "que el mercado actual no cubre."
                 ),
             ],
         },
     }
 
     prompt = (
-        "Genera el plan autonomo de trabajo para este proyecto.\n\n"
+        "Genera el plan autonomo de trabajo "
+        "para este proyecto.\n\n"
         + json.dumps(
             context,
             ensure_ascii=False,
@@ -136,11 +195,51 @@ def build_project_plan(
         )
     )
 
-    plan = generate_structured(
-        system_instruction=SYSTEM_INSTRUCTION,
-        prompt=prompt,
-        response_model=AIProjectPlan,
-    )
+    try:
+        chain = _build_r00_chain()
+
+        result = chain.invoke(
+            [
+                SystemMessage(
+                    content=
+                        SYSTEM_INSTRUCTION
+                ),
+                HumanMessage(
+                    content=prompt
+                ),
+            ]
+        )
+
+    except AgenticConfigurationError as exc:
+        raise GeminiConfigurationError(
+            str(exc)
+        ) from exc
+
+    except Exception as exc:
+        raise GeminiResponseError(
+            "R00 no pudo generar un plan "
+            "estructurado mediante LangChain. "
+            f"Detalle: {exc}"
+        ) from exc
+
+    if isinstance(
+        result,
+        AIProjectPlan,
+    ):
+        plan = result
+    else:
+        try:
+            plan = (
+                AIProjectPlan
+                .model_validate(
+                    result
+                )
+            )
+        except Exception as exc:
+            raise GeminiResponseError(
+                "LangChain genero una respuesta "
+                "que no cumple AIProjectPlan."
+            ) from exc
 
     return normalize_budgets(
         plan=plan,

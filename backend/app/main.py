@@ -27,21 +27,23 @@ from app.api.routes.market import (
 from app.api.routes.ecosystem import (
     router as ecosystem_router,
 )
-
 from app.api.routes.contracts import (
     router as contracts_router,
 )
-
 from app.api.routes.collaboration import (
     router as collaboration_router,
 )
-
 from app.api.routes.delegations import (
     router as delegations_router,
 )
+from app.api.routes.agentic import (
+    router as agentic_router,
+)
 
 from app.database.base import Base
-from app.database.session import engine
+from app.database.session import (
+    engine,
+)
 
 import app.models  # noqa: F401
 
@@ -53,9 +55,11 @@ Base.metadata.create_all(
 
 app = FastAPI(
     title="Repliker Economy API",
-    version="1.1.0",
+    version="1.2.0",
     description=(
         "Backend de Repliker Economy: "
+        "LangChain para agentes y tools, "
+        "LangGraph para orquestacion, "
         "coordinacion, mercado, contratacion, "
         "colaboracion, delegacion, ecosistema "
         "y economia autonoma de agentes."
@@ -71,7 +75,8 @@ allowed_origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=
+        allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -118,7 +123,6 @@ app.include_router(
     prefix="/api/v1",
 )
 
-
 app.include_router(
     contracts_router,
     prefix="/api/v1",
@@ -134,13 +138,20 @@ app.include_router(
     prefix="/api/v1",
 )
 
+app.include_router(
+    agentic_router,
+    prefix="/api/v1",
+)
+
 
 @app.get("/api/v1/health")
 def health():
     return {
         "status": "ok",
         "service": "backend",
-        "version": "1.1.0",
+        "version": "1.2.0",
+        "agentic_framework":
+            "LangChain + LangGraph",
     }
 
 
@@ -150,4 +161,6 @@ def root():
         "name": "Repliker Economy",
         "status": "online",
         "api": "/api/v1",
+        "agentic_framework":
+            "LangChain + LangGraph",
     }

@@ -19,6 +19,7 @@ import {
 import { api } from '../api'
 import ReplikerAvatar from '../components/ReplikerAvatar'
 import CollaborationPanel from '../components/CollaborationPanel'
+import AgenticControlCenter from '../components/AgenticControlCenter'
 import type {
   ReplikerAppearance,
 } from '../components/ReplikerAvatar'
@@ -590,6 +591,22 @@ export default function Ecosystem({
           {error}
         </div>
       )}
+
+
+      <AgenticControlCenter
+        selectedProjectId={
+          selectedProjectId
+        }
+        currentUserId={
+          currentUserId
+        }
+        currentUserRole={
+          currentUserRole
+        }
+        projects={
+          snapshot.projects
+        }
+      />
 
 
       <section className="ecosystem-metrics">

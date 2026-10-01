@@ -13,6 +13,7 @@ distro==1.9.0
 dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.141.1
+filetype==1.2.0
 google-auth==2.58.1
 google-genai==2.25.0
 h11==0.16.0
@@ -24,7 +25,9 @@ httpx2==2.13.1
 idna==3.20
 jsonpatch==1.33
 jsonpointer==3.1.1
+langchain==1.4.3
 langchain-core==1.6.5
+langchain-google-genai==4.4.0
 langchain-protocol==0.0.19
 langgraph==1.2.12
 langgraph-checkpoint==4.2.0

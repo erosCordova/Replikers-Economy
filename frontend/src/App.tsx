@@ -32,6 +32,7 @@ import { api } from './api'
 import Ecosystem from './pages/Ecosystem'
 import './App.css'
 import './theme.css'
+import './agentic-theme.css'
 
 
 type Section =

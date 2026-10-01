@@ -46,10 +46,16 @@ from app.models.delegation import (
 
 
 
+from app.models.agentic import (
+    ReplikerToolAssignment,
+)
+
+
 __all__ = [
     "User",
     "Repliker",
     "ReplikerSkill",
+    "ReplikerToolAssignment",
     "Project",
     "ProjectRequirement",
     "Task",

@@ -38,6 +38,9 @@ from app.services.activity_service import (
 from app.services.message_service import (
     record_message,
 )
+from app.services.agentic_service import (
+    resolve_repliker_tool_names,
+)
 from app.services.gemini_client import (
     GeminiConfigurationError,
     GeminiResponseError,
@@ -510,6 +513,12 @@ def run_autonomous_market(
                             task_data,
                         project_data=
                             project_data,
+                        allowed_tool_names=(
+                            resolve_repliker_tool_names(
+                                db=db,
+                                repliker=repliker,
+                            )
+                        ),
                     )
                 )
 
