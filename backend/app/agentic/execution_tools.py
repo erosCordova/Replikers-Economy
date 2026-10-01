@@ -48,6 +48,17 @@ class WorkspaceWriteInput(BaseModel):
     )
 
 
+class RunPythonInput(BaseModel):
+    path: str = Field(
+        min_length=1,
+        max_length=900,
+        description=(
+            "Ruta relativa de un archivo .py "
+            "existente dentro del workspace."
+        ),
+    )
+
+
 def build_execution_workspace_tools(
     *,
     db: Session,
@@ -59,7 +70,8 @@ def build_execution_workspace_tools(
     workspace autorizado.
 
     Ninguna tool expone filesystem arbitrario,
-    shell, subprocess ni comandos del sistema.
+    shell, subprocess, Docker CLI ni comandos
+    del sistema.
     """
 
     gateway = ToolGateway(
@@ -150,6 +162,30 @@ def build_execution_workspace_tools(
                 artifact.sha256,
         }
 
+    def run_python(
+        path: str,
+    ) -> dict:
+        """
+        Ejecuta un archivo Python del workspace
+        dentro del sandbox Docker rootless.
+        """
+
+        result = (
+            gateway.run_python(
+                path=path
+            )
+        )
+
+        db.commit()
+
+        return {
+            "workspace_id":
+                workspace.id,
+            "path":
+                path,
+            **result.as_dict(),
+        }
+
     return [
         StructuredTool.from_function(
             func=
@@ -163,6 +199,7 @@ def build_execution_workspace_tools(
                 "para conocer la estructura actual."
             ),
         ),
+
         StructuredTool.from_function(
             func=
                 workspace_read_text,
@@ -177,6 +214,7 @@ def build_execution_workspace_tools(
             args_schema=
                 WorkspaceReadInput,
         ),
+
         StructuredTool.from_function(
             func=
                 workspace_write_text,
@@ -190,5 +228,22 @@ def build_execution_workspace_tools(
             ),
             args_schema=
                 WorkspaceWriteInput,
+        ),
+
+        StructuredTool.from_function(
+            func=
+                run_python,
+            name=
+                "run_python",
+            description=(
+                "Ejecuta un archivo .py existente "
+                "del workspace dentro de un "
+                "contenedor Docker rootless "
+                "aislado. No proporciona shell, "
+                "red, argumentos Docker ni acceso "
+                "al sistema anfitrion."
+            ),
+            args_schema=
+                RunPythonInput,
         ),
     ]

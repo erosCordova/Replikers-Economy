@@ -33,17 +33,11 @@ from app.models.task import (
 @dataclass
 class ExecutionAgentRuntime:
     contract_id: int
-
     project_id: int
-
     task_id: int
-
     repliker_id: int
-
     workspace_id: int
-
     tools: list[BaseTool]
-
     agent: object
 
 
@@ -77,8 +71,9 @@ REGLAS DE EJECUCION
 1. Trabaja exclusivamente dentro del workspace
    que te fue asignado.
 
-2. Nunca inventes que creaste o modificaste
-   archivos. Usa siempre las tools disponibles.
+2. Nunca inventes que creaste, modificaste o
+   ejecutaste archivos. Usa siempre las tools
+   disponibles.
 
 3. Antes de modificar un proyecto existente,
    inspecciona primero sus archivos.
@@ -93,19 +88,39 @@ REGLAS DE EJECUCION
    externo, secretos, variables de entorno,
    procesos del sistema ni comandos arbitrarios.
 
-7. No tienes shell, Python, npm ni acceso de red
-   en esta etapa.
+7. No tienes shell ni acceso directo a Docker.
+   Python solo puede ejecutarse mediante la tool
+   run_python sobre un archivo .py previamente
+   creado dentro del workspace.
 
-8. Si una operacion es rechazada por el Policy
+8. run_python se ejecuta en un sandbox aislado
+   sin red, con filesystem raiz de solo lectura,
+   usuario sin privilegios y limites de recursos.
+
+9. Si una operacion es rechazada por el Policy
    Engine, no intentes evadir la restriccion.
 
-9. Mantiene los cambios limitados al objetivo
-   concreto de la tarea.
+10. Cuando el entregable incluya Python, utiliza
+    run_python cuando sea necesario para comprobar
+    que el archivo realmente ejecuta.
 
-10. La existencia de una respuesta del modelo
-    no significa que el trabajo este terminado:
-    los entregables reales son los artifacts
-    escritos mediante tools.
+11. Si run_python devuelve exit_code distinto de
+    cero o timed_out=true, no declares la ejecucion
+    como satisfactoria. Corrige el archivo y vuelve
+    a probar cuando corresponda.
+
+12. Mantiene los cambios limitados al objetivo
+    concreto de la tarea.
+
+13. Una respuesta del modelo no significa que el
+    trabajo este terminado. Los entregables reales
+    son los artifacts escritos mediante tools y
+    las ejecuciones registradas son evidencia del
+    comportamiento real.
+
+14. La verificacion formal de aceptacion pertenece
+    al sistema de QA. No falsifiques ni anticipes
+    un resultado de QA.
 """.strip()
 
 
