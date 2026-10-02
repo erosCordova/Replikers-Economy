@@ -26,6 +26,14 @@ from app.models.user import (
 from app.schemas.qa import (
     QAReviewPublic,
 )
+from app.services.gemini_client import (
+    GeminiConfigurationError,
+    GeminiResponseError,
+)
+from app.services.qa_evaluation_service import (
+    QAEvaluationError,
+    evaluate_contract_qa,
+)
 from app.services.qa_service import (
     QAServiceError,
     build_qa_snapshot,
@@ -63,6 +71,17 @@ def _contract_or_404(
     return contract
 
 
+def _project(
+    *,
+    db: Session,
+    contract: TaskContract,
+) -> Project | None:
+    return db.get(
+        Project,
+        contract.project_id,
+    )
+
+
 def _can_view(
     *,
     db: Session,
@@ -72,9 +91,9 @@ def _can_view(
     if current_user.role == "admin":
         return True
 
-    project = db.get(
-        Project,
-        contract.project_id,
+    project = _project(
+        db=db,
+        contract=contract,
     )
 
     if (
@@ -96,7 +115,7 @@ def _can_view(
     )
 
 
-def _can_prepare(
+def _can_control_qa(
     *,
     db: Session,
     contract: TaskContract,
@@ -105,9 +124,9 @@ def _can_prepare(
     if current_user.role == "admin":
         return True
 
-    project = db.get(
-        Project,
-        contract.project_id,
+    project = _project(
+        db=db,
+        contract=contract,
     )
 
     return bool(
@@ -137,7 +156,7 @@ def prepare_contract_qa(
             contract_id,
     )
 
-    if not _can_prepare(
+    if not _can_control_qa(
         db=db,
         contract=contract,
         current_user=
@@ -146,9 +165,10 @@ def prepare_contract_qa(
         raise HTTPException(
             status_code=403,
             detail=(
-                "El Repliker ejecutor "
-                "no puede preparar ni aprobar "
-                "su propia revision QA."
+                "El propietario del "
+                "Repliker ejecutor no puede "
+                "controlar su propia "
+                "revision QA."
             ),
         )
 
@@ -175,6 +195,84 @@ def prepare_contract_qa(
 
         raise HTTPException(
             status_code=422,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post(
+    "/contracts/{contract_id}/evaluate",
+    response_model=
+        QAReviewPublic,
+)
+def evaluate_contract_review(
+    contract_id: int,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    contract = _contract_or_404(
+        db=db,
+        contract_id=
+            contract_id,
+    )
+
+    if not _can_control_qa(
+        db=db,
+        contract=contract,
+        current_user=
+            current_user,
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "El propietario del "
+                "Repliker ejecutor no puede "
+                "aprobar su propia entrega."
+            ),
+        )
+
+    try:
+        review = evaluate_contract_qa(
+            db=db,
+            contract_id=
+                contract.id,
+        )
+
+        db.commit()
+
+        db.refresh(
+            review
+        )
+
+        return build_qa_snapshot(
+            db=db,
+            review=review,
+        )
+
+    except QAEvaluationError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    except GeminiConfigurationError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=503,
+            detail=str(exc),
+        ) from exc
+
+    except GeminiResponseError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=502,
             detail=str(exc),
         ) from exc
 

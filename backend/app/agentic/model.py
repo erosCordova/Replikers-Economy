@@ -13,6 +13,30 @@ class AgenticConfigurationError(
     pass
 
 
+def _supports_sampling_temperature(
+    model_name: str,
+) -> bool:
+    """
+    Gemini 3.8 Flash utiliza la nueva
+    configuracion de razonamiento y rechaza
+    parametros de sampling heredados como
+    temperature en ciertas rutas/API.
+
+    Otros modelos mantienen el comportamiento
+    anterior.
+    """
+
+    normalized = (
+        model_name
+        .strip()
+        .lower()
+    )
+
+    return not normalized.startswith(
+        "gemini-3.8"
+    )
+
+
 @lru_cache(maxsize=8)
 def get_chat_model(
     temperature: float = 0.1,
@@ -21,9 +45,9 @@ def get_chat_model(
     Modelo oficial utilizado por los agentes
     LangChain de Repliker Economy.
 
-    La funcion centraliza la configuracion para
-    evitar que cada Repliker construya clientes
-    distintos de manera inconsistente.
+    Centraliza la configuracion del proveedor
+    y evita enviar parametros incompatibles
+    con Gemini 3.8 Flash.
     """
 
     api_key = (
@@ -46,9 +70,22 @@ def get_chat_model(
             "GEMINI_MODEL no esta configurado."
         )
 
+    model_kwargs = {
+        "model":
+            model_name,
+        "google_api_key":
+            api_key,
+        "max_retries":
+            2,
+    }
+
+    if _supports_sampling_temperature(
+        model_name
+    ):
+        model_kwargs[
+            "temperature"
+        ] = temperature
+
     return ChatGoogleGenerativeAI(
-        model=model_name,
-        google_api_key=api_key,
-        temperature=temperature,
-        max_retries=2,
+        **model_kwargs
     )
