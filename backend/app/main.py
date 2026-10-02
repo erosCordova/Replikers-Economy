@@ -48,6 +48,9 @@ from app.api.routes.execution_agent import (
 from app.api.routes.qa import (
     router as qa_router,
 )
+from app.api.routes.economy import (
+    router as economy_router,
+)
 
 from app.database.base import Base
 from app.database.session import engine
@@ -62,14 +65,14 @@ Base.metadata.create_all(
 
 app = FastAPI(
     title="Repliker Economy API",
-    version="1.3.0",
+    version="1.4.0",
     description=(
         "Backend de Repliker Economy: "
         "LangChain para agentes y tools, "
         "LangGraph para orquestacion, "
-        "coordinacion, mercado, contratacion, "
-        "colaboracion, delegacion, ejecucion "
-        "aislada y QA verificable."
+        "mercado, contratacion, delegacion, "
+        "ejecucion aislada, QA verificable "
+        "y economia simulada con ledger."
     ),
 )
 
@@ -165,6 +168,11 @@ app.include_router(
     prefix="/api/v1",
 )
 
+app.include_router(
+    economy_router,
+    prefix="/api/v1",
+)
+
 
 @app.get("/api/v1/health")
 def health():
@@ -174,11 +182,15 @@ def health():
         "service":
             "backend",
         "version":
-            "1.3.0",
+            "1.4.0",
         "agentic_framework":
             "LangChain + LangGraph",
         "qa":
             "enabled",
+        "economy":
+            "simulation",
+        "real_money":
+            False,
     }
 
 
@@ -195,4 +207,8 @@ def root():
             "LangChain + LangGraph",
         "qa":
             "enabled",
+        "economy":
+            "simulation",
+        "real_money":
+            False,
     }

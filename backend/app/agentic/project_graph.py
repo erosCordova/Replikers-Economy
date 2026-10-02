@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from dataclasses import dataclass
 from typing import Callable
 
@@ -33,6 +35,7 @@ StageHandler = Callable[..., dict]
 @dataclass(frozen=True)
 class ProjectLifecycleHandlers:
     get_project: Callable
+    is_funded: Callable
     plan: StageHandler
     market: StageHandler
     contract: StageHandler
@@ -46,6 +49,7 @@ class ProjectLifecycleHandlers:
 DEFAULT_HANDLERS = (
     ProjectLifecycleHandlers(
         get_project=get_project,
+    is_funded=project_is_funded,
         plan=run_planning_stage,
         market=run_market_stage,
         contract=run_contracting_stage,
@@ -221,8 +225,9 @@ def build_project_lifecycle_graph(
             state
         )
 
-        funded = project_is_funded(
-            project
+        funded = runtime.is_funded(
+            db=db,
+            project=project,
         )
 
         return {

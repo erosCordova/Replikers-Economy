@@ -27,6 +27,12 @@ from app.services.activity_service import (
 from app.services.contract_service import (
     select_contracts_for_project,
 )
+from app.services.economy_service import (
+    finalize_project_economy,
+    project_has_sufficient_custody,
+    settle_contract_earnings,
+    sync_project_payment_status,
+)
 from app.services.delegation_service import (
     run_delegation_cycle_for_contract,
 )
@@ -123,11 +129,20 @@ def _project_client(
 
 
 def project_is_funded(
+    *,
+    db: Session,
     project: Project,
 ) -> bool:
+    sync_project_payment_status(
+        db=db,
+        project=project,
+    )
+
     return (
-        project.payment_status
-        in FUNDED_STATUSES
+        project_has_sufficient_custody(
+            db=db,
+            project=project,
+        )
     )
 
 
@@ -317,7 +332,8 @@ def run_contracting_stage(
     )
 
     if not project_is_funded(
-        project
+        db=db,
+        project=project,
     ):
         raise ProjectLifecycleError(
             "El proyecto debe estar "
@@ -570,6 +586,13 @@ def _mark_contract_completed(
     )
 
     contract.status = "completed"
+
+    db.flush()
+
+    settle_contract_earnings(
+        db=db,
+        contract_id=contract.id,
+    )
 
     if task is not None:
         task.status = "completed"
@@ -841,6 +864,11 @@ def finalize_project_if_ready(
         )
 
         project.status = "completed"
+
+        finalize_project_economy(
+            db=db,
+            project_id=project.id,
+        )
 
         if not was_completed:
             record_activity(

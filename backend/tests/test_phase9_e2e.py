@@ -4,6 +4,8 @@ import hashlib
 import shutil
 import unittest
 
+from fastapi import FastAPI
+
 from types import SimpleNamespace
 
 from app.agentic.project_graph import (
@@ -11,8 +13,12 @@ from app.agentic.project_graph import (
     build_project_lifecycle_graph,
     run_project_lifecycle,
 )
-from app.main import app
-from app.database.session import engine
+from app.api.routes.agentic import (
+    router as agentic_router,
+)
+from app.api.routes.qa import (
+    router as qa_router,
+)
 from app.services.workspace_service import (
     read_workspace_file_bytes,
     workspace_root,
@@ -189,6 +195,17 @@ class Phase9LifecycleTests(
 
         return ProjectLifecycleHandlers(
             get_project=get_project,
+            is_funded=(
+                lambda *,
+                db,
+                project:
+                    project.payment_status
+                    in {
+                        "paid",
+                        "funded",
+                        "escrowed",
+                    }
+            ),
             plan=plan,
             market=market,
             contract=contract,
@@ -545,8 +562,20 @@ class Phase9APITests(
     def test_required_routes_exist(
         self,
     ):
+        api = FastAPI()
+
+        api.include_router(
+            agentic_router,
+            prefix="/api/v1",
+        )
+
+        api.include_router(
+            qa_router,
+            prefix="/api/v1",
+        )
+
         paths = set(
-            app.openapi()[
+            api.openapi()[
                 "paths"
             ]
         )
@@ -567,16 +596,6 @@ class Phase9APITests(
                 paths
             )
         )
-
-
-def tearDownModule():
-    """
-    Cierra explicitamente el pool SQLAlchemy
-    utilizado al importar FastAPI durante
-    las pruebas.
-    """
-
-    engine.dispose()
 
 
 if __name__ == "__main__":

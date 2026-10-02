@@ -60,10 +60,14 @@ from app.models.qa import (
     QAEvidence,
 )
 
-
 from app.models.qa_workflow import (
     QARetryRun,
     QAReputationEvent,
+)
+
+from app.models.economy import (
+    LedgerAccount,
+    LedgerTransaction,
 )
 
 
@@ -98,4 +102,6 @@ __all__ = [
     "QAEvidence",
     "QARetryRun",
     "QAReputationEvent",
+    "LedgerAccount",
+    "LedgerTransaction",
 ]

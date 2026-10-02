@@ -34,6 +34,10 @@ from app.services.collaboration_service import (
 from app.services.message_service import (
     record_message,
 )
+from app.services.economy_service import (
+    project_has_sufficient_custody,
+    sync_project_payment_status,
+)
 
 
 SELECTION_POLICY_VERSION = "r00-selection-v1"
@@ -428,14 +432,19 @@ def select_contracts_for_project(
             "por el mercado antes de contratar."
         )
 
-    if project.payment_status not in {
-        "paid",
-        "funded",
-        "escrowed",
-    }:
+    sync_project_payment_status(
+        db=db,
+        project=project,
+    )
+
+    if not project_has_sufficient_custody(
+        db=db,
+        project=project,
+    ):
         raise ContractSelectionError(
-            "El proyecto debe estar financiado "
-            "antes de formalizar contratos."
+            "El proyecto no tiene fondos "
+            "suficientes registrados en "
+            "la custodia del ledger."
         )
 
     if (
