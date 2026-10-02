@@ -17,14 +17,20 @@ from app.models.contract import (
 from app.models.project import (
     Project,
 )
+from app.models.qa import (
+    QAReview,
+)
 from app.models.repliker import (
     Repliker,
 )
-from app.models.user import (
-    User,
-)
+from app.models.user import User
 from app.schemas.qa import (
     QAReviewPublic,
+)
+from app.schemas.qa_workflow import (
+    QAFollowupPublic,
+    QAReputationEventPublic,
+    QARetryRunPublic,
 )
 from app.services.gemini_client import (
     GeminiConfigurationError,
@@ -39,6 +45,11 @@ from app.services.qa_service import (
     build_qa_snapshot,
     get_latest_qa_review,
     prepare_qa_review,
+)
+from app.services.qa_workflow_service import (
+    MAX_QA_ATTEMPTS,
+    QAWorkflowError,
+    build_followup,
 )
 
 
@@ -69,6 +80,27 @@ def _contract_or_404(
         )
 
     return contract
+
+
+def _review_or_404(
+    *,
+    db: Session,
+    review_id: int,
+) -> QAReview:
+    review = db.get(
+        QAReview,
+        review_id,
+    )
+
+    if review is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Revision QA no encontrada."
+            ),
+        )
+
+    return review
 
 
 def _project(
@@ -138,8 +170,7 @@ def _can_control_qa(
 
 @router.post(
     "/contracts/{contract_id}/prepare",
-    response_model=
-        QAReviewPublic,
+    response_model=QAReviewPublic,
 )
 def prepare_contract_qa(
     contract_id: int,
@@ -180,10 +211,7 @@ def prepare_contract_qa(
         )
 
         db.commit()
-
-        db.refresh(
-            review
-        )
+        db.refresh(review)
 
         return build_qa_snapshot(
             db=db,
@@ -201,8 +229,7 @@ def prepare_contract_qa(
 
 @router.post(
     "/contracts/{contract_id}/evaluate",
-    response_model=
-        QAReviewPublic,
+    response_model=QAReviewPublic,
 )
 def evaluate_contract_review(
     contract_id: int,
@@ -242,10 +269,7 @@ def evaluate_contract_review(
         )
 
         db.commit()
-
-        db.refresh(
-            review
-        )
+        db.refresh(review)
 
         return build_qa_snapshot(
             db=db,
@@ -277,10 +301,113 @@ def evaluate_contract_review(
         ) from exc
 
 
+@router.post(
+    "/reviews/{review_id}/followup",
+    response_model=QAFollowupPublic,
+)
+def followup_review(
+    review_id: int,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    review = _review_or_404(
+        db=db,
+        review_id=
+            review_id,
+    )
+
+    contract = _contract_or_404(
+        db=db,
+        contract_id=
+            review.contract_id,
+    )
+
+    if not _can_control_qa(
+        db=db,
+        contract=contract,
+        current_user=
+            current_user,
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "No tienes permiso para "
+                "procesar el follow-up QA."
+            ),
+        )
+
+    try:
+        result = build_followup(
+            db=db,
+            review=review,
+            run_retry=True,
+        )
+
+        retry = result[
+            "retry"
+        ]
+
+        reputation = result[
+            "reputation"
+        ]
+
+        return QAFollowupPublic(
+            review_id=
+                review.id,
+            review_status=
+                review.status,
+            attempt_number=
+                review.attempt_number,
+            max_attempts=
+                MAX_QA_ATTEMPTS,
+            action=
+                str(
+                    result[
+                        "action"
+                    ]
+                ),
+            retry=(
+                QARetryRunPublic
+                .model_validate(
+                    retry
+                )
+                if retry is not None
+                else None
+            ),
+            reputation=(
+                QAReputationEventPublic
+                .model_validate(
+                    reputation
+                )
+                if reputation
+                is not None
+                else None
+            ),
+            trace=[
+                str(item)
+                for item
+                in result[
+                    "trace"
+                ]
+            ],
+        )
+
+    except QAWorkflowError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+
 @router.get(
     "/contracts/{contract_id}/latest",
-    response_model=
-        QAReviewPublic,
+    response_model=QAReviewPublic,
 )
 def latest_contract_qa(
     contract_id: int,

@@ -61,6 +61,12 @@ from app.models.qa import (
 )
 
 
+from app.models.qa_workflow import (
+    QARetryRun,
+    QAReputationEvent,
+)
+
+
 __all__ = [
     "User",
     "Repliker",
@@ -90,4 +96,6 @@ __all__ = [
     "QAReview",
     "QACriterionResult",
     "QAEvidence",
+    "QARetryRun",
+    "QAReputationEvent",
 ]
