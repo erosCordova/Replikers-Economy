@@ -5,7 +5,6 @@ from app.agentic.model import (
 
 from app.agentic.project_graph import (
     build_project_lifecycle_graph,
-    project_lifecycle_graph,
 )
 
 from app.agentic.repliker_runtime import (

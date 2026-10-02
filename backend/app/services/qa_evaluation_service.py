@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+
 from datetime import (
     datetime,
     timezone,
@@ -37,7 +39,7 @@ from app.services.qa_service import (
     get_latest_qa_review,
 )
 from app.services.workspace_service import (
-    read_text_file,
+    read_workspace_file_bytes,
 )
 
 
@@ -117,6 +119,21 @@ def _artifact_contents(
     db: Session,
     review: QAReview,
 ) -> list[dict]:
+    """
+    Construye el contexto QA exclusivamente
+    desde el snapshot de QAEvidence asociado
+    a esta revision.
+
+    Cada artifact se valida contra:
+
+    1. evidencia capturada,
+    2. metadatos persistidos,
+    3. bytes reales del workspace.
+
+    Si cualquiera difiere, la revision se
+    considera obsoleta y no se envia al LLM.
+    """
+
     workspace = db.get(
         ExecutionWorkspace,
         review.workspace_id,
@@ -127,17 +144,22 @@ def _artifact_contents(
             "Workspace QA no encontrado."
         )
 
-    artifacts = list(
+    evidence_rows = list(
         db.scalars(
             select(
-                ExecutionArtifact
+                QAEvidence
             )
             .where(
-                ExecutionArtifact.workspace_id
-                == workspace.id
+                QAEvidence.review_id
+                == review.id,
+                QAEvidence
+                .criterion_result_id
+                .is_(None),
+                QAEvidence.evidence_type
+                == "artifact",
             )
             .order_by(
-                ExecutionArtifact.id
+                QAEvidence.id
             )
         ).all()
     )
@@ -146,18 +168,136 @@ def _artifact_contents(
 
     consumed = 0
 
-    for artifact in artifacts:
+    for evidence in evidence_rows:
+
+        if evidence.artifact_id is None:
+            raise QAEvaluationError(
+                "Snapshot QA inconsistente: "
+                "evidencia artifact sin "
+                "artifact_id."
+            )
+
+        artifact = db.get(
+            ExecutionArtifact,
+            evidence.artifact_id,
+        )
+
+        if artifact is None:
+            raise QAEvaluationError(
+                "Snapshot QA obsoleto: "
+                f"artifact #{evidence.artifact_id} "
+                "ya no existe."
+            )
+
+        if (
+            artifact.workspace_id
+            != workspace.id
+        ):
+            raise QAEvaluationError(
+                "Snapshot QA invalido: "
+                "el artifact pertenece "
+                "a otro workspace."
+            )
+
+        if (
+            artifact.relative_path
+            != evidence.reference
+        ):
+            raise QAEvaluationError(
+                "Snapshot QA obsoleto: "
+                "la ruta del artifact cambio."
+            )
+
+        snapshot_sha = str(
+            evidence.sha256
+            or ""
+        ).strip().lower()
+
+        persisted_sha = str(
+            artifact.sha256
+            or ""
+        ).strip().lower()
+
+        if not snapshot_sha:
+            raise QAEvaluationError(
+                "Snapshot QA invalido: "
+                "artifact sin SHA-256."
+            )
+
+        if (
+            persisted_sha
+            != snapshot_sha
+        ):
+            raise QAEvaluationError(
+                "Snapshot QA obsoleto: "
+                f"artifact "
+                f"'{artifact.relative_path}' "
+                "cambio despues de preparar "
+                "la revision."
+            )
+
+        try:
+            payload = (
+                read_workspace_file_bytes(
+                    workspace=workspace,
+                    relative_path=
+                        artifact.relative_path,
+                )
+            )
+
+        except (
+            FileNotFoundError,
+            ExecutionPolicyError,
+            OSError,
+        ) as exc:
+            raise QAEvaluationError(
+                "No se pudo verificar "
+                f"'{artifact.relative_path}': "
+                f"{str(exc)[:300]}"
+            ) from exc
+
+        actual_sha = (
+            hashlib.sha256(
+                payload
+            )
+            .hexdigest()
+            .lower()
+        )
+
+        if (
+            actual_sha
+            != snapshot_sha
+        ):
+            raise QAEvaluationError(
+                "Integridad QA rechazada: "
+                f"'{artifact.relative_path}' "
+                "no coincide con el SHA-256 "
+                "capturado."
+            )
+
+        if (
+            len(payload)
+            != artifact.size_bytes
+        ):
+            raise QAEvaluationError(
+                "Integridad QA rechazada: "
+                f"'{artifact.relative_path}' "
+                "cambio de tamano."
+            )
+
         item = {
             "artifact_id":
                 artifact.id,
+            "evidence_id":
+                evidence.id,
             "relative_path":
                 artifact.relative_path,
             "media_type":
                 artifact.media_type,
             "size_bytes":
-                artifact.size_bytes,
+                len(payload),
             "sha256":
-                artifact.sha256,
+                snapshot_sha,
             "text_content":
                 None,
         }
@@ -190,54 +330,54 @@ def _artifact_contents(
             continue
 
         try:
-            content = read_text_file(
-                workspace=workspace,
-                relative_path=
-                    artifact.relative_path,
+            content = payload.decode(
+                "utf-8"
             )
 
-            remaining = (
-                MAX_TOTAL_ARTIFACT_CONTEXT_CHARS
-                - consumed
-            )
-
-            limit = min(
-                MAX_ARTIFACT_CONTEXT_CHARS,
-                remaining,
-            )
-
-            clipped = (
-                content[:limit]
-            )
-
-            consumed += len(
-                clipped
-            )
-
-            item[
-                "text_content"
-            ] = clipped
-
-            if (
-                len(content)
-                > len(clipped)
-            ):
-                item[
-                    "text_content"
-                ] += (
-                    "\n[contenido truncado]"
-                )
-
-        except (
-            FileNotFoundError,
-            ExecutionPolicyError,
-            OSError,
-        ) as exc:
+        except UnicodeDecodeError:
             item[
                 "text_content"
             ] = (
                 "[contenido no disponible: "
-                f"{str(exc)[:300]}]"
+                "el archivo no es UTF-8]"
+            )
+
+            result.append(
+                item
+            )
+
+            continue
+
+        remaining = (
+            MAX_TOTAL_ARTIFACT_CONTEXT_CHARS
+            - consumed
+        )
+
+        limit = min(
+            MAX_ARTIFACT_CONTEXT_CHARS,
+            remaining,
+        )
+
+        clipped = content[
+            :limit
+        ]
+
+        consumed += len(
+            clipped
+        )
+
+        item[
+            "text_content"
+        ] = clipped
+
+        if (
+            len(content)
+            > len(clipped)
+        ):
+            item[
+                "text_content"
+            ] += (
+                "\n[contenido truncado]"
             )
 
         result.append(

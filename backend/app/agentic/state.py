@@ -11,16 +11,17 @@ from typing_extensions import (
 
 
 ProjectStage = Literal[
+    "inspect",
     "planning",
     "market",
+    "awaiting_funding",
     "contracting",
-    "delegation_check",
-    "delegating",
-    "execution_pending",
-    "executing",
+    "delegation",
+    "execution",
     "qa",
     "retry",
     "integration",
+    "partial",
     "completed",
     "failed",
 ]
@@ -31,40 +32,41 @@ class AgenticProjectState(
     total=False,
 ):
     """
-    Estado compartido por el supervisor LangGraph.
+    Estado serializable del supervisor maestro
+    LangGraph de Repliker Economy.
 
-    Este estado NO contiene objetos SQLAlchemy.
-    Solo contiene identificadores y datos simples
-    para que el grafo sea serializable y pueda
-    persistirse mediante checkpoints posteriormente.
+    No almacena objetos SQLAlchemy.
+    Solo IDs, estados, contadores y trazas
+    serializables.
     """
 
     project_id: int
 
-    task_id: int | None
-
-    contract_id: int | None
-
-    subcontract_id: int | None
-
-    repliker_id: int | None
+    project_status: str
+    payment_status: str
 
     current_stage: ProjectStage
+    next_action: str
 
-    needs_delegation: bool
+    contract_ids: list[int]
+    review_ids: list[int]
+
+    contracts_created: int
+    contracts_processed: int
+    contracts_completed: int
+
+    delegations_processed: int
 
     execution_attempts: int
 
     qa_attempts: int
+    qa_passed: int
+    qa_failed: int
 
-    qa_status: Literal[
-        "pending",
-        "approved",
-        "retry",
-        "failed",
-    ]
+    failed_contract_ids: list[int]
 
-    error: str | None
+    blocked_reason: str
+    error: str
 
     history: Annotated[
         list[str],

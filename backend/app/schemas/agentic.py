@@ -125,3 +125,41 @@ class AgenticProjectSnapshot(BaseModel):
     recent_activity: list[
         AgenticActivityPublic
     ]
+
+
+class AgenticLifecycleRunResponse(
+    BaseModel
+):
+    project_id: int
+
+    project_status: str
+
+    payment_status: str
+
+    final_stage: str
+
+    next_action: str
+
+    contracts_created: int
+
+    contracts_processed: int
+
+    contracts_completed: int
+
+    delegations_processed: int
+
+    execution_attempts: int
+
+    qa_attempts: int
+
+    qa_passed: int
+
+    qa_failed: int
+
+    failed_contract_ids: list[int]
+
+    blocked_reason: str
+
+    error: str
+
+    history: list[str]

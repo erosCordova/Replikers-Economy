@@ -497,30 +497,58 @@ def retry_review(
 
         return retry
 
-    next_review = prepare_qa_review(
-        db=db,
-        contract_id=
-            review.contract_id,
-    )
-
-    if next_review.id == review.id:
-        raise QAWorkflowError(
-            "No se genero un nuevo "
-            "intento QA."
+    try:
+        next_review = prepare_qa_review(
+            db=db,
+            contract_id=
+                review.contract_id,
         )
 
-    expected_attempt = (
-        review.attempt_number + 1
-    )
+        if next_review.id == review.id:
+            raise QAWorkflowError(
+                "No se genero un nuevo "
+                "intento QA."
+            )
 
-    if (
-        next_review.attempt_number
-        != expected_attempt
-    ):
-        raise QAWorkflowError(
-            "La secuencia de intentos "
-            "QA es inconsistente."
+        expected_attempt = (
+            review.attempt_number + 1
         )
+
+        if (
+            next_review.attempt_number
+            != expected_attempt
+        ):
+            raise QAWorkflowError(
+                "La secuencia de intentos "
+                "QA es inconsistente."
+            )
+
+    except Exception as exc:
+        # La ejecucion del Repliker pudo
+        # completarse correctamente, pero
+        # el pipeline QA posterior fallo.
+        # Cerramos el retry de forma
+        # determinista en lugar de dejarlo
+        # permanentemente en running.
+        retry.status = (
+            "execution_failed"
+        )
+
+        retry.error_summary = (
+            "QA_PREPARE_FAILED: "
+            + str(exc)
+        )[:4000]
+
+        retry.completed_at = (
+            datetime.now(
+                timezone.utc
+            )
+        )
+
+        db.commit()
+        db.refresh(retry)
+
+        return retry
 
     retry.next_review_id = (
         next_review.id

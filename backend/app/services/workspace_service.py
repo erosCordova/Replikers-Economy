@@ -400,6 +400,60 @@ def write_text_file(
     return artifact
 
 
+def read_workspace_file_bytes(
+    *,
+    workspace: ExecutionWorkspace,
+    relative_path: str,
+) -> bytes:
+    """
+    Lee bytes reales de un archivo autorizado.
+
+    Se utiliza para verificaciones criptograficas
+    y evita confiar solamente en metadatos de DB.
+    """
+
+    root = workspace_root(
+        workspace
+    )
+
+    target = resolve_inside_workspace(
+        workspace_root=root,
+        relative_path=relative_path,
+    )
+
+    if (
+        not target.exists()
+        or not target.is_file()
+    ):
+        raise FileNotFoundError(
+            "Archivo no encontrado."
+        )
+
+    size = target.stat().st_size
+
+    if (
+        size
+        > workspace.max_file_bytes
+    ):
+        raise ExecutionPolicyError(
+            "El archivo excede el limite "
+            "de lectura permitido."
+        )
+
+    payload = target.read_bytes()
+
+    if (
+        len(payload)
+        > workspace.max_file_bytes
+    ):
+        raise ExecutionPolicyError(
+            "El archivo excede el limite "
+            "de lectura permitido."
+        )
+
+    return payload
+
+
 def read_text_file(
     *,
     workspace: ExecutionWorkspace,
