@@ -44,17 +44,20 @@ from app.models.delegation import (
     Subcontract,
 )
 
-
-
 from app.models.agentic import (
     ReplikerToolAssignment,
 )
-
 
 from app.models.execution import (
     ExecutionWorkspace,
     ExecutionArtifact,
     ToolExecutionLog,
+)
+
+from app.models.qa import (
+    QAReview,
+    QACriterionResult,
+    QAEvidence,
 )
 
 
@@ -84,4 +87,7 @@ __all__ = [
     "ExecutionWorkspace",
     "ExecutionArtifact",
     "ToolExecutionLog",
+    "QAReview",
+    "QACriterionResult",
+    "QAEvidence",
 ]
