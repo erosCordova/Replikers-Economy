@@ -17,12 +17,10 @@ import {
   Network,
   Plus,
   RefreshCw,
-  Rocket,
   ShieldCheck,
   Sparkles,
   Target,
   UserPlus,
-  Users,
   WalletCards,
   X,
 } from 'lucide-react'
@@ -30,9 +28,11 @@ import axios from 'axios'
 
 import { api } from './api'
 import Ecosystem from './pages/Ecosystem'
+import ShowcaseDashboard from './components/ShowcaseDashboard'
 import './App.css'
 import './theme.css'
 import './agentic-theme.css'
+import './styles/ShowcaseDashboard.css'
 
 
 type Section =
@@ -793,7 +793,13 @@ function App() {
 
 
   return (
-    <div className="app-shell">
+    <div
+      className={
+        section === 'dashboard'
+          ? 'app-shell presentation-shell'
+          : 'app-shell'
+      }
+    >
       <aside
         className={
           sidebarOpen
@@ -1048,285 +1054,19 @@ function App() {
           )}
 
           {section === 'dashboard' && (
-            <>
-              <section className="hero-panel">
-                <div>
-                  <div className="hero-label">
-                    <Sparkles size={17} />
-                    Plataforma operativa
-                  </div>
-
-                  <h1>
-                    Bienvenido,{' '}
-                    {user.full_name.split(' ')[0]}
-                  </h1>
-
-                  <p>
-                    Desde aqui puedes observar
-                    como R00 transforma solicitudes
-                    humanas en tareas que despues
-                    seran negociadas por Replikers
-                    autonomos.
-                  </p>
-
-                  <button
-                    className="hero-action"
-                    onClick={() =>
-                      navigate(
-                        'new-project',
-                      )
-                    }
-                  >
-                    <Rocket size={19} />
-                    Crear un proyecto
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-
-                <div className="economy-orbit">
-                  <div className="orbit-center">
-                    <Cpu size={30} />
-                    <strong>R00</strong>
-                  </div>
-
-                  <div className="orbit-node node-one">
-                    <Bot size={18} />
-                  </div>
-
-                  <div className="orbit-node node-two">
-                    <Boxes size={18} />
-                  </div>
-
-                  <div className="orbit-node node-three">
-                    <ShieldCheck size={18} />
-                  </div>
-                </div>
-              </section>
-
-              <section className="metric-grid">
-                <article className="metric-card">
-                  <div className="metric-icon purple">
-                    <BriefcaseBusiness size={21} />
-                  </div>
-
-                  <div>
-                    <span>
-                      Proyectos
-                    </span>
-
-                    <strong>
-                      {projects.length}
-                    </strong>
-
-                    <small>
-                      solicitudes registradas
-                    </small>
-                  </div>
-                </article>
-
-                <article className="metric-card">
-                  <div className="metric-icon blue">
-                    <Bot size={21} />
-                  </div>
-
-                  <div>
-                    <span>
-                      Replikers
-                    </span>
-
-                    <strong>
-                      {replikers.length}
-                    </strong>
-
-                    <small>
-                      agentes en el mercado
-                    </small>
-                  </div>
-                </article>
-
-                <article className="metric-card">
-                  <div className="metric-icon green">
-                    <CircleDollarSign size={21} />
-                  </div>
-
-                  <div>
-                    <span>
-                      Valor planificado
-                    </span>
-
-                    <strong className="metric-money">
-                      {money(plannedValue)}
-                    </strong>
-
-                    <small>
-                      cotizaciones de R00
-                    </small>
-                  </div>
-                </article>
-
-                <article className="metric-card">
-                  <div className="metric-icon orange">
-                    <Activity size={21} />
-                  </div>
-
-                  <div>
-                    <span>
-                      Sistema
-                    </span>
-
-                    <strong>
-                      Operativo
-                    </strong>
-
-                    <small>
-                      backend conectado
-                    </small>
-                  </div>
-                </article>
-              </section>
-
-              <section className="dashboard-columns">
-                <article className="panel">
-                  <div className="panel-header">
-                    <div>
-                      <span className="panel-kicker">
-                        ACTIVIDAD
-                      </span>
-
-                      <h3>
-                        Flujo de la plataforma
-                      </h3>
-                    </div>
-
-                    <Activity size={21} />
-                  </div>
-
-                  <div className="activity-timeline">
-                    <div className="timeline-item">
-                      <div className="timeline-icon">
-                        <Target size={17} />
-                      </div>
-
-                      <div>
-                        <strong>
-                          Cliente humano
-                        </strong>
-
-                        <p>
-                          Define objetivo,
-                          requisitos y presupuesto.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="timeline-item">
-                      <div className="timeline-icon r00">
-                        <Cpu size={17} />
-                      </div>
-
-                      <div>
-                        <strong>
-                          R00 coordina
-                        </strong>
-
-                        <p>
-                          Decide autonomamente
-                          tareas, habilidades,
-                          criterios y costos.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="timeline-item future">
-                      <div className="timeline-icon">
-                        <Bot size={17} />
-                      </div>
-
-                      <div>
-                        <strong>
-                          Mercado de Replikers
-                        </strong>
-
-                        <p>
-                          La siguiente fase permitira
-                          ofertas y rechazos autonomos.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-
-                <article className="panel">
-                  <div className="panel-header">
-                    <div>
-                      <span className="panel-kicker">
-                        MERCADO
-                      </span>
-
-                      <h3>
-                        Replikers disponibles
-                      </h3>
-                    </div>
-
-                    <Users size={21} />
-                  </div>
-
-                  {replikers.length === 0 ? (
-                    <div className="empty-compact">
-                      <Bot size={30} />
-                      <p>
-                        Aun no hay Replikers
-                        disponibles.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mini-agent-list">
-                      {replikers
-                        .slice(0, 4)
-                        .map((repliker) => (
-                          <div
-                            className="mini-agent"
-                            key={repliker.id}
-                          >
-                            <div className="agent-avatar">
-                              <Bot size={18} />
-                            </div>
-
-                            <div>
-                              <strong>
-                                {repliker.name}
-                              </strong>
-
-                              <span>
-                                {repliker.specialty}
-                              </span>
-                            </div>
-
-                            <div className="agent-score">
-                              {Math.round(
-                                repliker
-                                  .reputation_score,
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-
-                  <button
-                    className="text-action"
-                    onClick={() =>
-                      navigate(
-                        'marketplace',
-                      )
-                    }
-                  >
-                    Ver marketplace
-                    <ChevronRight size={16} />
-                  </button>
-                </article>
-              </section>
-            </>
+            <ShowcaseDashboard
+              userName={user.full_name}
+              projectCount={projects.length}
+              replikerCount={replikers.length}
+              plannedValue={money(plannedValue)}
+              backendOnline={backendOnline}
+              onCreateProject={() =>
+                navigate('new-project')
+              }
+              onOpenMarketplace={() =>
+                navigate('marketplace')
+              }
+            />
           )}
 
 

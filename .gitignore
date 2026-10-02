@@ -30,3 +30,13 @@ Thumbs.db
 workspace/
 generated_projects/
 backend/.runtime/
+
+# Replikers - secretos locales
+backend/.env
+frontend/.env
+backend/.env.tmp
+frontend/.env.tmp
+
+# Los secretos cifrados SI forman parte del repositorio
+!backend/.env.enc
+!frontend/.env.enc
