@@ -19,6 +19,7 @@ import {
 import { api } from '../api'
 import ReplikerAvatar from '../components/ReplikerAvatar'
 import CollaborationPanel from '../components/CollaborationPanel'
+import LiveProjectActivity from '../components/LiveProjectActivity'
 import AgenticControlCenter from '../components/AgenticControlCenter'
 import type {
   ReplikerAppearance,
@@ -287,18 +288,6 @@ export default function Ecosystem({
 
   useEffect(() => {
     void loadSnapshot()
-
-    const timer =
-      window.setInterval(
-        () => {
-          void loadSnapshot(true)
-        },
-        8000,
-      )
-
-    return () => {
-      window.clearInterval(timer)
-    }
   }, [])
 
 
@@ -1014,6 +1003,22 @@ export default function Ecosystem({
           </div>
         )}
       </section>
+
+
+      <LiveProjectActivity
+        currentUserId={
+          currentUserId
+        }
+        selectedProjectId={
+          selectedProjectId
+        }
+        projects={
+          snapshot.projects
+        }
+        onRealtimeActivity={() => {
+          void loadSnapshot(true)
+        }}
+      />
 
 
       <section className="ecosystem-observation-grid">

@@ -70,6 +70,10 @@ from app.models.economy import (
     LedgerTransaction,
 )
 
+from app.models.realtime import (
+    RealtimeEvent,
+)
+
 
 __all__ = [
     "User",
@@ -104,4 +108,5 @@ __all__ = [
     "QAReputationEvent",
     "LedgerAccount",
     "LedgerTransaction",
+    "RealtimeEvent",
 ]

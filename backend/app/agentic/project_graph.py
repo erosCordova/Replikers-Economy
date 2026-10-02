@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from dataclasses import dataclass
-from typing import Callable
 
 from langgraph.graph import (
     END,
@@ -27,9 +26,20 @@ from app.services.project_lifecycle_service import (
     run_planning_stage,
     run_qa_stage,
 )
+from app.services.realtime_service import (
+    record_workflow_event,
+)
 
 
 StageHandler = Callable[..., dict]
+
+
+def _noop_workflow_event(
+    **kwargs,
+):
+    _ = kwargs
+
+    return None
 
 
 @dataclass(frozen=True)
@@ -44,6 +54,7 @@ class ProjectLifecycleHandlers:
     qa: Callable
     integration: StageHandler
     active_contracts: Callable
+    emit: Callable = _noop_workflow_event
 
 
 DEFAULT_HANDLERS = (
@@ -62,6 +73,8 @@ DEFAULT_HANDLERS = (
             finalize_project_if_ready,
         active_contracts=
             active_contract_ids,
+        emit=
+            record_workflow_event,
     )
 )
 
@@ -90,6 +103,212 @@ def build_project_lifecycle_graph(
             project_id=
                 state["project_id"],
         )
+
+    workflow_actors = {
+        "inspect": "langgraph",
+        "planning": "r00",
+        "market": "market",
+        "funding": "economy",
+        "contracting": "r00",
+        "delegation": "repliker",
+        "execution": "repliker",
+        "qa": "qa",
+        "retry": "repliker",
+        "integration": "system",
+        "economy": "economy",
+        "awaiting_funding": "economy",
+        "already_completed": "system",
+        "failed": "system",
+    }
+
+    def emit_stage_event(
+        *,
+        state: AgenticProjectState,
+        stage: str,
+        status: str,
+        title: str,
+        payload: dict | None = None,
+        kind: str = "workflow",
+    ):
+        emitted = runtime.emit(
+            db=db,
+            project_id=
+                state["project_id"],
+            stage=stage,
+            status=status,
+            title=title,
+            actor_type=
+                workflow_actors.get(
+                    stage,
+                    "langgraph",
+                ),
+            kind=kind,
+            payload=payload or {},
+        )
+
+        # El emitter real devuelve un modelo.
+        # Los emitters inyectados de tests
+        # pueden devolver None y no requieren
+        # una Session SQLAlchemy real.
+        if (
+            emitted is not None
+            and hasattr(
+                db,
+                "commit",
+            )
+        ):
+            db.commit()
+
+        return emitted
+
+    def instrument_node(
+        stage: str,
+        node: Callable,
+    ):
+        def wrapped(
+            state: AgenticProjectState,
+        ):
+            emit_stage_event(
+                state=state,
+                stage=stage,
+                status="started",
+                title=(
+                    f"Etapa {stage} iniciada"
+                ),
+                payload={
+                    "previous_stage":
+                        state.get(
+                            "current_stage"
+                        ),
+                    "next_action":
+                        state.get(
+                            "next_action"
+                        ),
+                },
+            )
+
+            try:
+                result = node(
+                    state
+                )
+
+            except Exception as exc:
+                if hasattr(
+                    db,
+                    "rollback",
+                ):
+                    db.rollback()
+
+                emit_stage_event(
+                    state=state,
+                    stage=stage,
+                    status="failed",
+                    title=(
+                        f"Etapa {stage} fallo"
+                    ),
+                    payload={
+                        "error":
+                            str(exc)[:1000],
+                    },
+                )
+
+                raise
+
+            compact_payload = {
+                key:
+                    value
+                for key, value
+                in result.items()
+                if key != "history"
+            }
+
+            emit_stage_event(
+                state=state,
+                stage=stage,
+                status="completed",
+                title=(
+                    f"Etapa {stage} completada"
+                ),
+                payload=
+                    compact_payload,
+            )
+
+            # QA puede ejecutar automaticamente
+            # uno o mas retries.
+            if stage == "qa":
+                before_attempts = int(
+                    state.get(
+                        "execution_attempts",
+                        0,
+                    )
+                )
+
+                after_attempts = int(
+                    result.get(
+                        "execution_attempts",
+                        before_attempts,
+                    )
+                )
+
+                retry_attempts = max(
+                    0,
+                    after_attempts
+                    - before_attempts,
+                )
+
+                if retry_attempts > 0:
+                    emit_stage_event(
+                        state=state,
+                        stage="retry",
+                        status="completed",
+                        title=(
+                            "Retry de ejecucion "
+                            "completado"
+                        ),
+                        payload={
+                            "retry_attempts":
+                                retry_attempts,
+                        },
+                    )
+
+            # La economia se liquida durante
+            # la integracion final de Fase 10.
+            if (
+                stage == "integration"
+                and result.get(
+                    "current_stage"
+                )
+                == "completed"
+            ):
+                project = load_project(
+                    state
+                )
+
+                if (
+                    project.payment_status
+                    == "settled"
+                ):
+                    emit_stage_event(
+                        state=state,
+                        stage="economy",
+                        status="settled",
+                        kind="economy",
+                        title=(
+                            "Economia simulada "
+                            "liquidada"
+                        ),
+                        payload={
+                            "payment_status":
+                                project
+                                .payment_status,
+                            "project_status":
+                                project.status,
+                        },
+                    )
+
+            return result
+
+        return wrapped
 
     def inspect_node(
         state: AgenticProjectState,
@@ -685,62 +904,98 @@ def build_project_lifecycle_graph(
 
     graph.add_node(
         "inspect",
-        inspect_node,
+        instrument_node(
+            "inspect",
+            inspect_node,
+        ),
     )
 
     graph.add_node(
         "planning",
-        planning_node,
+        instrument_node(
+            "planning",
+            planning_node,
+        ),
     )
 
     graph.add_node(
         "market",
-        market_node,
+        instrument_node(
+            "market",
+            market_node,
+        ),
     )
 
     graph.add_node(
         "funding",
-        funding_node,
+        instrument_node(
+            "funding",
+            funding_node,
+        ),
     )
 
     graph.add_node(
         "contracting",
-        contracting_node,
+        instrument_node(
+            "contracting",
+            contracting_node,
+        ),
     )
 
     graph.add_node(
         "delegation",
-        delegation_node,
+        instrument_node(
+            "delegation",
+            delegation_node,
+        ),
     )
 
     graph.add_node(
         "execution",
-        execution_node,
+        instrument_node(
+            "execution",
+            execution_node,
+        ),
     )
 
     graph.add_node(
         "qa",
-        qa_node,
+        instrument_node(
+            "qa",
+            qa_node,
+        ),
     )
 
     graph.add_node(
         "integration",
-        integration_node,
+        instrument_node(
+            "integration",
+            integration_node,
+        ),
     )
 
     graph.add_node(
         "awaiting_funding",
-        waiting_funding_node,
+        instrument_node(
+            "awaiting_funding",
+            waiting_funding_node,
+        ),
     )
 
     graph.add_node(
         "already_completed",
-        already_completed_node,
+        instrument_node(
+            "already_completed",
+            already_completed_node,
+        ),
     )
 
     graph.add_node(
         "failed",
-        failed_node,
+        instrument_node(
+            "failed",
+            failed_node,
+        ),
     )
 
     graph.add_edge(
