@@ -45,6 +45,10 @@ from app.services.gemini_client import (
     GeminiConfigurationError,
     GeminiResponseError,
 )
+from app.services.repliker_matching_service import (
+    normalize_market_text,
+    rank_task_candidates,
+)
 
 
 router = APIRouter(
@@ -53,6 +57,26 @@ router = APIRouter(
         "Mercado autonomo",
     ],
 )
+
+
+def _find_iris(
+    replikers: list[Repliker],
+) -> Repliker | None:
+    for repliker in replikers:
+        if (
+            normalize_market_text(
+                repliker.name
+            )
+            == "iris"
+            and
+            normalize_market_text(
+                repliker.specialty
+            )
+            == "product / requirements"
+        ):
+            return repliker
+
+    return None
 
 
 def _check_project_access(
@@ -310,6 +334,10 @@ def run_autonomous_market(
             ),
         )
 
+    iris = _find_iris(
+        replikers
+    )
+
     market_was_open = (
         project.status
         == "market_open"
@@ -362,25 +390,36 @@ def run_autonomous_market(
             ),
             description=(
                 f"{len(eligible_tasks)} "
-                f"tareas fueron puestas "
-                f"a disposicion de "
-                f"{len(replikers)} "
-                f"Replikers activos."
+                f"tareas entraron en "
+                f"busqueda dirigida. "
+                f"Iris ofrecera cada tarea "
+                f"solamente a Replikers "
+                f"compatibles."
             ),
         )
 
         record_message(
             db=db,
             project_id=project.id,
-            sender_type="market",
+            sender_type=(
+                "repliker"
+                if iris is not None
+                else "market"
+            ),
+            sender_repliker_id=(
+                iris.id
+                if iris is not None
+                else None
+            ),
             receiver_type="replikers",
             message_type="market_open",
             content=(
-                f"El proyecto '{project.title}' "
-                f"ha abierto {len(eligible_tasks)} "
-                f"tareas al mercado. "
-                f"Los Replikers disponibles ya "
-                f"pueden evaluarlas."
+                f"Ya analice el proyecto "
+                f"'{project.title}'. "
+                f"Voy a buscar los Replikers "
+                f"mas adecuados para cada tarea "
+                f"y les enviare las oportunidades "
+                f"una por una."
             ),
         )
 
@@ -389,6 +428,7 @@ def run_autonomous_market(
     new_decisions = 0
     bid_count = 0
     pass_count = 0
+    agents_considered = 0
 
     errors: list[str] = []
 
@@ -400,6 +440,8 @@ def run_autonomous_market(
                 task.title,
             "description":
                 task.description,
+            "required_specialty":
+                task.required_specialty,
             "complexity":
                 task.complexity,
             "max_budget_cents": (
@@ -440,7 +482,81 @@ def run_autonomous_market(
                 .quoted_amount_cents,
         }
 
-        for repliker in replikers:
+        candidate_matches = (
+            rank_task_candidates(
+                task=task,
+                replikers=replikers,
+            )
+        )
+
+        active_bid = db.scalar(
+            select(TaskBid)
+            .where(
+                TaskBid.task_id
+                == task.id,
+                TaskBid.status.in_(
+                    (
+                        "pending",
+                        "accepted",
+                    )
+                ),
+            )
+            .order_by(
+                TaskBid.id
+            )
+        )
+
+        if active_bid is not None:
+            db.commit()
+            continue
+
+        if not candidate_matches:
+            errors.append(
+                f"Tarea {task.id}: "
+                f"no hay Replikers disponibles "
+                f"compatibles con la "
+                f"especialidad requerida."
+            )
+
+            record_activity(
+                db=db,
+                actor_type=(
+                    "repliker"
+                    if iris is not None
+                    else "system"
+                ),
+                event_type=(
+                    "candidate_search_empty"
+                ),
+                project_id=
+                    project.id,
+                task_id=
+                    task.id,
+                repliker_id=(
+                    iris.id
+                    if iris is not None
+                    else None
+                ),
+                title=(
+                    "Iris no encontro "
+                    "un candidato disponible"
+                ),
+                description=(
+                    f"La tarea '{task.title}' "
+                    f"queda pendiente hasta que "
+                    f"aparezca un Repliker "
+                    f"compatible."
+                ),
+            )
+
+            db.commit()
+            continue
+
+        for candidate in candidate_matches:
+            repliker = (
+                candidate.repliker
+            )
+
             existing_decision = (
                 db.scalar(
                     select(
@@ -511,11 +627,75 @@ def run_autonomous_market(
                 )
             )
 
-            # existing_decision, existing_bid y la resolución
-            # de herramientas son solamente lecturas.
-            # Cerramos esa transacción antes de esperar
-            # al modelo para no dejar PostgreSQL bloqueado.
+            record_activity(
+                db=db,
+                actor_type=(
+                    "repliker"
+                    if iris is not None
+                    else "system"
+                ),
+                event_type=(
+                    "task_offer_sent"
+                ),
+                project_id=
+                    project.id,
+                task_id=
+                    task.id,
+                repliker_id=(
+                    iris.id
+                    if iris is not None
+                    else None
+                ),
+                title=(
+                    f"Iris envio una "
+                    f"oportunidad a "
+                    f"{repliker.name}"
+                ),
+                description=(
+                    f"Coincidencia tecnica: "
+                    f"{candidate.skill_coverage:.0f}%. "
+                    f"El Repliker puede aceptar "
+                    f"o rechazar libremente."
+                ),
+            )
+
+            record_message(
+                db=db,
+                project_id=
+                    project.id,
+                task_id=
+                    task.id,
+                sender_type=(
+                    "repliker"
+                    if iris is not None
+                    else "market"
+                ),
+                sender_repliker_id=(
+                    iris.id
+                    if iris is not None
+                    else None
+                ),
+                receiver_type=
+                    "repliker",
+                receiver_repliker_id=
+                    repliker.id,
+                message_type=
+                    "task_offer",
+                content=(
+                    f"Hola {repliker.name}. "
+                    f"Tengo una oportunidad "
+                    f"que coincide con tu perfil: "
+                    f"'{task.title}'. "
+                    f"Revisala y decide con libertad "
+                    f"si deseas presentar una oferta."
+                ),
+            )
+
+            # La oferta queda guardada antes
+            # de esperar la respuesta de la IA.
             db.commit()
+
+            agents_considered += 1
 
             try:
                 ai_decision = (
@@ -542,15 +722,11 @@ def run_autonomous_market(
             except (
                 GeminiResponseError
             ) as exc:
-                error_text = (
-                    f"Task {task.id} / "
+                errors.append(
+                    f"Tarea {task.id} / "
                     f"Repliker "
                     f"{repliker.id}: "
                     f"{exc}"
-                )
-
-                errors.append(
-                    error_text
                 )
 
                 record_activity(
@@ -572,15 +748,14 @@ def run_autonomous_market(
                         f"la evaluacion"
                     ),
                     description=(
-                        "La evaluacion "
-                        "autonoma de la "
-                        "tarea encontro "
-                        "un error temporal."
+                        "La evaluacion autonoma "
+                        "encontro un error temporal. "
+                        "Iris continuara con "
+                        "el siguiente candidato."
                     ),
                 )
 
                 db.commit()
-
                 continue
 
             decision = (
@@ -682,7 +857,7 @@ def run_autonomous_market(
                         repliker.id,
                     title=(
                         f"{repliker.name} "
-                        f"envio una oferta"
+                        f"acepto la oportunidad"
                     ),
                     description=(
                         f"Oferta: "
@@ -698,56 +873,87 @@ def run_autonomous_market(
 
                 record_message(
                     db=db,
-                    project_id=project.id,
-                    task_id=task.id,
-                    sender_type="repliker",
-                    sender_repliker_id=repliker.id,
-                    receiver_type="r00",
-                    message_type="bid",
-                    content=ai_decision.message,
-                )
-
-            else:
-                pass_count += 1
-
-                record_activity(
-                    db=db,
-                    actor_type=
-                        "repliker",
-                    event_type=(
-                        "task_passed"
-                    ),
                     project_id=
                         project.id,
                     task_id=
                         task.id,
-                    repliker_id=
+                    sender_type=
+                        "repliker",
+                    sender_repliker_id=
                         repliker.id,
-                    title=(
-                        f"{repliker.name} "
-                        f"decidio no ofertar"
+                    receiver_type=(
+                        "repliker"
+                        if iris is not None
+                        else "market"
                     ),
-                    description=(
-                        f"El Repliker evaluo "
-                        f"la tarea "
-                        f"'{task.title}' y "
-                        f"decidio no competir "
-                        f"por ella. "
-                        f"Confianza declarada: "
-                        f"{ai_decision.confidence_score}%."
+                    receiver_repliker_id=(
+                        iris.id
+                        if iris is not None
+                        else None
                     ),
+                    message_type="bid",
+                    content=
+                        ai_decision.message,
                 )
 
-                record_message(
-                    db=db,
-                    project_id=project.id,
-                    task_id=task.id,
-                    sender_type="repliker",
-                    sender_repliker_id=repliker.id,
-                    receiver_type="r00",
-                    message_type="pass",
-                    content=ai_decision.message,
-                )
+                db.commit()
+
+                # Una oferta valida detiene la
+                # busqueda para esta tarea.
+                break
+
+            pass_count += 1
+
+            record_activity(
+                db=db,
+                actor_type=
+                    "repliker",
+                event_type=(
+                    "task_passed"
+                ),
+                project_id=
+                    project.id,
+                task_id=
+                    task.id,
+                repliker_id=
+                    repliker.id,
+                title=(
+                    f"{repliker.name} "
+                    f"rechazo la oportunidad"
+                ),
+                description=(
+                    f"El Repliker decidio "
+                    f"no presentar una oferta "
+                    f"para '{task.title}'. "
+                    f"Iris continuara con "
+                    f"el siguiente candidato."
+                ),
+            )
+
+            record_message(
+                db=db,
+                project_id=
+                    project.id,
+                task_id=
+                    task.id,
+                sender_type=
+                    "repliker",
+                sender_repliker_id=
+                    repliker.id,
+                receiver_type=(
+                    "repliker"
+                    if iris is not None
+                    else "market"
+                ),
+                receiver_repliker_id=(
+                    iris.id
+                    if iris is not None
+                    else None
+                ),
+                message_type="pass",
+                content=
+                    ai_decision.message,
+            )
 
             db.commit()
 
@@ -810,9 +1016,7 @@ def run_autonomous_market(
                 eligible_tasks
             ),
         agents_considered=
-            len(
-                replikers
-            ),
+            agents_considered,
         new_decisions=
             new_decisions,
         bid_count=
