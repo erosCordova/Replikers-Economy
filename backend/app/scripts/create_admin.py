@@ -2,6 +2,10 @@ from getpass import getpass
 
 from sqlalchemy import select
 
+from app.auth.password_policy import (
+    PasswordPolicyError,
+    validate_new_password,
+)
 from app.auth.security import (
     hash_password,
 )
@@ -27,11 +31,9 @@ def main():
             "No se puede crear "
             "el administrador."
         )
-
         print(
             str(exc)
         )
-
         return
 
     print(
@@ -66,16 +68,20 @@ def main():
         "Confirmar contraseña: "
     )
 
-    if len(password) < 8:
-        print(
-            "La contraseña debe tener "
-            "al menos 8 caracteres."
-        )
-        return
-
     if password != password_confirm:
         print(
             "Las contraseñas no coinciden."
+        )
+        return
+
+    try:
+        validate_new_password(
+            password
+        )
+
+    except PasswordPolicyError as exc:
+        print(
+            str(exc)
         )
         return
 
@@ -115,11 +121,9 @@ def main():
             "Administrador creado "
             "correctamente."
         )
-
         print(
             f"Correo: {email}"
         )
-
         print(
             "Rol: admin"
         )

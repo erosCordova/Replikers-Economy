@@ -1,4 +1,5 @@
 from typing import Literal
+from urllib.parse import urlparse
 
 from pydantic_settings import (
     BaseSettings,
@@ -41,19 +42,43 @@ class Settings(BaseSettings):
     )
 
     # --------------------------------------------------------
-    # Security
+    # Security / JWT
     # --------------------------------------------------------
 
     SECRET_KEY: str
 
-    ALGORITHM: str = "HS256"
+    ALGORITHM: Literal[
+        "HS256"
+    ] = "HS256"
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = (
-        1440
+        120
     )
+
+    JWT_ISSUER: str = (
+        "repliker-economy"
+    )
+
+    JWT_AUDIENCE: str = (
+        "repliker-economy-api"
+    )
+
+    JWT_LEEWAY_SECONDS: int = (
+        5
+    )
+
+    # --------------------------------------------------------
+    # Web / CORS
+    # --------------------------------------------------------
 
     FRONTEND_URL: str = (
         "http://localhost:5173"
+    )
+
+    CORS_ALLOWED_ORIGINS: str = ""
+
+    ALLOW_INSECURE_LOCAL_ORIGINS: bool = (
+        False
     )
 
     # --------------------------------------------------------
@@ -69,11 +94,6 @@ class Settings(BaseSettings):
     # --------------------------------------------------------
     # Economia
     # --------------------------------------------------------
-    # Replikers continua trabajando
-    # EXCLUSIVAMENTE con dinero ficticio.
-    # El paso a dinero real solo se activara
-    # mediante una decision posterior explicita.
-    # --------------------------------------------------------
 
     ECONOMY_MODE: str = (
         "simulation"
@@ -83,8 +103,6 @@ class Settings(BaseSettings):
         False
     )
 
-    # 1000 basis points = 10 %
-    # Politica temporal de simulacion.
     PLATFORM_COMMISSION_BPS: int = (
         1000
     )
@@ -94,6 +112,173 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def cors_origins(
+        self,
+    ) -> list[str]:
+        candidates: list[str] = []
+
+        if self.FRONTEND_URL.strip():
+            candidates.append(
+                self.FRONTEND_URL
+                .strip()
+                .rstrip("/")
+            )
+
+        if (
+            self.CORS_ALLOWED_ORIGINS
+            .strip()
+        ):
+            candidates.extend(
+                origin.strip().rstrip("/")
+                for origin
+                in self.CORS_ALLOWED_ORIGINS
+                .split(",")
+                if origin.strip()
+            )
+
+        if (
+            self.ENVIRONMENT
+            != "production"
+        ):
+            candidates.extend(
+                [
+                    "http://localhost:5173",
+                    "http://127.0.0.1:5173",
+                ]
+            )
+
+        result: list[str] = []
+
+        for origin in candidates:
+            if (
+                origin
+                and origin not in result
+            ):
+                result.append(
+                    origin
+                )
+
+        return result
+
+    def production_security_issues(
+        self,
+    ) -> list[str]:
+        if (
+            self.ENVIRONMENT
+            != "production"
+        ):
+            return []
+
+        issues: list[str] = []
+
+        if len(
+            self.SECRET_KEY
+        ) < 48:
+            issues.append(
+                "SECRET_KEY debe tener "
+                "al menos 48 caracteres."
+            )
+
+        if not (
+            5
+            <= self.ACCESS_TOKEN_EXPIRE_MINUTES
+            <= 240
+        ):
+            issues.append(
+                "ACCESS_TOKEN_EXPIRE_MINUTES "
+                "debe estar entre 5 y 240."
+            )
+
+        if not (
+            self.DATABASE_URL
+            .lower()
+            .startswith(
+                (
+                    "postgres://",
+                    "postgresql://",
+                    "postgresql+psycopg://",
+                )
+            )
+        ):
+            issues.append(
+                "Produccion requiere PostgreSQL."
+            )
+
+        if not self.cors_origins:
+            issues.append(
+                "Debe existir al menos un "
+                "origen CORS permitido."
+            )
+
+        if "*" in self.cors_origins:
+            issues.append(
+                "CORS no puede usar '*' "
+                "en produccion."
+            )
+
+        for origin in self.cors_origins:
+            parsed = urlparse(
+                origin
+            )
+
+            local = (
+                parsed.hostname
+                in {
+                    "localhost",
+                    "127.0.0.1",
+                }
+            )
+
+            if (
+                parsed.scheme != "https"
+                and not (
+                    local
+                    and self
+                    .ALLOW_INSECURE_LOCAL_ORIGINS
+                )
+            ):
+                issues.append(
+                    "Los origenes CORS de "
+                    "produccion deben usar HTTPS."
+                )
+
+                break
+
+        if (
+            self.ECONOMY_MODE
+            != "simulation"
+        ):
+            issues.append(
+                "ECONOMY_MODE debe permanecer "
+                "en simulation."
+            )
+
+        if self.REAL_PAYMENTS_ENABLED:
+            issues.append(
+                "REAL_PAYMENTS_ENABLED debe "
+                "permanecer desactivado."
+            )
+
+        return issues
+
+    def assert_production_ready(
+        self,
+    ) -> None:
+        issues = (
+            self
+            .production_security_issues()
+        )
+
+        if issues:
+            raise RuntimeError(
+                "Configuracion de produccion "
+                "insegura: "
+                + " ".join(
+                    issues
+                )
+            )
 
 
 settings = Settings()

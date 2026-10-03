@@ -64,26 +64,21 @@ from app.database.migrations import (
     assert_database_migrations_current,
 )
 from app.database.session import engine
+from app.middleware.security_headers import (
+    SecurityHeadersMiddleware,
+)
 
 
 @asynccontextmanager
 async def lifespan(
     _: FastAPI,
 ):
-    # En produccion la aplicacion nunca
-    # crea/modifica tablas automaticamente.
-    #
-    # El despliegue debe ejecutar primero:
-    #
-    #   python -m alembic upgrade head
-    #
-    # Si la version de BD no coincide,
-    # el backend falla rapido en lugar de
-    # trabajar sobre un esquema incorrecto.
     if (
         settings.ENVIRONMENT
         == "production"
     ):
+        settings.assert_production_ready()
+
         assert_database_migrations_current(
             engine
         )
@@ -93,34 +88,48 @@ async def lifespan(
 
 app = FastAPI(
     title="Repliker Economy API",
-    version="1.6.0",
+    version="1.7.0",
     description=(
         "Backend de Repliker Economy: "
         "LangChain para agentes y tools, "
         "LangGraph para orquestacion, "
         "mercado, contratacion, delegacion, "
         "ejecucion aislada, QA verificable, "
-        "economia simulada con ledger y "
-        "persistencia administrada "
-        "mediante Alembic."
+        "economia simulada con ledger, "
+        "PostgreSQL y seguridad endurecida."
     ),
     lifespan=lifespan,
 )
 
 
-allowed_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+app.add_middleware(
+    SecurityHeadersMiddleware,
+    production=(
+        settings.ENVIRONMENT
+        == "production"
+    ),
+)
 
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=
-        allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+        settings.cors_origins,
+    allow_credentials=False,
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    ],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "Accept",
+        "Last-Event-ID",
+    ],
 )
 
 
@@ -218,7 +227,7 @@ def health():
         "service":
             "backend",
         "version":
-            "1.6.0",
+            "1.7.0",
         "environment":
             settings.ENVIRONMENT,
         "database_schema":
