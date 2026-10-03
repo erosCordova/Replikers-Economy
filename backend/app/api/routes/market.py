@@ -504,6 +504,19 @@ def run_autonomous_market(
                 ],
             }
 
+            allowed_tool_names = (
+                resolve_repliker_tool_names(
+                    db=db,
+                    repliker=repliker,
+                )
+            )
+
+            # existing_decision, existing_bid y la resolución
+            # de herramientas son solamente lecturas.
+            # Cerramos esa transacción antes de esperar
+            # al modelo para no dejar PostgreSQL bloqueado.
+            db.commit()
+
             try:
                 ai_decision = (
                     evaluate_repliker_for_task(
@@ -513,12 +526,8 @@ def run_autonomous_market(
                             task_data,
                         project_data=
                             project_data,
-                        allowed_tool_names=(
-                            resolve_repliker_tool_names(
-                                db=db,
-                                repliker=repliker,
-                            )
-                        ),
+                        allowed_tool_names=
+                            allowed_tool_names,
                     )
                 )
 

@@ -343,6 +343,15 @@ async def stream_project_events(
         current_user=current_user,
     )
 
+    stream_project_id = int(
+        project.id
+    )
+
+    # La autenticación y autorización ya terminaron.
+    # Liberamos la transacción antes de abrir la
+    # conexión de larga duración.
+    db.rollback()
+
     cursor = resolve_sse_cursor(
         after_id=after_id,
         last_event_id=
@@ -353,7 +362,7 @@ async def stream_project_events(
         project_event_stream(
             request=request,
             project_id=
-                project.id,
+                stream_project_id,
             start_after_id=
                 cursor,
         ),
@@ -499,10 +508,28 @@ async def stream_my_events(
         default=None,
         alias="Last-Event-ID",
     ),
+    db: Session = Depends(
+        get_db
+    ),
     current_user: User = Depends(
         get_current_user
     ),
 ):
+    stream_user_id = int(
+        current_user.id
+    )
+
+    stream_is_admin = (
+        current_user.role
+        == "admin"
+    )
+
+    # get_current_user comparte get_db mediante
+    # el sistema de dependencias de FastAPI.
+    # La transmisión no necesita conservar esa
+    # transacción abierta.
+    db.rollback()
+
     cursor = resolve_sse_cursor(
         after_id=after_id,
         last_event_id=
@@ -513,11 +540,9 @@ async def stream_my_events(
         account_event_stream(
             request=request,
             user_id=
-                current_user.id,
-            is_admin=(
-                current_user.role
-                == "admin"
-            ),
+                stream_user_id,
+            is_admin=
+                stream_is_admin,
             start_after_id=
                 cursor,
         ),

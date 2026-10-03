@@ -244,6 +244,11 @@ def plan_project(
         ],
     }
 
+    # Las consultas de preparación ya terminaron.
+    # No debemos conservar una transacción PostgreSQL
+    # abierta mientras esperamos la respuesta de la IA.
+    db.commit()
+
     try:
         plan = build_project_plan(
             project_data=
