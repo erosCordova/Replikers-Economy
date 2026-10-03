@@ -58,8 +58,14 @@ from app.api.routes.economy import (
 from app.api.routes.realtime import (
     router as realtime_router,
 )
+from app.api.routes.health import (
+    router as health_router,
+)
 
 from app.core.config import settings
+from app.core.version import (
+    APP_VERSION,
+)
 from app.database.migrations import (
     assert_database_migrations_current,
 )
@@ -88,7 +94,7 @@ async def lifespan(
 
 app = FastAPI(
     title="Repliker Economy API",
-    version="1.7.0",
+    version=APP_VERSION,
     description=(
         "Backend de Repliker Economy: "
         "LangChain para agentes y tools, "
@@ -132,6 +138,11 @@ app.add_middleware(
     ],
 )
 
+
+app.include_router(
+    health_router,
+    prefix="/api/v1",
+)
 
 app.include_router(
     auth_router,
@@ -219,7 +230,9 @@ app.include_router(
 )
 
 
-@app.get("/api/v1/health")
+@app.get(
+    "/api/v1/health"
+)
 def health():
     return {
         "status":
@@ -227,7 +240,7 @@ def health():
         "service":
             "backend",
         "version":
-            "1.7.0",
+            APP_VERSION,
         "environment":
             settings.ENVIRONMENT,
         "database_schema":
@@ -252,6 +265,8 @@ def root():
             "online",
         "api":
             "/api/v1",
+        "version":
+            APP_VERSION,
         "environment":
             settings.ENVIRONMENT,
         "database_schema":
