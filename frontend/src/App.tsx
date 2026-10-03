@@ -27,6 +27,12 @@ import {
 import axios from 'axios'
 
 import { api } from './api'
+import {
+  clearAccessToken,
+  getAccessToken,
+  purgeLegacyAuthStorage,
+  setAccessToken,
+} from './auth/session'
 import Ecosystem from './pages/Ecosystem'
 import ShowcaseDashboard from './components/ShowcaseDashboard'
 import './App.css'
@@ -342,8 +348,10 @@ function App() {
 
 
   async function bootstrap() {
+    purgeLegacyAuthStorage()
+
     const token =
-      localStorage.getItem('repliker_token')
+      getAccessToken()
 
     await checkBackend()
 
@@ -361,9 +369,7 @@ function App() {
 
       await loadPrivateData()
     } catch {
-      localStorage.removeItem(
-        'repliker_token',
-      )
+      clearAccessToken()
 
       setUser(null)
     } finally {
@@ -409,8 +415,7 @@ function App() {
       const token =
         response.data.access_token
 
-      localStorage.setItem(
-        'repliker_token',
+      setAccessToken(
         token,
       )
 
@@ -432,9 +437,7 @@ function App() {
 
 
   function logout() {
-    localStorage.removeItem(
-      'repliker_token',
-    )
+    clearAccessToken()
 
     setUser(null)
     setProjects([])

@@ -1,3 +1,9 @@
+import {
+  clearAccessToken,
+  getAccessToken,
+} from '../auth/session'
+
+
 export type RealtimeConnectionStatus =
   | 'connecting'
   | 'connected'
@@ -275,9 +281,7 @@ export async function connectRealtime(
     firstAttempt = false
 
     const token =
-      localStorage.getItem(
-        'repliker_token',
-      )
+      getAccessToken()
 
     if (!token) {
       onStatus(
@@ -323,6 +327,8 @@ export async function connectRealtime(
         response.status === 401 ||
         response.status === 403
       ) {
+        clearAccessToken()
+
         onStatus(
           'unauthorized',
         )
