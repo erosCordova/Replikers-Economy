@@ -19,6 +19,7 @@ from app.models.project import (
 )
 
 from app.models.project_specialist import (
+    ProjectSpecialistOffer,
     ProjectSpecialistRequirement,
 )
 
@@ -97,6 +98,7 @@ __all__ = [
     "Project",
     "ProjectRequirement",
     "ProjectSpecialistRequirement",
+    "ProjectSpecialistOffer",
     "Task",
     "TaskSkillRequirement",
     "TaskAcceptanceCriterion",

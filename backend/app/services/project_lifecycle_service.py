@@ -237,6 +237,119 @@ def _eligible_market_task_count(
     )
 
 
+def _official_iris_id(
+    *,
+    db: Session,
+) -> int | None:
+    """
+    Busca la instancia oficial de Iris.
+
+    Devuelve None en bases antiguas o pruebas
+    aisladas que todavía no tengan cargado el
+    catálogo oficial.
+    """
+
+    from app.replikers.catalogo_web import (
+        get_web_repliker,
+    )
+    from app.services.web_repliker_registry_service import (
+        ECOSYSTEM_OWNER_EMAIL,
+    )
+
+    definition = get_web_repliker(
+        "product_requirements"
+    )
+
+    if definition is None:
+        return None
+
+    owner_id = db.scalar(
+        select(
+            User.id
+        )
+        .where(
+            User.email
+            == ECOSYSTEM_OWNER_EMAIL
+        )
+    )
+
+    if owner_id is None:
+        return None
+
+    iris_id = db.scalar(
+        select(
+            Repliker.id
+        )
+        .where(
+            Repliker.owner_id
+            == owner_id,
+            Repliker.name
+            == definition.name,
+            Repliker.specialty
+            == definition.specialty,
+            Repliker.is_active
+            .is_(True),
+        )
+    )
+
+    if iris_id is None:
+        return None
+
+    return int(
+        iris_id
+    )
+
+
+def _run_specialist_recruitment_stage(
+    *,
+    db: Session,
+    project_id: int,
+) -> dict:
+    """
+    Ejecuta el reclutamiento de puestos que
+    requieren aceptación explícita.
+
+    Actualmente cubre el puesto independiente
+    de Revisor Final.
+    """
+
+    from app.services.specialist_recruitment_service import (
+        run_project_specialist_recruitment,
+    )
+
+    iris_id = _official_iris_id(
+        db=db
+    )
+
+    result = (
+        run_project_specialist_recruitment(
+            db=db,
+            project_id=project_id,
+            iris_id=iris_id,
+        )
+    )
+
+    db.expire_all()
+
+    return {
+        "requirements_processed":
+            result.requirements_processed,
+        "candidates_considered":
+            result.candidates_considered,
+        "offers_sent":
+            result.offers_sent,
+        "accepted":
+            result.accepted,
+        "rejected":
+            result.rejected,
+        "errors":
+            list(
+                result.errors
+            ),
+    }
+
+
+
 def run_market_stage(
     *,
     db: Session,
@@ -254,51 +367,114 @@ def run_market_stage(
         )
     )
 
-    if eligible_count == 0:
-        return {
-            "tasks_processed": 0,
-            "new_decisions": 0,
-            "bid_count": 0,
-            "pass_count": 0,
-            "errors": [],
-            "skipped": True,
-        }
+    tasks_processed = 0
+    new_decisions = 0
+    bid_count = 0
+    pass_count = 0
 
-    client = _project_client(
-        db=db,
-        project=project,
+    errors: list[str] = []
+
+    # El mercado de tareas se ejecuta solamente
+    # si todavía existen tareas abiertas o
+    # planificadas.
+    if eligible_count > 0:
+        client = _project_client(
+            db=db,
+            project=project,
+        )
+
+        # Conservamos el mercado de tareas
+        # validado en fases anteriores.
+        from app.api.routes.market import (
+            run_autonomous_market,
+        )
+
+        response = run_autonomous_market(
+            project_id=project.id,
+            db=db,
+            current_user=client,
+        )
+
+        db.expire_all()
+
+        tasks_processed = (
+            response.tasks_processed
+        )
+
+        new_decisions = (
+            response.new_decisions
+        )
+
+        bid_count = (
+            response.bid_count
+        )
+
+        pass_count = (
+            response.pass_count
+        )
+
+        errors.extend(
+            response.errors
+        )
+
+    # Los puestos independientes del proyecto
+    # se reclutan aunque ya no existan tareas
+    # abiertas. Esto permite que Iris complete
+    # la cobertura obligatoria antes de ejecutar.
+    specialist = (
+        _run_specialist_recruitment_stage(
+            db=db,
+            project_id=project.id,
+        )
     )
 
-    # Conservamos la implementacion del
-    # mercado que ya fue validada en fases
-    # anteriores.
-    from app.api.routes.market import (
-        run_autonomous_market,
+    errors.extend(
+        specialist["errors"]
     )
 
-    response = run_autonomous_market(
-        project_id=project.id,
-        db=db,
-        current_user=client,
+    specialist_attempted = (
+        specialist[
+            "requirements_processed"
+        ]
+        > 0
     )
-
-    db.expire_all()
 
     return {
         "tasks_processed":
-            response.tasks_processed,
+            tasks_processed,
         "new_decisions":
-            response.new_decisions,
+            new_decisions,
         "bid_count":
-            response.bid_count,
+            bid_count,
         "pass_count":
-            response.pass_count,
+            pass_count,
         "errors":
-            list(response.errors),
-        "skipped":
-            False,
+            errors,
+        "skipped": (
+            eligible_count == 0
+            and not specialist_attempted
+        ),
+        "specialist_requirements":
+            specialist[
+                "requirements_processed"
+            ],
+        "specialist_candidates":
+            specialist[
+                "candidates_considered"
+            ],
+        "specialist_offers":
+            specialist[
+                "offers_sent"
+            ],
+        "specialist_accepted":
+            specialist[
+                "accepted"
+            ],
+        "specialist_rejected":
+            specialist[
+                "rejected"
+            ],
     }
-
 
 def active_contract_ids(
     *,
@@ -342,6 +518,14 @@ def run_contracting_stage(
             "El proyecto debe estar "
             "financiado antes de contratar."
         )
+
+    # Si el proyecto se reanuda mientras
+    # espera una especialidad obligatoria,
+    # Iris vuelve a buscar candidatos nuevos.
+    _run_specialist_recruitment_stage(
+        db=db,
+        project_id=project.id,
+    )
 
     open_tasks = int(
         db.scalar(

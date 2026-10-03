@@ -18,6 +18,7 @@ from app.models.delegation import (
 )
 from app.models.project import Project
 from app.models.project_specialist import (
+    ProjectSpecialistOffer,
     ProjectSpecialistRequirement,
 )
 from app.models.repliker import Repliker
@@ -97,36 +98,28 @@ def _busy_repliker_ids(
     return principal | delegated
 
 
-def _reserved_final_gate_ids(
+def _reserved_offer_repliker_ids(
     *,
     db: Session,
     project_id: int,
 ) -> set[int]:
     rows = db.scalars(
         select(
-            ProjectSpecialistRequirement
-            .assigned_repliker_id
+            ProjectSpecialistOffer
+            .repliker_id
         )
         .join(
             Project,
             Project.id
             ==
-            ProjectSpecialistRequirement
+            ProjectSpecialistOffer
             .project_id,
         )
         .where(
-            ProjectSpecialistRequirement
-            .project_id
+            ProjectSpecialistOffer.project_id
             != project_id,
-            ProjectSpecialistRequirement
-            .is_final_gate
-            .is_(True),
-            ProjectSpecialistRequirement
-            .coverage_status
-            == "covered",
-            ProjectSpecialistRequirement
-            .assigned_repliker_id
-            .is_not(None),
+            ProjectSpecialistOffer.status
+            == "accepted",
             ~Project.status.in_(
                 TERMINAL_PROJECT_STATUSES
             ),
@@ -190,8 +183,32 @@ def _contract_specialists(
     return result
 
 
-def _is_valid_final_gate_assignment(
+def _accepted_offer(
     *,
+    db: Session,
+    requirement_id: int,
+) -> ProjectSpecialistOffer | None:
+    return db.scalar(
+        select(
+            ProjectSpecialistOffer
+        )
+        .where(
+            ProjectSpecialistOffer
+            .requirement_id
+            == requirement_id,
+            ProjectSpecialistOffer.status
+            == "accepted",
+        )
+        .order_by(
+            ProjectSpecialistOffer.id
+        )
+        .limit(1)
+    )
+
+
+def _valid_offer_assignment(
+    *,
+    project: Project,
     requirement:
         ProjectSpecialistRequirement,
     repliker: Repliker | None,
@@ -205,10 +222,8 @@ def _is_valid_final_gate_assignment(
         return False
 
     if (
-        normalize_specialty(
-            repliker.status
-        )
-        != "available"
+        repliker.owner_id
+        == project.client_id
     ):
         return False
 
@@ -216,6 +231,14 @@ def _is_valid_final_gate_assignment(
         return False
 
     if repliker.id in reserved_ids:
+        return False
+
+    if (
+        normalize_specialty(
+            repliker.status
+        )
+        != "available"
+    ):
         return False
 
     return (
@@ -227,62 +250,6 @@ def _is_valid_final_gate_assignment(
             requirement.specialty
         )
     )
-
-
-def _find_final_gate_candidate(
-    *,
-    db: Session,
-    project: Project,
-    requirement:
-        ProjectSpecialistRequirement,
-    busy_ids: set[int],
-    reserved_ids: set[int],
-) -> Repliker | None:
-    candidates = list(
-        db.scalars(
-            select(Repliker)
-            .where(
-                Repliker.is_active
-                .is_(True),
-                Repliker.owner_id
-                != project.client_id,
-                Repliker.status
-                == "available",
-            )
-            .order_by(
-                Repliker
-                .reputation_score
-                .desc(),
-                Repliker
-                .jobs_completed
-                .desc(),
-                Repliker.id,
-            )
-        ).all()
-    )
-
-    required = normalize_specialty(
-        requirement.specialty
-    )
-
-    for repliker in candidates:
-        if repliker.id in busy_ids:
-            continue
-
-        if repliker.id in reserved_ids:
-            continue
-
-        if (
-            normalize_specialty(
-                repliker.specialty
-            )
-            != required
-        ):
-            continue
-
-        return repliker
-
-    return None
 
 
 def _snapshot(
@@ -385,7 +352,7 @@ def sync_project_specialist_coverage(
     )
 
     reserved_ids = (
-        _reserved_final_gate_ids(
+        _reserved_offer_repliker_ids(
             db=db,
             project_id=project.id,
         )
@@ -396,55 +363,21 @@ def sync_project_specialist_coverage(
             requirement.specialty
         )
 
-        if requirement.is_final_gate:
-            assigned = None
-
-            if (
-                requirement
-                .assigned_repliker_id
-                is not None
-            ):
-                assigned = db.get(
-                    Repliker,
-                    requirement
-                    .assigned_repliker_id,
+        # Los puestos normales pueden quedar
+        # cubiertos por un contrato de tarea.
+        # El Revisor Final no: necesita una
+        # aceptación explícita del puesto.
+        if not requirement.is_final_gate:
+            contracted = (
+                contract_specialists.get(
+                    specialty
                 )
+            )
 
-            if not (
-                _is_valid_final_gate_assignment(
-                    requirement=requirement,
-                    repliker=assigned,
-                    busy_ids=busy_ids,
-                    reserved_ids=
-                        reserved_ids,
-                )
-            ):
-                assigned = (
-                    _find_final_gate_candidate(
-                        db=db,
-                        project=project,
-                        requirement=
-                            requirement,
-                        busy_ids=busy_ids,
-                        reserved_ids=
-                            reserved_ids,
-                    )
-                )
-
-            if assigned is None:
+            if contracted is not None:
                 requirement\
                     .assigned_repliker_id = (
-                        None
-                    )
-
-                requirement\
-                    .coverage_status = (
-                        "pending"
-                    )
-            else:
-                requirement\
-                    .assigned_repliker_id = (
-                        assigned.id
+                        contracted.id
                     )
 
                 requirement\
@@ -452,19 +385,46 @@ def sync_project_specialist_coverage(
                         "covered"
                     )
 
-                reserved_ids.add(
-                    assigned.id
-                )
+                continue
 
-            continue
-
-        repliker = (
-            contract_specialists.get(
-                specialty
-            )
+        offer = _accepted_offer(
+            db=db,
+            requirement_id=requirement.id,
         )
 
-        if repliker is None:
+        offered_repliker = None
+
+        if offer is not None:
+            offered_repliker = db.get(
+                Repliker,
+                offer.repliker_id,
+            )
+
+        if (
+            offer is not None
+            and _valid_offer_assignment(
+                project=project,
+                requirement=requirement,
+                repliker=offered_repliker,
+                busy_ids=busy_ids,
+                reserved_ids=reserved_ids,
+            )
+        ):
+            requirement\
+                .assigned_repliker_id = (
+                    offered_repliker.id
+                )
+
+            requirement\
+                .coverage_status = (
+                    "covered"
+                )
+
+            reserved_ids.add(
+                offered_repliker.id
+            )
+
+        else:
             requirement\
                 .assigned_repliker_id = (
                     None
@@ -473,16 +433,6 @@ def sync_project_specialist_coverage(
             requirement\
                 .coverage_status = (
                     "pending"
-                )
-        else:
-            requirement\
-                .assigned_repliker_id = (
-                    repliker.id
-                )
-
-            requirement\
-                .coverage_status = (
-                    "covered"
                 )
 
     db.flush()

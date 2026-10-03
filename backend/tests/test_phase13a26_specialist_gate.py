@@ -16,6 +16,7 @@ from app.database.base import Base
 from app.models.contract import TaskContract
 from app.models.project import Project
 from app.models.project_specialist import (
+    ProjectSpecialistOffer,
     ProjectSpecialistRequirement,
 )
 from app.models.repliker import Repliker
@@ -185,6 +186,28 @@ class Phase13A26GateServiceTests(
 
         self.db.commit()
 
+    def accept_final_reviewer(
+        self,
+        requirement,
+        repliker=None,
+    ):
+        repliker = repliker or self.vera
+
+        offer = ProjectSpecialistOffer(
+            project_id=requirement.project_id,
+            requirement_id=requirement.id,
+            repliker_id=repliker.id,
+            status="accepted",
+            confidence_score=100,
+            message="Acepto.",
+            reasoning="Disponible.",
+        )
+
+        self.db.add(offer)
+        self.db.flush()
+
+        return offer
+
     def tearDown(self):
         self.db.close()
         self.engine.dispose()
@@ -274,6 +297,33 @@ class Phase13A26GateServiceTests(
             "Final Reviewer",
             final_gate=True,
         )
+
+        # 13A26_ACCEPT_FINAL
+        final_requirement = (
+            self.db.query(
+                ProjectSpecialistRequirement
+            )
+            .filter_by(
+                project_id=self.project.id,
+                is_final_gate=True,
+            )
+            .one()
+        )
+
+        self.db.add(
+            ProjectSpecialistOffer(
+                project_id=self.project.id,
+                requirement_id=
+                    final_requirement.id,
+                repliker_id=self.vera.id,
+                status="accepted",
+                confidence_score=100,
+                message="Acepto.",
+                reasoning="Disponible.",
+            )
+        )
+
+        self.db.flush()
 
         snapshot = (
             enforce_project_specialist_gate(

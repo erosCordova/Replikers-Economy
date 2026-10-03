@@ -21,6 +21,7 @@ from app.models.contract import (
 )
 from app.models.project import Project
 from app.models.project_specialist import (
+    ProjectSpecialistOffer,
     ProjectSpecialistRequirement,
 )
 from app.models.repliker import Repliker
@@ -198,6 +199,28 @@ class CoverageTestBase(
 
         self.db.commit()
 
+    def accept_final_reviewer(
+        self,
+        requirement,
+        repliker=None,
+    ):
+        repliker = repliker or self.vera
+
+        offer = ProjectSpecialistOffer(
+            project_id=requirement.project_id,
+            requirement_id=requirement.id,
+            repliker_id=repliker.id,
+            status="accepted",
+            confidence_score=100,
+            message="Acepto.",
+            reasoning="Disponible.",
+        )
+
+        self.db.add(offer)
+        self.db.flush()
+
+        return offer
+
     def tearDown(self):
         self.db.close()
         self.engine.dispose()
@@ -257,6 +280,24 @@ class Phase13A25CoverageTests(
             )
         )
 
+        self.accept_final_reviewer(
+            self.final_requirement
+            if hasattr(
+                self,
+                "final_requirement",
+            )
+            else next(
+                item
+                for item
+                in self.db.query(
+                    ProjectSpecialistRequirement
+                ).filter_by(
+                    project_id=self.project.id,
+                    is_final_gate=True,
+                ).all()
+            )
+        )
+
         snapshot = (
             sync_project_specialist_coverage(
                 db=self.db,
@@ -307,6 +348,24 @@ class Phase13A25CoverageTests(
             final_gate=True,
         )
 
+        self.accept_final_reviewer(
+            self.final_requirement
+            if hasattr(
+                self,
+                "final_requirement",
+            )
+            else next(
+                item
+                for item
+                in self.db.query(
+                    ProjectSpecialistRequirement
+                ).filter_by(
+                    project_id=self.project.id,
+                    is_final_gate=True,
+                ).all()
+            )
+        )
+
         snapshot = (
             sync_project_specialist_coverage(
                 db=self.db,
@@ -342,6 +401,24 @@ class Phase13A25CoverageTests(
             final_gate=True,
         )
 
+        self.accept_final_reviewer(
+            self.final_requirement
+            if hasattr(
+                self,
+                "final_requirement",
+            )
+            else next(
+                item
+                for item
+                in self.db.query(
+                    ProjectSpecialistRequirement
+                ).filter_by(
+                    project_id=self.project.id,
+                    is_final_gate=True,
+                ).all()
+            )
+        )
+
         snapshot = (
             sync_project_specialist_coverage(
                 db=self.db,
@@ -363,6 +440,33 @@ class Phase13A25CoverageTests(
                 "Final Reviewer",
             final_gate=True,
         )
+
+        # 13A25_ACCEPT_FIRST
+        final_requirement = (
+            self.db.query(
+                ProjectSpecialistRequirement
+            )
+            .filter_by(
+                project_id=self.project.id,
+                is_final_gate=True,
+            )
+            .one()
+        )
+
+        self.db.add(
+            ProjectSpecialistOffer(
+                project_id=self.project.id,
+                requirement_id=
+                    final_requirement.id,
+                repliker_id=self.vera.id,
+                status="accepted",
+                confidence_score=100,
+                message="Acepto.",
+                reasoning="Disponible.",
+            )
+        )
+
+        self.db.flush()
 
         first = (
             sync_project_specialist_coverage(
@@ -404,6 +508,51 @@ class Phase13A25CoverageTests(
                 "Final Reviewer",
             final_gate=True,
         )
+
+        # 13A25_ACCEPT_SECOND
+        second_final_requirement = (
+            self.db.query(
+                ProjectSpecialistRequirement
+            )
+            .filter(
+                ProjectSpecialistRequirement
+                .project_id
+                != self.project.id,
+                ProjectSpecialistRequirement
+                .is_final_gate
+                .is_(True),
+            )
+            .order_by(
+                ProjectSpecialistRequirement
+                .id
+                .desc()
+            )
+            .first()
+        )
+
+        self.assertIsNotNone(
+            second_final_requirement
+        )
+
+        self.db.add(
+            ProjectSpecialistOffer(
+                project_id=(
+                    second_final_requirement
+                    .project_id
+                ),
+                requirement_id=(
+                    second_final_requirement
+                    .id
+                ),
+                repliker_id=self.vera.id,
+                status="accepted",
+                confidence_score=100,
+                message="Acepto.",
+                reasoning="Disponible.",
+            )
+        )
+
+        self.db.flush()
 
         second = (
             sync_project_specialist_coverage(

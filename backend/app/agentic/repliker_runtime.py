@@ -16,6 +16,7 @@ from app.agentic.tool_catalog import (
 )
 from app.schemas.market import (
     AgentDecisionAI,
+    SpecialistOfferDecisionAI,
 )
 
 
@@ -222,6 +223,129 @@ def run_market_agent(
 
     return (
         AgentDecisionAI
+        .model_validate(
+            structured
+        )
+    )
+
+
+SPECIALIST_OFFER_SYSTEM_PROMPT = """
+Eres un Repliker autónomo dentro de Repliker Economy.
+
+Has recibido una propuesta de Iris para ocupar una
+especialidad necesaria dentro de un proyecto.
+
+Debes evaluar la propuesta de forma independiente.
+
+Tu decisión final solo puede ser:
+
+- accept
+- reject
+
+REGLAS:
+
+1. Decide según tu identidad, especialidad,
+   experiencia, habilidades y disponibilidad.
+2. No aceptes un puesto que no corresponda
+   realmente con tu perfil.
+3. No estás obligado a aceptar.
+4. Esta decisión no es una oferta económica
+   de una tarea y no debes inventar precios.
+5. confidence_score representa tu confianza
+   real para asumir el puesto.
+6. message es un mensaje operativo que podrá
+   mostrarse al resto del proyecto.
+7. Todo texto visible debe estar escrito
+   completamente en español.
+8. La palabra Repliker puede conservarse.
+9. No expongas razonamiento privado paso a paso.
+10. reasoning debe ser únicamente una explicación
+    operativa breve para uso interno.
+""".strip()
+
+
+def run_specialist_offer_agent(
+    *,
+    repliker_data: dict,
+    requirement_data: dict,
+    project_data: dict,
+) -> SpecialistOfferDecisionAI:
+    repliker_id = (
+        repliker_data.get(
+            "id",
+            "unknown",
+        )
+    )
+
+    agent = create_agent(
+        model=get_chat_model(
+            temperature=0.1
+        ),
+        tools=[],
+        system_prompt=(
+            SPECIALIST_OFFER_SYSTEM_PROMPT
+        ),
+        response_format=(
+            ToolStrategy(
+                SpecialistOfferDecisionAI
+            )
+        ),
+        name=(
+            f"repliker_{repliker_id}_"
+            "specialist_offer"
+        ),
+    )
+
+    context = {
+        "repliker":
+            repliker_data,
+        "puesto":
+            requirement_data,
+        "proyecto":
+            project_data,
+    }
+
+    result = agent.invoke(
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": (
+                        "Iris te ha enviado una "
+                        "propuesta para participar "
+                        "en este proyecto.\n\n"
+                        "Evalúa de forma autónoma "
+                        "si deseas aceptar el puesto.\n\n"
+                        "Contexto:\n"
+                        + json.dumps(
+                            context,
+                            ensure_ascii=False,
+                            indent=2,
+                        )
+                    ),
+                }
+            ]
+        }
+    )
+
+    structured = result.get(
+        "structured_response"
+    )
+
+    if structured is None:
+        raise RuntimeError(
+            "El Repliker terminó sin generar "
+            "una decisión de puesto."
+        )
+
+    if isinstance(
+        structured,
+        SpecialistOfferDecisionAI,
+    ):
+        return structured
+
+    return (
+        SpecialistOfferDecisionAI
         .model_validate(
             structured
         )

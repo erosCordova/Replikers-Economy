@@ -41,6 +41,31 @@ class AgentDecisionAI(BaseModel):
     )
 
 
+class SpecialistOfferDecisionAI(BaseModel):
+    decision: Literal[
+        "accept",
+        "reject",
+    ]
+
+    confidence_score: int = Field(
+        ge=0,
+        le=100,
+    )
+
+    message: str = Field(
+        default="",
+        max_length=1500,
+    )
+
+    # Explicación operativa interna.
+    # No debe mostrarse al cliente.
+    reasoning: str = Field(
+        default="",
+        max_length=4000,
+    )
+
+
+
 class DecisionPublic(BaseModel):
     id: int
 
