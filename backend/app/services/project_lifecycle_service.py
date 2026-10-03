@@ -17,6 +17,11 @@ from app.models.execution import (
     ExecutionWorkspace,
 )
 from app.models.project import Project
+from app.models.project_specialist import (
+    ProjectFinalReview,
+    ProjectSpecialistOffer,
+    ProjectSpecialistRequirement,
+)
 from app.models.qa import QAReview
 from app.models.repliker import Repliker
 from app.models.task import Task
@@ -1057,11 +1062,151 @@ def finalize_project_if_ready(
         or 0
     )
 
-    completed = (
+    tasks_ready = (
         total_tasks > 0
         and completed_tasks
         == total_tasks
     )
+
+    final_requirement = db.scalar(
+        select(
+            ProjectSpecialistRequirement
+        )
+        .where(
+            ProjectSpecialistRequirement
+            .project_id
+            == project.id,
+            ProjectSpecialistRequirement
+            .is_mandatory
+            .is_(True),
+            ProjectSpecialistRequirement
+            .is_final_gate
+            .is_(True),
+        )
+        .order_by(
+            ProjectSpecialistRequirement.id
+        )
+        .limit(1)
+    )
+
+    # Compatibilidad:
+    # los proyectos antiguos creados antes
+    # de la compuerta final conservan el
+    # comportamiento histórico.
+    final_review_required = (
+        final_requirement is not None
+    )
+
+    final_review = None
+    final_review_status = (
+        "not_required"
+    )
+
+    reviewer_accepted = False
+
+    if final_requirement is not None:
+        assigned_id = (
+            final_requirement
+            .assigned_repliker_id
+        )
+
+        if assigned_id is not None:
+            reviewer_accepted = (
+                db.scalar(
+                    select(
+                        ProjectSpecialistOffer.id
+                    )
+                    .where(
+                        ProjectSpecialistOffer
+                        .requirement_id
+                        == final_requirement.id,
+                        ProjectSpecialistOffer
+                        .repliker_id
+                        == assigned_id,
+                        ProjectSpecialistOffer
+                        .status
+                        == "accepted",
+                    )
+                    .limit(1)
+                )
+                is not None
+            )
+
+        if reviewer_accepted:
+            final_review = db.scalar(
+                select(
+                    ProjectFinalReview
+                )
+                .where(
+                    ProjectFinalReview
+                    .project_id
+                    == project.id,
+                    ProjectFinalReview
+                    .requirement_id
+                    == final_requirement.id,
+                    ProjectFinalReview
+                    .reviewer_repliker_id
+                    == assigned_id,
+                )
+                .order_by(
+                    ProjectFinalReview
+                    .attempt_number
+                    .desc(),
+                    ProjectFinalReview
+                    .id
+                    .desc(),
+                )
+                .limit(1)
+            )
+
+        if not reviewer_accepted:
+            final_review_status = (
+                "reviewer_missing"
+            )
+
+        elif final_review is None:
+            final_review_status = (
+                "pending"
+            )
+
+        else:
+            final_review_status = (
+                final_review.status
+            )
+
+    final_approved = (
+        not final_review_required
+        or (
+            reviewer_accepted
+            and final_review is not None
+            and final_review.status
+            == "approved"
+        )
+    )
+
+    completed = (
+        tasks_ready
+        and final_approved
+    )
+
+    if (
+        tasks_ready
+        and final_review_required
+        and not final_approved
+    ):
+        if (
+            final_review_status
+            == "corrections_requested"
+        ):
+            project.status = (
+                "corrections_requested"
+            )
+        else:
+            project.status = (
+                "awaiting_final_review"
+            )
+
+        db.commit()
 
     if completed:
         was_completed = (
@@ -1071,6 +1216,8 @@ def finalize_project_if_ready(
 
         project.status = "completed"
 
+        # La economía solo puede liquidarse
+        # después de la aprobación final.
         finalize_project_economy(
             db=db,
             project_id=project.id,
@@ -1090,8 +1237,15 @@ def finalize_project_if_ready(
                 ),
                 description=(
                     f"Las {total_tasks} tareas "
-                    "fueron ejecutadas y "
-                    "aprobadas por QA."
+                    "fueron aprobadas y la "
+                    "revisión final autorizó "
+                    "la entrega."
+                    if final_review_required
+                    else (
+                        f"Las {total_tasks} tareas "
+                        "fueron ejecutadas y "
+                        "aprobadas por QA."
+                    )
                 ),
             )
 
@@ -1108,7 +1262,15 @@ def finalize_project_if_ready(
                     f"El proyecto "
                     f"'{project.title}' "
                     "ha completado todas "
-                    "sus tareas verificadas."
+                    "sus verificaciones y "
+                    "está aprobado para entrega."
+                    if final_review_required
+                    else (
+                        f"El proyecto "
+                        f"'{project.title}' "
+                        "ha completado todas "
+                        "sus tareas verificadas."
+                    )
                 ),
             )
 
@@ -1123,4 +1285,20 @@ def finalize_project_if_ready(
             completed_tasks,
         "project_status":
             project.status,
+        "final_review_required":
+            final_review_required,
+        "final_review_status":
+            final_review_status,
+        "final_review_id": (
+            final_review.id
+            if final_review is not None
+            else None
+        ),
+        "final_reviewer_id": (
+            final_requirement
+            .assigned_repliker_id
+            if final_requirement
+            is not None
+            else None
+        ),
     }

@@ -467,6 +467,53 @@ class Phase13A28RecruitmentTests(
             "Revisor Final",
         )
 
+    def test_configuration_error_is_reported_without_crashing(
+        self,
+    ):
+        from app.services.gemini_client import (
+            GeminiConfigurationError,
+        )
+
+        calls = 0
+
+        def unavailable(**kwargs):
+            nonlocal calls
+            _ = kwargs
+
+            calls += 1
+
+            raise GeminiConfigurationError(
+                "Configuración no disponible."
+            )
+
+        result = (
+            run_project_specialist_recruitment(
+                db=self.db,
+                project_id=self.project.id,
+                evaluator=unavailable,
+            )
+        )
+
+        self.assertEqual(
+            calls,
+            1,
+        )
+
+        self.assertEqual(
+            result.accepted,
+            0,
+        )
+
+        self.assertEqual(
+            result.offers_sent,
+            1,
+        )
+
+        self.assertTrue(
+            result.errors,
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()

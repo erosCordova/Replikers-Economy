@@ -26,6 +26,12 @@ from app.services.project_lifecycle_service import (
     run_planning_stage,
     run_qa_stage,
 )
+from app.services.final_review_correction_service import (
+    run_final_review_corrections,
+)
+from app.services.final_review_service import (
+    run_project_final_review,
+)
 from app.services.realtime_service import (
     record_workflow_event,
 )
@@ -58,6 +64,8 @@ class ProjectLifecycleHandlers:
     integration: StageHandler
     active_contracts: Callable
     emit: Callable = _noop_workflow_event
+    final_review: StageHandler | None = None
+    corrections: StageHandler | None = None
 
 
 DEFAULT_HANDLERS = (
@@ -78,6 +86,10 @@ DEFAULT_HANDLERS = (
             active_contract_ids,
         emit=
             record_workflow_event,
+        final_review=
+            run_project_final_review,
+        corrections=
+            run_final_review_corrections,
     )
 )
 
@@ -118,12 +130,60 @@ def build_project_lifecycle_graph(
         "qa": "qa",
         "retry": "repliker",
         "integration": "system",
+        "final_review": "repliker",
+        "corrections": "repliker",
         "economy": "economy",
         "awaiting_funding": "economy",
         "awaiting_specialists": "repliker",
         "already_completed": "system",
         "failed": "system",
     }
+
+    workflow_stage_labels = {
+        "inspect":
+            "Inspección",
+        "planning":
+            "Planificación",
+        "market":
+            "Mercado",
+        "funding":
+            "Financiación",
+        "contracting":
+            "Contratación",
+        "delegation":
+            "Delegación",
+        "execution":
+            "Ejecución",
+        "qa":
+            "Control de calidad",
+        "retry":
+            "Reintento",
+        "integration":
+            "Integración",
+        "final_review":
+            "Revisión final",
+        "corrections":
+            "Correcciones",
+        "economy":
+            "Economía",
+        "awaiting_funding":
+            "Espera de financiación",
+        "awaiting_specialists":
+            "Espera de especialistas",
+        "already_completed":
+            "Proyecto completado",
+        "failed":
+            "Proceso con error",
+    }
+
+    def visible_stage_label(
+        stage: str,
+    ) -> str:
+        return workflow_stage_labels.get(
+            stage,
+            "Proceso del proyecto",
+        )
+
 
     def emit_stage_event(
         *,
@@ -177,7 +237,8 @@ def build_project_lifecycle_graph(
                 stage=stage,
                 status="started",
                 title=(
-                    f"Etapa {stage} iniciada"
+                    f"Etapa iniciada: "
+                    f"{visible_stage_label(stage)}"
                 ),
                 payload={
                     "previous_stage":
@@ -208,7 +269,8 @@ def build_project_lifecycle_graph(
                     stage=stage,
                     status="failed",
                     title=(
-                        f"Etapa {stage} fallo"
+                        f"Etapa con error: "
+                        f"{visible_stage_label(stage)}"
                     ),
                     payload={
                         "error":
@@ -231,7 +293,8 @@ def build_project_lifecycle_graph(
                 stage=stage,
                 status="completed",
                 title=(
-                    f"Etapa {stage} completada"
+                    f"Etapa completada: "
+                    f"{visible_stage_label(stage)}"
                 ),
                 payload=
                     compact_payload,
@@ -266,7 +329,7 @@ def build_project_lifecycle_graph(
                         stage="retry",
                         status="completed",
                         title=(
-                            "Retry de ejecucion "
+                            "Reintento de ejecución "
                             "completado"
                         ),
                         payload={
@@ -278,7 +341,10 @@ def build_project_lifecycle_graph(
             # La economia se liquida durante
             # la integracion final de Fase 10.
             if (
-                stage == "integration"
+                stage in {
+                    "integration",
+                    "final_review",
+                }
                 and result.get(
                     "current_stage"
                 )
@@ -376,6 +442,12 @@ def build_project_lifecycle_graph(
             # Un proyecto contratado debe volver
             # a validar cobertura antes de ejecutar.
             return "contracting"
+
+        if status == "awaiting_final_review":
+            return "integration"
+
+        if status == "corrections_requested":
+            return "corrections"
 
         return "failed"
 
@@ -864,29 +936,282 @@ def build_project_lifecycle_graph(
             )
         )
 
+        final_review_required = bool(
+            result.get(
+                "final_review_required",
+                False,
+            )
+        )
+
+        final_review_status = str(
+            result.get(
+                "final_review_status",
+                "",
+            )
+        )
+
+        if completed:
+            current_stage = "completed"
+            next_action = "none"
+
+            history_message = (
+                "Integración final completada. "
+                f"Tareas aprobadas: "
+                f"{result.get('completed_tasks', 0)}/"
+                f"{result.get('total_tasks', 0)}."
+            )
+
+        elif final_review_required:
+            current_stage = (
+                "awaiting_final_review"
+            )
+
+            next_action = (
+                "run_final_review"
+            )
+
+            if (
+                final_review_status
+                == "corrections_requested"
+            ):
+                history_message = (
+                    "La revisión final solicitó "
+                    "correcciones antes de poder "
+                    "entregar el proyecto."
+                )
+            else:
+                history_message = (
+                    "Todas las tareas están listas. "
+                    "El proyecto espera la revisión "
+                    "final obligatoria."
+                )
+
+        else:
+            current_stage = "partial"
+            next_action = "rerun_market"
+
+            history_message = (
+                "La integración todavía no puede "
+                "completarse."
+            )
+
+        return {
+            "current_stage":
+                current_stage,
+            "project_status":
+                project.status,
+            "next_action":
+                next_action,
+            "final_review_status":
+                final_review_status,
+            "final_review_id":
+                result.get(
+                    "final_review_id"
+                ),
+            "history": [
+                history_message
+            ],
+        }
+
+    def integration_router(
+        state: AgenticProjectState,
+    ) -> str:
+        if (
+            state.get(
+                "current_stage"
+            )
+            == "awaiting_final_review"
+        ):
+            return "review"
+
+        return "done"
+
+
+    def final_review_node(
+        state: AgenticProjectState,
+    ) -> dict:
+        # En tests antiguos puede omitirse este
+        # handler para conservar compatibilidad.
+        if runtime.final_review is None:
+            return {
+                "current_stage":
+                    "awaiting_final_review",
+                "project_status":
+                    state.get(
+                        "project_status",
+                        "",
+                    ),
+                "next_action":
+                    "run_final_review",
+                "final_review_status":
+                    state.get(
+                        "final_review_status",
+                        "pending",
+                    ),
+                "final_review_id":
+                    state.get(
+                        "final_review_id"
+                    ),
+                "history": [
+                    (
+                        "El proyecto continúa "
+                        "esperando la revisión "
+                        "final obligatoria."
+                    )
+                ],
+            }
+
+        result = runtime.final_review(
+            db=db,
+            project_id=
+                state["project_id"],
+        )
+
+        project = load_project(
+            state
+        )
+
+        status = str(
+            result.get(
+                "status",
+                "",
+            )
+        )
+
+        if (
+            project.status
+            == "completed"
+            or status == "approved"
+        ):
+            current_stage = "completed"
+            next_action = "none"
+
+        elif (
+            status
+            == "corrections_requested"
+        ):
+            current_stage = (
+                "corrections_requested"
+            )
+            next_action = (
+                "apply_corrections"
+            )
+
+        else:
+            current_stage = (
+                "awaiting_final_review"
+            )
+            next_action = (
+                "run_final_review"
+            )
+
+        return {
+            "current_stage":
+                current_stage,
+            "project_status":
+                project.status,
+            "next_action":
+                next_action,
+            "final_review_status":
+                status,
+            "final_review_id":
+                result.get(
+                    "review_id"
+                ),
+            "history": [
+                (
+                    result.get(
+                        "summary"
+                    )
+                    or (
+                        "El Repliker encargado "
+                        "completó la revisión final."
+                    )
+                )
+            ],
+        }
+
+
+
+    def corrections_router(
+        state: AgenticProjectState,
+    ) -> str:
+        if (
+            state.get(
+                "current_stage"
+            )
+            == "awaiting_final_review"
+        ):
+            return "review"
+
+        return "done"
+
+
+    def corrections_node(
+        state: AgenticProjectState,
+    ) -> dict:
+        if runtime.corrections is None:
+            return {
+                "current_stage":
+                    "corrections_requested",
+                "project_status":
+                    state.get(
+                        "project_status",
+                        "",
+                    ),
+                "next_action":
+                    "apply_corrections",
+                "history": [
+                    (
+                        "Las correcciones "
+                        "continúan pendientes."
+                    )
+                ],
+            }
+
+        result = runtime.corrections(
+            db=db,
+            project_id=
+                state["project_id"],
+        )
+
+        project = load_project(
+            state
+        )
+
+        ready = bool(
+            result.get(
+                "ready_for_final_review",
+                False,
+            )
+        )
+
         return {
             "current_stage": (
-                "completed"
-                if completed
-                else "partial"
+                "awaiting_final_review"
+                if ready
+                else "corrections_requested"
             ),
             "project_status":
                 project.status,
             "next_action": (
-                "none"
-                if completed
-                else "rerun_market"
+                "run_final_review"
+                if ready
+                else "retry_corrections"
             ),
             "history": [
-                (
-                    "Integracion final "
-                    "completada. "
-                    f"Tareas aprobadas: "
-                    f"{result.get('completed_tasks', 0)}/"
-                    f"{result.get('total_tasks', 0)}."
+                str(
+                    result.get(
+                        "summary",
+                        (
+                            "Se procesaron "
+                            "las correcciones."
+                        ),
+                    )
                 )
             ],
         }
+
 
     def waiting_specialists_node(
         state: AgenticProjectState,
@@ -1078,6 +1403,22 @@ def build_project_lifecycle_graph(
     )
 
     graph.add_node(
+        "final_review",
+        instrument_node(
+            "final_review",
+            final_review_node,
+        ),
+    )
+
+    graph.add_node(
+        "corrections",
+        instrument_node(
+            "corrections",
+            corrections_node,
+        ),
+    )
+
+    graph.add_node(
         "awaiting_funding",
         instrument_node(
             "awaiting_funding",
@@ -1126,6 +1467,10 @@ def build_project_lifecycle_graph(
                 "contracting",
             "delegation":
                 "delegation",
+            "integration":
+                "integration",
+            "corrections":
+                "corrections",
             "completed":
                 "already_completed",
             "failed":
@@ -1194,8 +1539,30 @@ def build_project_lifecycle_graph(
         },
     )
 
-    graph.add_edge(
+    graph.add_conditional_edges(
         "integration",
+        integration_router,
+        {
+            "review":
+                "final_review",
+            "done":
+                END,
+        },
+    )
+
+    graph.add_conditional_edges(
+        "corrections",
+        corrections_router,
+        {
+            "review":
+                "final_review",
+            "done":
+                END,
+        },
+    )
+
+    graph.add_edge(
+        "final_review",
         END,
     )
 
@@ -1270,6 +1637,10 @@ def run_project_lifecycle(
             True,
         "missing_specialties":
             [],
+        "final_review_status":
+            "",
+        "final_review_id":
+            None,
         "blocked_reason":
             "",
         "error":

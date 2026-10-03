@@ -1,13 +1,16 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.orm import (
     Mapped,
@@ -128,6 +131,17 @@ class ProjectSpecialistOffer(Base):
                 "requirement_repliker"
             ),
         ),
+        Index(
+            "uq_specialist_offer_one_accepted_per_requirement",
+            "requirement_id",
+            unique=True,
+            sqlite_where=text(
+                "status = 'accepted'"
+            ),
+            postgresql_where=text(
+                "status = 'accepted'"
+            ),
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -213,4 +227,321 @@ class ProjectSpecialistOffer(Base):
 
     repliker = relationship(
         "Repliker",
+    )
+
+
+class ProjectFinalReview(Base):
+    __tablename__ = (
+        "project_final_reviews"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id",
+            "attempt_number",
+            name=(
+                "uq_project_final_review_attempt"
+            ),
+        ),
+        CheckConstraint(
+            "attempt_number >= 1",
+            name=(
+                "ck_project_final_review_"
+                "attempt_positive"
+            ),
+        ),
+        CheckConstraint(
+            (
+                "status IN ("
+                "'pending', "
+                "'running', "
+                "'approved', "
+                "'corrections_requested', "
+                "'failed'"
+                ")"
+            ),
+            name=(
+                "ck_project_final_review_status"
+            ),
+        ),
+        CheckConstraint(
+            (
+                "score IS NULL "
+                "OR (score >= 0 AND score <= 100)"
+            ),
+            name=(
+                "ck_project_final_review_score"
+            ),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
+
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "projects.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    requirement_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "project_specialist_requirements.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    reviewer_repliker_id: Mapped[int] = (
+        mapped_column(
+            ForeignKey(
+                "replikers.id",
+                ondelete="RESTRICT",
+            ),
+            nullable=False,
+            index=True,
+        )
+    )
+
+    attempt_number: Mapped[int] = (
+        mapped_column(
+            Integer,
+            nullable=False,
+        )
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="pending",
+        index=True,
+    )
+
+    score: Mapped[
+        int | None
+    ] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    summary: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="",
+    )
+
+    corrections_json: Mapped[str] = (
+        mapped_column(
+            Text,
+            nullable=False,
+            default="[]",
+        )
+    )
+
+    reasoning: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="",
+    )
+
+    created_at: Mapped[datetime] = (
+        mapped_column(
+            DateTime(timezone=True),
+            nullable=False,
+            server_default=func.now(),
+        )
+    )
+
+    completed_at: Mapped[
+        datetime | None
+    ] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    project = relationship(
+        "Project",
+    )
+
+    requirement = relationship(
+        "ProjectSpecialistRequirement",
+    )
+
+    reviewer_repliker = relationship(
+        "Repliker",
+    )
+
+
+class ProjectFinalCorrectionRun(Base):
+    __tablename__ = (
+        "project_final_correction_runs"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "final_review_id",
+            "task_id",
+            name=(
+                "uq_project_final_correction_"
+                "review_task"
+            ),
+        ),
+        CheckConstraint(
+            (
+                "status IN ("
+                "'pending', "
+                "'running', "
+                "'qa_running', "
+                "'completed', "
+                "'failed'"
+                ")"
+            ),
+            name=(
+                "ck_project_final_correction_"
+                "status"
+            ),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
+
+    final_review_id: Mapped[int] = (
+        mapped_column(
+            ForeignKey(
+                "project_final_reviews.id",
+                ondelete="CASCADE",
+            ),
+            nullable=False,
+            index=True,
+        )
+    )
+
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "projects.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "tasks.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    contract_id: Mapped[int] = (
+        mapped_column(
+            ForeignKey(
+                "task_contracts.id",
+                ondelete="RESTRICT",
+            ),
+            nullable=False,
+            index=True,
+        )
+    )
+
+    repliker_id: Mapped[int] = (
+        mapped_column(
+            ForeignKey(
+                "replikers.id",
+                ondelete="RESTRICT",
+            ),
+            nullable=False,
+            index=True,
+        )
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="pending",
+        index=True,
+    )
+
+    instruction: Mapped[str] = (
+        mapped_column(
+            Text,
+            nullable=False,
+            default="",
+        )
+    )
+
+    execution_status: Mapped[str] = (
+        mapped_column(
+            String(30),
+            nullable=False,
+            default="pending",
+        )
+    )
+
+    qa_review_id: Mapped[
+        int | None
+    ] = mapped_column(
+        ForeignKey(
+            "qa_reviews.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        index=True,
+    )
+
+    error_summary: Mapped[str] = (
+        mapped_column(
+            Text,
+            nullable=False,
+            default="",
+        )
+    )
+
+    created_at: Mapped[datetime] = (
+        mapped_column(
+            DateTime(timezone=True),
+            nullable=False,
+            server_default=func.now(),
+        )
+    )
+
+    completed_at: Mapped[
+        datetime | None
+    ] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    final_review = relationship(
+        "ProjectFinalReview",
+    )
+
+    project = relationship(
+        "Project",
+    )
+
+    task = relationship(
+        "Task",
+    )
+
+    contract = relationship(
+        "TaskContract",
+    )
+
+    repliker = relationship(
+        "Repliker",
+    )
+
+    qa_review = relationship(
+        "QAReview",
     )

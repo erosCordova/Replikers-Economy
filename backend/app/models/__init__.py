@@ -19,6 +19,8 @@ from app.models.project import (
 )
 
 from app.models.project_specialist import (
+    ProjectFinalCorrectionRun,
+    ProjectFinalReview,
     ProjectSpecialistOffer,
     ProjectSpecialistRequirement,
 )
@@ -99,6 +101,8 @@ __all__ = [
     "ProjectRequirement",
     "ProjectSpecialistRequirement",
     "ProjectSpecialistOffer",
+    "ProjectFinalReview",
+    "ProjectFinalCorrectionRun",
     "Task",
     "TaskSkillRequirement",
     "TaskAcceptanceCriterion",

@@ -16,6 +16,9 @@ ProjectStage = Literal[
     "market",
     "awaiting_funding",
     "awaiting_specialists",
+    "awaiting_final_review",
+    "final_review",
+    "corrections_requested",
     "contracting",
     "delegation",
     "execution",
@@ -68,6 +71,8 @@ class AgenticProjectState(
 
     specialist_coverage_ready: bool
     missing_specialties: list[str]
+    final_review_status: str
+    final_review_id: int | None
 
     blocked_reason: str
     error: str

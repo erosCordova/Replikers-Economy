@@ -37,6 +37,7 @@ from app.services.activity_service import (
     record_activity,
 )
 from app.services.gemini_client import (
+    GeminiConfigurationError,
     GeminiResponseError,
 )
 from app.services.message_service import (
@@ -581,6 +582,52 @@ def run_project_specialist_recruitment(
                         project_data,
                 )
 
+            except GeminiConfigurationError as exc:
+                failed_offer = db.get(
+                    ProjectSpecialistOffer,
+                    offer_id,
+                )
+
+                if failed_offer is not None:
+                    failed_offer.status = "error"
+                    failed_offer.reasoning = (
+                        str(exc)[:4000]
+                    )
+
+                record_activity(
+                    db=db,
+                    actor_type="system",
+                    event_type=(
+                        "specialist_configuration_failed"
+                    ),
+                    project_id=project.id,
+                    repliker_id=repliker_id,
+                    title=(
+                        "No fue posible evaluar "
+                        "la propuesta"
+                    ),
+                    description=(
+                        "El servicio de inteligencia "
+                        "artificial no está disponible "
+                        "para evaluar esta propuesta."
+                    ),
+                )
+
+                db.commit()
+
+                errors.append(
+                    "No fue posible evaluar "
+                    "la propuesta por un problema "
+                    "de configuración del servicio "
+                    "de inteligencia artificial."
+                )
+
+                # Es un problema global del motor,
+                # no del candidato. No tiene sentido
+                # consultar a todos los candidatos
+                # con la misma configuración rota.
+                break
+
             except GeminiResponseError as exc:
                 failed_offer = db.get(
                     ProjectSpecialistOffer,
@@ -671,6 +718,28 @@ def run_project_specialist_recruitment(
                 decision.decision
                 == "accept"
             ):
+                competing_acceptances = list(
+                    db.scalars(
+                        select(
+                            ProjectSpecialistOffer
+                        )
+                        .where(
+                            ProjectSpecialistOffer
+                            .requirement_id
+                            == requirement.id,
+                            ProjectSpecialistOffer.id
+                            != offer.id,
+                            ProjectSpecialistOffer.status
+                            == "accepted",
+                        )
+                    ).all()
+                )
+
+                for competing in (
+                    competing_acceptances
+                ):
+                    competing.status = "expired"
+
                 offer.status = "accepted"
                 accepted += 1
 
