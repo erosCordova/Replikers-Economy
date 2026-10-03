@@ -26,10 +26,12 @@ import {
 } from 'lucide-react'
 import axios from 'axios'
 
-import { api } from './api'
 import {
-  clearAccessToken,
-  getAccessToken,
+  api,
+  logoutSession,
+  restoreSession,
+} from './api'
+import {
   purgeLegacyAuthStorage,
   setAccessToken,
 } from './auth/session'
@@ -350,28 +352,23 @@ function App() {
   async function bootstrap() {
     purgeLegacyAuthStorage()
 
-    const token =
-      getAccessToken()
-
     await checkBackend()
 
-    if (!token) {
-      await loadMarketplace()
-      setAuthLoading(false)
-      return
-    }
-
     try {
-      const response =
-        await api.get<User>('/auth/me')
+      const restoredUser =
+        await restoreSession<User>()
 
-      setUser(response.data)
+      if (!restoredUser) {
+        setUser(null)
+        await loadMarketplace()
+        return
+      }
+
+      setUser(
+        restoredUser,
+      )
 
       await loadPrivateData()
-    } catch {
-      clearAccessToken()
-
-      setUser(null)
     } finally {
       setAuthLoading(false)
     }
@@ -436,12 +433,14 @@ function App() {
   }
 
 
-  function logout() {
-    clearAccessToken()
+  async function logout() {
+    await logoutSession()
 
     setUser(null)
     setProjects([])
     setSection('dashboard')
+
+    await loadMarketplace()
   }
 
 
@@ -734,7 +733,7 @@ function App() {
                     event.target.value,
                   )
                 }
-                placeholder="Minimo 8 caracteres"
+                placeholder="Minimo 12 caracteres"
                 required
               />
             </label>

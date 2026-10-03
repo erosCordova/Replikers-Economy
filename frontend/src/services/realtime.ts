@@ -1,4 +1,7 @@
 import {
+  refreshAccessToken,
+} from '../api'
+import {
   clearAccessToken,
   getAccessToken,
 } from '../auth/session'
@@ -280,8 +283,13 @@ export async function connectRealtime(
 
     firstAttempt = false
 
-    const token =
+    let token =
       getAccessToken()
+
+    if (!token) {
+      token =
+        await refreshAccessToken()
+    }
 
     if (!token) {
       onStatus(
@@ -324,7 +332,29 @@ export async function connectRealtime(
         )
 
       if (
-        response.status === 401 ||
+        response.status === 401
+      ) {
+        clearAccessToken()
+
+        const refreshedToken =
+          await refreshAccessToken()
+
+        if (refreshedToken) {
+          onStatus(
+            'reconnecting',
+          )
+
+          continue
+        }
+
+        onStatus(
+          'unauthorized',
+        )
+
+        return
+      }
+
+      if (
         response.status === 403
       ) {
         clearAccessToken()

@@ -1,5 +1,9 @@
 from app.models.user import User
 
+from app.models.auth_session import (
+    AuthSession,
+)
+
 from app.models.repliker import (
     Repliker,
     ReplikerSkill,
@@ -77,6 +81,7 @@ from app.models.realtime import (
 
 __all__ = [
     "User",
+    "AuthSession",
     "Repliker",
     "ReplikerSkill",
     "ReplikerToolAssignment",

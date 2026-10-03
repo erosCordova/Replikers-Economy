@@ -139,3 +139,30 @@ if (violations.length > 0) {
     'ACCESS_TOKEN_STORAGE ............... MEMORY_ONLY',
   )
 }
+
+
+const apiSource =
+  readFileSync(
+    new URL(
+      '../src/api.ts',
+      import.meta.url,
+    ),
+    'utf8',
+  )
+
+
+if (
+  !apiSource.includes(
+    'withCredentials: true'
+  )
+) {
+  console.error(
+    'CREDENTIALLED_COOKIE_CHECK ........ ERROR',
+  )
+
+  process.exitCode = 1
+} else {
+  console.log(
+    'CREDENTIALLED_COOKIE_CHECK ........ OK',
+  )
+}

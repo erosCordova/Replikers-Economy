@@ -13,6 +13,12 @@ EnvironmentName = Literal[
     "production",
 ]
 
+CookieSameSite = Literal[
+    "lax",
+    "strict",
+    "none",
+]
+
 
 class Settings(BaseSettings):
     APP_NAME: str = (
@@ -52,7 +58,7 @@ class Settings(BaseSettings):
     ] = "HS256"
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = (
-        120
+        15
     )
 
     JWT_ISSUER: str = (
@@ -65,6 +71,32 @@ class Settings(BaseSettings):
 
     JWT_LEEWAY_SECONDS: int = (
         5
+    )
+
+    # --------------------------------------------------------
+    # Refresh sessions
+    # --------------------------------------------------------
+
+    REFRESH_TOKEN_EXPIRE_DAYS: int = (
+        14
+    )
+
+    REFRESH_COOKIE_NAME: str = (
+        "repliker_refresh"
+    )
+
+    REFRESH_COOKIE_PATH: str = (
+        "/api/v1/auth"
+    )
+
+    REFRESH_COOKIE_DOMAIN: str = ""
+
+    REFRESH_COOKIE_SAMESITE: CookieSameSite = (
+        "lax"
+    )
+
+    REFRESH_COOKIE_SECURE: bool = (
+        False
     )
 
     # --------------------------------------------------------
@@ -114,6 +146,16 @@ class Settings(BaseSettings):
     )
 
     @property
+    def refresh_cookie_secure(
+        self,
+    ) -> bool:
+        return (
+            self.REFRESH_COOKIE_SECURE
+            or self.ENVIRONMENT
+            == "production"
+        )
+
+    @property
     def cors_origins(
         self,
     ) -> list[str]:
@@ -133,7 +175,8 @@ class Settings(BaseSettings):
             candidates.extend(
                 origin.strip().rstrip("/")
                 for origin
-                in self.CORS_ALLOWED_ORIGINS
+                in self
+                .CORS_ALLOWED_ORIGINS
                 .split(",")
                 if origin.strip()
             )
@@ -184,11 +227,21 @@ class Settings(BaseSettings):
         if not (
             5
             <= self.ACCESS_TOKEN_EXPIRE_MINUTES
-            <= 240
+            <= 60
         ):
             issues.append(
                 "ACCESS_TOKEN_EXPIRE_MINUTES "
-                "debe estar entre 5 y 240."
+                "debe estar entre 5 y 60."
+            )
+
+        if not (
+            1
+            <= self.REFRESH_TOKEN_EXPIRE_DAYS
+            <= 30
+        ):
+            issues.append(
+                "REFRESH_TOKEN_EXPIRE_DAYS "
+                "debe estar entre 1 y 30."
             )
 
         if not (
@@ -245,6 +298,17 @@ class Settings(BaseSettings):
                 )
 
                 break
+
+        if (
+            self.REFRESH_COOKIE_SAMESITE
+            == "none"
+            and not self
+            .refresh_cookie_secure
+        ):
+            issues.append(
+                "SameSite=None requiere "
+                "una cookie Secure."
+            )
 
         if (
             self.ECONOMY_MODE
