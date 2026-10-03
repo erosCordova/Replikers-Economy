@@ -16,6 +16,10 @@ from app.api.routes.users import (
 from app.api.routes.replikers import (
     router as replikers_router,
 )
+from app.api.routes.repliker_developer import (
+    router as repliker_developer_router,
+)
+
 from app.api.routes.projects import (
     router as projects_router,
 )
@@ -158,6 +162,12 @@ app.include_router(
     replikers_router,
     prefix="/api/v1",
 )
+
+app.include_router(
+    repliker_developer_router,
+    prefix="/api/v1",
+)
+
 
 app.include_router(
     projects_router,

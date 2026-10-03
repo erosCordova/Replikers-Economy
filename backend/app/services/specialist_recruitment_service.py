@@ -43,6 +43,9 @@ from app.services.gemini_client import (
 from app.services.message_service import (
     record_message,
 )
+from app.services.repliker_behavior_service import (
+    load_repliker_behavior_context,
+)
 from app.services.specialist_coverage_service import (
     TERMINAL_PROJECT_STATUSES,
     normalize_specialty,
@@ -484,6 +487,16 @@ def run_project_specialist_recruitment(
                     in repliker.skills
                 ],
             }
+
+            repliker_data[
+                "studio_behavior"
+            ] = (
+                load_repliker_behavior_context(
+                    db=db,
+                    repliker_id=
+                        repliker.id,
+                )
+            )
 
             requirement_data = {
                 "id":

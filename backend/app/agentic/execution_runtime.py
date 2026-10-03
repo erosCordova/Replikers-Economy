@@ -30,6 +30,13 @@ from app.models.task import (
 )
 
 
+from app.services.repliker_behavior_service import (
+    behavior_prompt_section,
+)
+from app.services.repliker_developer_service import (
+    developer_prompt_section,
+)
+
 @dataclass
 class ExecutionAgentRuntime:
     contract_id: int
@@ -46,8 +53,12 @@ def execution_system_prompt(
     contract: TaskContract,
     repliker: Repliker,
     task: Task,
+    behavior_context:
+        dict | None = None,
+    developer_context:
+        dict | None = None,
 ) -> str:
-    return f"""
+    base_prompt = f"""
 Eres {repliker.name}, un Repliker autonomo
 especializado en {repliker.specialty}.
 
@@ -123,6 +134,16 @@ REGLAS DE EJECUCION
     un resultado de QA.
 """.strip()
 
+    return (
+        base_prompt
+        + behavior_prompt_section(
+            behavior_context
+        )
+        + developer_prompt_section(
+            developer_context
+        )
+    )
+
 
 def build_execution_repliker_agent(
     *,
@@ -131,6 +152,10 @@ def build_execution_repliker_agent(
     repliker: Repliker,
     task: Task,
     workspace: ExecutionWorkspace,
+    behavior_context:
+        dict | None = None,
+    developer_context:
+        dict | None = None,
 ) -> ExecutionAgentRuntime:
     if (
         contract.repliker_id
@@ -185,6 +210,10 @@ def build_execution_repliker_agent(
                 contract=contract,
                 repliker=repliker,
                 task=task,
+                behavior_context=
+                    behavior_context,
+                developer_context=
+                    developer_context,
             )
         ),
     )

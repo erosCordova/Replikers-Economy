@@ -21,6 +21,7 @@ import ReplikerAvatar from '../components/ReplikerAvatar'
 import CollaborationPanel from '../components/CollaborationPanel'
 import LiveProjectActivity from '../components/LiveProjectActivity'
 import AgenticControlCenter from '../components/AgenticControlCenter'
+import ReplikerStudioPanel from '../components/ReplikerStudioPanel'
 import type {
   ReplikerAppearance,
 } from '../components/ReplikerAvatar'
@@ -186,6 +187,54 @@ function agentStatusLabel(
   }
 
   return 'Inactivo'
+}
+
+
+
+const specialtyLabelsEs:
+  Record<string, string> = {
+    'Generalist':
+      'Generalista',
+    'Product / Requirements':
+      'Producto y Requisitos',
+    'Software Architect':
+      'Arquitecto de Software',
+    'UX Research':
+      'Investigación de Experiencia de Usuario',
+    'UI Designer':
+      'Diseñador de Interfaz',
+    'Frontend Developer':
+      'Desarrollador de Interfaz',
+    'Backend Developer':
+      'Desarrollador de Servidor',
+    'Database Engineer':
+      'Ingeniero de Base de Datos',
+    'Integration Specialist':
+      'Especialista en Integraciones',
+    'Security Engineer':
+      'Ingeniero de Seguridad',
+    'QA Engineer':
+      'Ingeniero de Pruebas',
+    'DevOps Engineer':
+      'Ingeniero de Operaciones y Despliegue',
+    'Accessibility Specialist':
+      'Especialista en Accesibilidad',
+    'SEO/Performance Specialist':
+      'Especialista en Posicionamiento y Rendimiento',
+    'Content/Copy Specialist':
+      'Especialista en Contenido',
+    'Final Reviewer':
+      'Revisor Final',
+  }
+
+
+function specialtyLabelEs(
+  value: string,
+) {
+  return (
+    specialtyLabelsEs[value]
+    ?? 'Especialidad personalizada'
+  )
 }
 
 
@@ -597,6 +646,9 @@ export default function Ecosystem({
       )}
 
 
+      <ReplikerStudioPanel />
+
+
       <AgenticControlCenter
         selectedProjectId={
           selectedProjectId
@@ -857,7 +909,7 @@ export default function Ecosystem({
                         </h3>
 
                         <span>
-                          {agent.specialty}
+                          {specialtyLabelEs(agent.specialty)}
                         </span>
                       </div>
 
@@ -1186,7 +1238,7 @@ export default function Ecosystem({
               </h2>
 
               <p>
-                {selectedAgent.specialty}
+                {specialtyLabelEs(selectedAgent.specialty)}
               </p>
             </div>
 

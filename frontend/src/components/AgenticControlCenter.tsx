@@ -122,6 +122,54 @@ interface Props {
 }
 
 
+
+const visibleSpecialties:
+  Record<string, string> = {
+    'Generalist':
+      'Generalista',
+    'Product / Requirements':
+      'Producto y Requisitos',
+    'Software Architect':
+      'Arquitecto de Software',
+    'UX Research':
+      'Investigación de Experiencia de Usuario',
+    'UI Designer':
+      'Diseñador de Interfaz',
+    'Frontend Developer':
+      'Desarrollador de Interfaz',
+    'Backend Developer':
+      'Desarrollador de Servidor',
+    'Database Engineer':
+      'Ingeniero de Base de Datos',
+    'Integration Specialist':
+      'Especialista en Integraciones',
+    'Security Engineer':
+      'Ingeniero de Seguridad',
+    'QA Engineer':
+      'Ingeniero de Pruebas',
+    'DevOps Engineer':
+      'Ingeniero de Operaciones y Despliegue',
+    'Accessibility Specialist':
+      'Especialista en Accesibilidad',
+    'SEO/Performance Specialist':
+      'Especialista en Posicionamiento y Rendimiento',
+    'Content/Copy Specialist':
+      'Especialista en Contenido',
+    'Final Reviewer':
+      'Revisor Final',
+  }
+
+
+function visibleSpecialty(
+  value: string,
+) {
+  return (
+    visibleSpecialties[value]
+    ?? 'Especialidad personalizada'
+  )
+}
+
+
 function nodeIcon(
   node: GraphNode,
 ) {
@@ -370,7 +418,7 @@ export default function AgenticControlCenter({
       } catch {
         setError(
           'No fue posible cargar '
-          + 'el Agentic Control Center.',
+          + 'el Centro de control autónomo.',
         )
 
       } finally {
@@ -476,7 +524,7 @@ export default function AgenticControlCenter({
     ) {
       setNotice(
         'El Repliker debe conservar '
-        + 'al menos una tool.',
+        + 'al menos una herramienta.',
       )
 
       return
@@ -521,14 +569,14 @@ export default function AgenticControlCenter({
       )
 
       setNotice(
-        'Configuracion LangChain '
+        'Configuración de herramientas '
         + 'guardada correctamente.',
       )
 
     } catch {
       setNotice(
         'No fue posible guardar '
-        + 'las tools del Repliker.',
+        + 'las herramientas del Repliker.',
       )
 
     } finally {
@@ -561,7 +609,7 @@ export default function AgenticControlCenter({
               size={16}
             />
 
-            Agentic Control Center
+            Centro de control autónomo
           </div>
 
           <h2>
@@ -570,9 +618,9 @@ export default function AgenticControlCenter({
           </h2>
 
           <p>
-            Observa cómo LangChain
-            equipa a cada Repliker
-            y cómo LangGraph organiza
+            Observa cómo cada Repliker
+            utiliza sus herramientas
+            y cómo el sistema organiza
             el flujo completo del proyecto.
           </p>
         </div>
@@ -586,7 +634,7 @@ export default function AgenticControlCenter({
           >
             <span />
 
-            Agentic Core online
+            Núcleo autónomo activo
           </div>
 
           <button
@@ -650,7 +698,7 @@ export default function AgenticControlCenter({
             </span>
 
             <strong>
-              LangChain
+              Motor autónomo
             </strong>
 
             <small>
@@ -677,7 +725,7 @@ export default function AgenticControlCenter({
             </span>
 
             <strong>
-              LangGraph
+              Orquestador autónomo
             </strong>
 
             <small>
@@ -704,12 +752,11 @@ export default function AgenticControlCenter({
             </span>
 
             <strong>
-              Gemini
+              Modelo activo
             </strong>
 
             <small>
-              {runtime?.model
-                ?? 'Cargando...'}
+              Configurado
             </small>
           </div>
         </article>
@@ -726,14 +773,14 @@ export default function AgenticControlCenter({
 
           <div>
             <span>
-              Tool Registry
+              Registro de herramientas
             </span>
 
             <strong>
               {runtime?.tool_count
                 ?? 0}
               {' '}
-              tools
+              herramientas
             </strong>
 
             <small>
@@ -876,7 +923,7 @@ export default function AgenticControlCenter({
                 />
 
                 <strong>
-                  Flujo LangGraph
+                  Flujo del proyecto
                 </strong>
               </div>
 
@@ -1016,14 +1063,14 @@ export default function AgenticControlCenter({
                             </strong>
 
                             <span>
-                              {profile.specialty}
+                              {visibleSpecialty(profile.specialty)}
                             </span>
                           </div>
 
                           <div
                             className="agentic-langchain-pill"
                           >
-                            LangChain
+                            Motor autónomo
                           </div>
                         </div>
 
@@ -1061,7 +1108,7 @@ export default function AgenticControlCenter({
                               profile
                                 .explicit_configuration
                                 ? 'Configuración propia'
-                                : 'Tool pack predeterminado'
+                                : 'Conjunto predeterminado'
                             }
                           </div>
 
@@ -1130,7 +1177,7 @@ export default function AgenticControlCenter({
                                       }
                                     >
                                       <span>
-                                        {tool.pack}
+                                        Herramienta autorizada
                                       </span>
 
                                       <strong>

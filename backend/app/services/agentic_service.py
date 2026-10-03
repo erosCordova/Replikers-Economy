@@ -342,7 +342,7 @@ def replace_repliker_tools(
             not in TOOL_DEFINITIONS
         ):
             raise ValueError(
-                "Tool desconocida: "
+                "Herramienta desconocida: "
                 f"{clean_name}"
             )
 
@@ -357,7 +357,7 @@ def replace_repliker_tools(
     if not unique_names:
         raise ValueError(
             "Un Repliker debe conservar "
-            "al menos una tool."
+            "al menos una herramienta."
         )
 
     db.execute(
@@ -392,11 +392,11 @@ def replace_repliker_tools(
         repliker_id=
             repliker.id,
         title=(
-            f"Tools actualizadas para "
+            f"Herramientas actualizadas para "
             f"{repliker.name}"
         ),
         description=(
-            "Tools LangChain asignadas: "
+            "Herramientas asignadas: "
             + ", ".join(
                 unique_names
             )

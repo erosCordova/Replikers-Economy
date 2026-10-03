@@ -45,6 +45,9 @@ from app.services.gemini_client import (
     GeminiConfigurationError,
     GeminiResponseError,
 )
+from app.services.repliker_behavior_service import (
+    load_repliker_behavior_context,
+)
 from app.services.repliker_matching_service import (
     normalize_market_text,
     rank_task_candidates,
@@ -619,6 +622,16 @@ def run_autonomous_market(
                     in repliker.skills
                 ],
             }
+
+            repliker_data[
+                "studio_behavior"
+            ] = (
+                load_repliker_behavior_context(
+                    db=db,
+                    repliker_id=
+                        repliker.id,
+                )
+            )
 
             allowed_tool_names = (
                 resolve_repliker_tool_names(

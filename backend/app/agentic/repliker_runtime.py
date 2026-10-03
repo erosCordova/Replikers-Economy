@@ -14,6 +14,10 @@ from app.agentic.tool_catalog import (
     build_market_tools,
     resolve_market_tool_names,
 )
+from app.services.repliker_behavior_service import (
+    behavior_prompt_section,
+)
+
 from app.schemas.market import (
     AgentDecisionAI,
     SpecialistOfferDecisionAI,
@@ -91,6 +95,22 @@ Si eliges bid:
 """.strip()
 
 
+
+def _personalized_system_prompt(
+    *,
+    base_prompt: str,
+    repliker_data: dict,
+) -> str:
+    return (
+        base_prompt
+        + behavior_prompt_section(
+            repliker_data.get(
+                "studio_behavior"
+            )
+        )
+    )
+
+
 def build_market_agent(
     *,
     repliker_data: dict,
@@ -130,8 +150,14 @@ def build_market_agent(
             temperature=0.1
         ),
         tools=tools,
-        system_prompt=
-            MARKET_AGENT_SYSTEM_PROMPT,
+        system_prompt=(
+            _personalized_system_prompt(
+                base_prompt=
+                    MARKET_AGENT_SYSTEM_PROMPT,
+                repliker_data=
+                    repliker_data,
+            )
+        ),
         response_format=
             ToolStrategy(
                 AgentDecisionAI
@@ -283,7 +309,12 @@ def run_specialist_offer_agent(
         ),
         tools=[],
         system_prompt=(
-            SPECIALIST_OFFER_SYSTEM_PROMPT
+            _personalized_system_prompt(
+                base_prompt=
+                    SPECIALIST_OFFER_SYSTEM_PROMPT,
+                repliker_data=
+                    repliker_data,
+            )
         ),
         response_format=(
             ToolStrategy(

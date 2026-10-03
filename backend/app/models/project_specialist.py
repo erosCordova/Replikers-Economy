@@ -12,6 +12,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy import false, true
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -60,16 +61,19 @@ class ProjectSpecialistRequirement(Base):
         Text,
         nullable=False,
         default="",
+        server_default="",
     )
 
     is_mandatory: Mapped[bool] = mapped_column(
         nullable=False,
         default=True,
+        server_default=true(),
     )
 
     is_final_gate: Mapped[bool] = mapped_column(
         nullable=False,
         default=False,
+        server_default=false(),
     )
 
     coverage_status: Mapped[str] = (
@@ -77,6 +81,7 @@ class ProjectSpecialistRequirement(Base):
             String(30),
             nullable=False,
             default="pending",
+            server_default="pending",
         )
     )
 
@@ -180,6 +185,7 @@ class ProjectSpecialistOffer(Base):
         String(30),
         nullable=False,
         default="pending",
+        server_default="pending",
     )
 
     confidence_score: Mapped[int] = (
@@ -187,6 +193,7 @@ class ProjectSpecialistOffer(Base):
             Integer,
             nullable=False,
             default=0,
+            server_default="0",
         )
     )
 
@@ -194,12 +201,14 @@ class ProjectSpecialistOffer(Base):
         Text,
         nullable=False,
         default="",
+        server_default="",
     )
 
     reasoning: Mapped[str] = mapped_column(
         Text,
         nullable=False,
         default="",
+        server_default="",
     )
 
     created_at: Mapped[datetime] = (
@@ -320,6 +329,7 @@ class ProjectFinalReview(Base):
         String(30),
         nullable=False,
         default="pending",
+        server_default="pending",
         index=True,
     )
 
@@ -334,6 +344,7 @@ class ProjectFinalReview(Base):
         Text,
         nullable=False,
         default="",
+        server_default="",
     )
 
     corrections_json: Mapped[str] = (
@@ -341,6 +352,7 @@ class ProjectFinalReview(Base):
             Text,
             nullable=False,
             default="[]",
+            server_default="[]",
         )
     )
 
@@ -348,6 +360,7 @@ class ProjectFinalReview(Base):
         Text,
         nullable=False,
         default="",
+        server_default="",
     )
 
     created_at: Mapped[datetime] = (
@@ -469,6 +482,7 @@ class ProjectFinalCorrectionRun(Base):
         String(30),
         nullable=False,
         default="pending",
+        server_default="pending",
         index=True,
     )
 
@@ -477,6 +491,7 @@ class ProjectFinalCorrectionRun(Base):
             Text,
             nullable=False,
             default="",
+        server_default="",
         )
     )
 
@@ -485,6 +500,7 @@ class ProjectFinalCorrectionRun(Base):
             String(30),
             nullable=False,
             default="pending",
+            server_default="pending",
         )
     )
 
@@ -504,6 +520,7 @@ class ProjectFinalCorrectionRun(Base):
             Text,
             nullable=False,
             default="",
+            server_default="",
         )
     )
 

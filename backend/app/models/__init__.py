@@ -13,6 +13,16 @@ from app.models.repliker import (
     ReplikerSkill,
 )
 
+from app.models.repliker_developer import (
+    ReplikerDeveloperModule,
+)
+
+from app.models.repliker_studio import (
+    ReplikerKnowledgeItem,
+    ReplikerRule,
+    ReplikerStudioProfile,
+)
+
 from app.models.project import (
     Project,
     ProjectRequirement,
@@ -96,6 +106,10 @@ __all__ = [
     "AuthRateLimit",
     "Repliker",
     "ReplikerSkill",
+    "ReplikerDeveloperModule",
+    "ReplikerRule",
+    "ReplikerKnowledgeItem",
+    "ReplikerStudioProfile",
     "ReplikerToolAssignment",
     "Project",
     "ProjectRequirement",

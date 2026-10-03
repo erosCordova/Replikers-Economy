@@ -32,6 +32,12 @@ from app.models.repliker import (
 from app.models.task import (
     Task,
 )
+from app.services.repliker_behavior_service import (
+    load_repliker_behavior_context,
+)
+from app.services.repliker_developer_service import (
+    materialize_developer_module,
+)
 from app.services.workspace_service import (
     get_or_create_workspace,
     log_tool_execution,
@@ -252,6 +258,20 @@ def execute_contract_once(
         workspace
     )
 
+    developer_context = (
+        materialize_developer_module(
+            db=db,
+            workspace=workspace,
+            repliker_id=
+                repliker.id,
+        )
+    )
+
+    # El modulo queda incorporado antes
+    # de tomar la linea base, por lo que
+    # no cuenta como entregable de la tarea.
+    db.commit()
+
     baseline = (
         _artifact_snapshot(
             db=db,
@@ -272,6 +292,14 @@ def execute_contract_once(
             task.description
             or task.title
         )
+
+    behavior_context = (
+        load_repliker_behavior_context(
+            db=db,
+            repliker_id=
+                repliker.id,
+        )
+    )
 
     trace = [
         *state.get(
@@ -317,8 +345,20 @@ def execute_contract_once(
                 repliker=repliker,
                 task=task,
                 workspace=workspace,
+                behavior_context=
+                    behavior_context,
+                developer_context=
+                    developer_context,
             )
         )
+
+        # El contexto del Studio ya esta
+        # materializado como datos simples.
+        # Cerramos cualquier transaccion que
+        # pudiera haberse abierto al preparar
+        # el runtime antes de esperar a la IA.
+        if db.in_transaction():
+            db.commit()
 
         result = (
             runtime.agent.invoke(
