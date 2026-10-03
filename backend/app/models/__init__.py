@@ -18,6 +18,10 @@ from app.models.project import (
     ProjectRequirement,
 )
 
+from app.models.project_specialist import (
+    ProjectSpecialistRequirement,
+)
+
 from app.models.task import (
     Task,
     TaskSkillRequirement,
@@ -92,6 +96,7 @@ __all__ = [
     "ReplikerToolAssignment",
     "Project",
     "ProjectRequirement",
+    "ProjectSpecialistRequirement",
     "Task",
     "TaskSkillRequirement",
     "TaskAcceptanceCriterion",

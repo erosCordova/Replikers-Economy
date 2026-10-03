@@ -14,6 +14,9 @@ from app.auth.dependencies import (
     get_db,
 )
 from app.models.project import Project
+from app.models.project_specialist import (
+    ProjectSpecialistRequirement,
+)
 from app.models.repliker import Repliker
 from app.models.task import (
     Task,
@@ -274,6 +277,32 @@ def plan_project(
             status_code=502,
             detail=str(exc),
         ) from exc
+
+    for specialist in (
+        plan.required_specialists
+    ):
+        db.add(
+            ProjectSpecialistRequirement(
+                project_id=
+                    project.id,
+                specialty=(
+                    specialist
+                    .specialty
+                    .strip()
+                ),
+                reason=(
+                    specialist
+                    .reason
+                    .strip()
+                ),
+                is_mandatory=
+                    specialist.mandatory,
+                is_final_gate=
+                    specialist.final_gate,
+                coverage_status=
+                    "pending",
+            )
+        )
 
     created_task_ids: list[int] = []
 

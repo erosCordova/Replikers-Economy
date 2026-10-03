@@ -29,6 +29,9 @@ from app.services.project_lifecycle_service import (
 from app.services.realtime_service import (
     record_workflow_event,
 )
+from app.services.specialty_localization_service import (
+    specialty_label_es,
+)
 
 
 StageHandler = Callable[..., dict]
@@ -117,6 +120,7 @@ def build_project_lifecycle_graph(
         "integration": "system",
         "economy": "economy",
         "awaiting_funding": "economy",
+        "awaiting_specialists": "repliker",
         "already_completed": "system",
         "failed": "system",
     }
@@ -369,7 +373,9 @@ def build_project_lifecycle_graph(
             return "market"
 
         if status == "contracted":
-            return "delegation"
+            # Un proyecto contratado debe volver
+            # a validar cobertura antes de ejecutar.
+            return "contracting"
 
         return "failed"
 
@@ -519,6 +525,28 @@ def build_project_lifecycle_graph(
             )
         )
 
+        coverage_ready = bool(
+            result.get(
+                "specialist_coverage_ready",
+                True,
+            )
+        )
+
+        raw_missing = list(
+            result.get(
+                "missing_specialties",
+                [],
+            )
+        )
+
+        missing = [
+            specialty_label_es(
+                specialty
+            )
+            for specialty
+            in raw_missing
+        ]
+
         return {
             "current_stage":
                 "contracting",
@@ -526,6 +554,10 @@ def build_project_lifecycle_graph(
                 project.status,
             "contract_ids":
                 ids,
+            "specialist_coverage_ready":
+                coverage_ready,
+            "missing_specialties":
+                missing,
             "contracts_created": (
                 state.get(
                     "contracts_created",
@@ -542,15 +574,38 @@ def build_project_lifecycle_graph(
                 len(ids),
             "next_action": (
                 "evaluate_delegation"
-                if ids
-                else "integrate"
+                if (
+                    ids
+                    and coverage_ready
+                )
+                else (
+                    "await_specialists"
+                    if not coverage_ready
+                    else "integrate"
+                )
+            ),
+            "blocked_reason": (
+                ""
+                if coverage_ready
+                else (
+                    "Faltan especialistas "
+                    "obligatorios: "
+                    + ", ".join(
+                        missing
+                    )
+                    + "."
+                )
             ),
             "history": [
                 (
-                    "R00 completo la "
-                    "seleccion contractual. "
+                    "La seleccion contractual "
+                    "finalizo. "
                     f"Contratos activos: "
-                    f"{len(ids)}."
+                    f"{len(ids)}. "
+                    f"Especialistas obligatorios "
+                    f"cubiertos: "
+                    f"{result.get('covered_specialists', 0)}/"
+                    f"{result.get('mandatory_specialists', 0)}."
                 )
             ],
         }
@@ -558,6 +613,12 @@ def build_project_lifecycle_graph(
     def contract_router(
         state: AgenticProjectState,
     ) -> str:
+        if not state.get(
+            "specialist_coverage_ready",
+            True,
+        ):
+            return "blocked"
+
         if state.get(
             "contract_ids",
             [],
@@ -827,6 +888,48 @@ def build_project_lifecycle_graph(
             ],
         }
 
+    def waiting_specialists_node(
+        state: AgenticProjectState,
+    ) -> dict:
+        missing = list(
+            state.get(
+                "missing_specialties",
+                [],
+            )
+        )
+
+        message = (
+            "El proyecto queda en espera "
+            "hasta cubrir todas las "
+            "especialidades obligatorias."
+        )
+
+        if missing:
+            message += (
+                " Faltan: "
+                + ", ".join(
+                    missing
+                )
+                + "."
+            )
+
+        return {
+            "current_stage":
+                "awaiting_specialists",
+            "next_action":
+                "rerun_market",
+            "blocked_reason":
+                message,
+            "specialist_coverage_ready":
+                False,
+            "missing_specialties":
+                missing,
+            "history": [
+                message
+            ],
+        }
+
+
     def waiting_funding_node(
         state: AgenticProjectState,
     ) -> dict:
@@ -983,6 +1086,14 @@ def build_project_lifecycle_graph(
     )
 
     graph.add_node(
+        "awaiting_specialists",
+        instrument_node(
+            "awaiting_specialists",
+            waiting_specialists_node,
+        ),
+    )
+
+    graph.add_node(
         "already_completed",
         instrument_node(
             "already_completed",
@@ -1011,6 +1122,8 @@ def build_project_lifecycle_graph(
                 "planning",
             "market":
                 "market",
+            "contracting":
+                "contracting",
             "delegation":
                 "delegation",
             "completed":
@@ -1047,6 +1160,8 @@ def build_project_lifecycle_graph(
         {
             "contracts":
                 "delegation",
+            "blocked":
+                "awaiting_specialists",
             "integration":
                 "integration",
         },
@@ -1086,6 +1201,11 @@ def build_project_lifecycle_graph(
 
     graph.add_edge(
         "awaiting_funding",
+        END,
+    )
+
+    graph.add_edge(
+        "awaiting_specialists",
         END,
     )
 
@@ -1145,6 +1265,10 @@ def run_project_lifecycle(
         "qa_failed":
             0,
         "failed_contract_ids":
+            [],
+        "specialist_coverage_ready":
+            True,
+        "missing_specialties":
             [],
         "blocked_reason":
             "",

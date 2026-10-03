@@ -15,6 +15,7 @@ ProjectStage = Literal[
     "planning",
     "market",
     "awaiting_funding",
+    "awaiting_specialists",
     "contracting",
     "delegation",
     "execution",
@@ -64,6 +65,9 @@ class AgenticProjectState(
     qa_failed: int
 
     failed_contract_ids: list[int]
+
+    specialist_coverage_ready: bool
+    missing_specialties: list[str]
 
     blocked_reason: str
     error: str

@@ -42,6 +42,9 @@ from app.services.execution_agent_service import (
 from app.services.message_service import (
     record_message,
 )
+from app.services.specialist_coverage_service import (
+    enforce_project_specialist_gate,
+)
 from app.services.qa_evaluation_service import (
     evaluate_contract_qa,
 )
@@ -377,11 +380,30 @@ def run_contracting_stage(
         project_id=project.id,
     )
 
+    coverage = (
+        enforce_project_specialist_gate(
+            db=db,
+            project_id=project.id,
+        )
+    )
+
+    db.commit()
+
     return {
         "contracts_created":
             created_count,
         "contract_ids":
             ids,
+        "specialist_coverage_ready":
+            coverage.ready,
+        "mandatory_specialists":
+            coverage.mandatory_total,
+        "covered_specialists":
+            coverage.mandatory_covered,
+        "missing_specialties":
+            list(
+                coverage.missing_specialties
+            ),
     }
 
 

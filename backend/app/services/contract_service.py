@@ -34,6 +34,9 @@ from app.services.collaboration_service import (
 from app.services.message_service import (
     record_message,
 )
+from app.services.specialist_coverage_service import (
+    enforce_project_specialist_gate,
+)
 from app.services.economy_service import (
     project_has_sufficient_custody,
     sync_project_payment_status,
@@ -842,6 +845,14 @@ def select_contracts_for_project(
         project.status = (
             "partially_contracted"
         )
+
+    # Una cobertura incompleta puede devolver
+    # el proyecto a partially_contracted aunque
+    # todas las tareas tengan contrato.
+    enforce_project_specialist_gate(
+        db=db,
+        project_id=project.id,
+    )
 
     if created:
         record_activity(
