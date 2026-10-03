@@ -1,7 +1,16 @@
+from typing import Literal
+
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
 )
+
+
+EnvironmentName = Literal[
+    "development",
+    "test",
+    "production",
+]
 
 
 class Settings(BaseSettings):
@@ -13,9 +22,27 @@ class Settings(BaseSettings):
         "/api/v1"
     )
 
+    ENVIRONMENT: EnvironmentName = (
+        "development"
+    )
+
+    # --------------------------------------------------------
+    # Database
+    # --------------------------------------------------------
+
     DATABASE_URL: str = (
         "sqlite:///./replikers.db"
     )
+
+    DB_POOL_PRE_PING: bool = True
+
+    DB_POOL_RECYCLE_SECONDS: int = (
+        300
+    )
+
+    # --------------------------------------------------------
+    # Security
+    # --------------------------------------------------------
 
     SECRET_KEY: str
 
@@ -29,7 +56,10 @@ class Settings(BaseSettings):
         "http://localhost:5173"
     )
 
+    # --------------------------------------------------------
     # Inteligencia artificial
+    # --------------------------------------------------------
+
     GEMINI_API_KEY: str = ""
 
     GEMINI_MODEL: str = (
@@ -39,16 +69,25 @@ class Settings(BaseSettings):
     # --------------------------------------------------------
     # Economia
     # --------------------------------------------------------
-    # Por decision del proyecto, actualmente
-    # Replikers trabaja EXCLUSIVAMENTE con
-    # dinero ficticio.
-    ECONOMY_MODE: str = "simulation"
+    # Replikers continua trabajando
+    # EXCLUSIVAMENTE con dinero ficticio.
+    # El paso a dinero real solo se activara
+    # mediante una decision posterior explicita.
+    # --------------------------------------------------------
 
-    REAL_PAYMENTS_ENABLED: bool = False
+    ECONOMY_MODE: str = (
+        "simulation"
+    )
+
+    REAL_PAYMENTS_ENABLED: bool = (
+        False
+    )
 
     # 1000 basis points = 10 %
-    # Politica temporal para simulacion.
-    PLATFORM_COMMISSION_BPS: int = 1000
+    # Politica temporal de simulacion.
+    PLATFORM_COMMISSION_BPS: int = (
+        1000
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

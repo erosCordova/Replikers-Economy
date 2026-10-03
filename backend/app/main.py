@@ -1,3 +1,7 @@
+from contextlib import (
+    asynccontextmanager,
+)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import (
     CORSMiddleware,
@@ -55,28 +59,52 @@ from app.api.routes.realtime import (
     router as realtime_router,
 )
 
-from app.database.base import Base
+from app.core.config import settings
+from app.database.migrations import (
+    assert_database_migrations_current,
+)
 from app.database.session import engine
 
-import app.models  # noqa: F401
 
+@asynccontextmanager
+async def lifespan(
+    _: FastAPI,
+):
+    # En produccion la aplicacion nunca
+    # crea/modifica tablas automaticamente.
+    #
+    # El despliegue debe ejecutar primero:
+    #
+    #   python -m alembic upgrade head
+    #
+    # Si la version de BD no coincide,
+    # el backend falla rapido en lugar de
+    # trabajar sobre un esquema incorrecto.
+    if (
+        settings.ENVIRONMENT
+        == "production"
+    ):
+        assert_database_migrations_current(
+            engine
+        )
 
-Base.metadata.create_all(
-    bind=engine
-)
+    yield
 
 
 app = FastAPI(
     title="Repliker Economy API",
-    version="1.5.0",
+    version="1.6.0",
     description=(
         "Backend de Repliker Economy: "
         "LangChain para agentes y tools, "
         "LangGraph para orquestacion, "
         "mercado, contratacion, delegacion, "
-        "ejecucion aislada, QA verificable "
-        "y economia simulada con ledger."
+        "ejecucion aislada, QA verificable, "
+        "economia simulada con ledger y "
+        "persistencia administrada "
+        "mediante Alembic."
     ),
+    lifespan=lifespan,
 )
 
 
@@ -190,7 +218,11 @@ def health():
         "service":
             "backend",
         "version":
-            "1.5.0",
+            "1.6.0",
+        "environment":
+            settings.ENVIRONMENT,
+        "database_schema":
+            "alembic",
         "agentic_framework":
             "LangChain + LangGraph",
         "qa":
@@ -211,6 +243,10 @@ def root():
             "online",
         "api":
             "/api/v1",
+        "environment":
+            settings.ENVIRONMENT,
+        "database_schema":
+            "alembic",
         "agentic_framework":
             "LangChain + LangGraph",
         "qa":
