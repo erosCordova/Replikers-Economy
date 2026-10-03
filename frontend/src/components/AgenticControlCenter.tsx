@@ -15,7 +15,7 @@ import {
   Wrench,
 } from 'lucide-react'
 
-import {
+import { useCallback,
   useEffect,
   useMemo,
   useState,
@@ -313,85 +313,100 @@ export default function AgenticControlCenter({
     )
 
 
-  async function load(
-    silent = false,
-  ) {
-    if (silent) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
-
-    try {
-      const [
-        runtimeResponse,
-        catalogResponse,
-      ] =
-        await Promise.all([
-          api.get<AgenticRuntime>(
-            '/agentic/runtime',
-          ),
-
-          api.get<AgenticTool[]>(
-            '/agentic/tools',
-          ),
-        ])
-
-      setRuntime(
-        runtimeResponse.data,
-      )
-
-      setCatalog(
-        catalogResponse.data,
-      )
-
-      if (
-        selectedProjectId
-        === 'all'
-      ) {
-        setSnapshot(null)
-        setError('')
-
-        return
+  const load = useCallback(
+    async (
+      silent = false,
+    ) => {
+      if (silent) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
       }
 
-      const snapshotResponse =
-        await api.get<AgenticSnapshot>(
-          `/agentic/projects/${selectedProjectId}`,
+      try {
+        const [
+          runtimeResponse,
+          catalogResponse,
+        ] =
+          await Promise.all([
+            api.get<AgenticRuntime>(
+              '/agentic/runtime',
+            ),
+
+            api.get<AgenticTool[]>(
+              '/agentic/tools',
+            ),
+          ])
+
+        setRuntime(
+          runtimeResponse.data,
         )
 
-      setSnapshot(
-        snapshotResponse.data,
-      )
+        setCatalog(
+          catalogResponse.data,
+        )
 
-      setError('')
+        if (
+          selectedProjectId
+          === 'all'
+        ) {
+          setSnapshot(null)
+          setError('')
 
-    } catch {
-      setError(
-        'No fue posible cargar '
-        + 'el Agentic Control Center.',
-      )
+          return
+        }
 
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
+        const snapshotResponse =
+          await api.get<AgenticSnapshot>(
+            `/agentic/projects/${selectedProjectId}`,
+          )
+
+        setSnapshot(
+          snapshotResponse.data,
+        )
+
+        setError('')
+
+      } catch {
+        setError(
+          'No fue posible cargar '
+          + 'el Agentic Control Center.',
+        )
+
+      } finally {
+        setLoading(false)
+        setRefreshing(false)
+      }
+    },
+    [selectedProjectId],
+  )
 
 
   useEffect(
     () => {
-      setEditingAgentId(
-        null,
-      )
+      const timer =
+        window.setTimeout(
+          () => {
+            setEditingAgentId(
+              null,
+            )
 
-      setToolDraft([])
+            setToolDraft([])
 
-      setNotice('')
+            setNotice('')
 
-      void load()
+            void load()
+          },
+          0,
+        )
+
+      return () => {
+        window.clearTimeout(
+          timer,
+        )
+      }
     },
-    [selectedProjectId],
+    [load],
   )
 
 

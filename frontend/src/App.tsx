@@ -376,7 +376,19 @@ function App() {
 
 
   useEffect(() => {
-    bootstrap()
+    const timer =
+      window.setTimeout(
+        () => {
+          void bootstrap()
+        },
+        0,
+      )
+
+    return () => {
+      window.clearTimeout(
+        timer,
+      )
+    }
   }, [])
 
 

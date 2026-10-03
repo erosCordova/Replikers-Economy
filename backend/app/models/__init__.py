@@ -4,6 +4,10 @@ from app.models.auth_session import (
     AuthSession,
 )
 
+from app.models.auth_rate_limit import (
+    AuthRateLimit,
+)
+
 from app.models.repliker import (
     Repliker,
     ReplikerSkill,
@@ -82,6 +86,7 @@ from app.models.realtime import (
 __all__ = [
     "User",
     "AuthSession",
+    "AuthRateLimit",
     "Repliker",
     "ReplikerSkill",
     "ReplikerToolAssignment",

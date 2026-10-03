@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Workflow,
 } from 'lucide-react'
-import {
+import { useCallback,
   useEffect,
   useMemo,
   useState,
@@ -289,101 +289,122 @@ export default function CollaborationPanel({
     )
 
 
-  async function load(
-    silent = false,
-  ) {
-    if (
-      selectedProjectId
-      === 'all'
-    ) {
-      setSnapshot({
-        project_id: 0,
-        threads: [],
-        messages: [],
-      })
+  const load = useCallback(
+    async (
+      silent = false,
+    ) => {
+      if (
+        selectedProjectId
+        === 'all'
+      ) {
+        setSnapshot({
+          project_id: 0,
+          threads: [],
+          messages: [],
+        })
 
-      return
-    }
+        return
+      }
 
-    if (silent) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
+      if (silent) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
+      }
 
-    try {
-      const response =
-        await api.get<CollaborationSnapshot>(
-          `/collaboration/projects/${selectedProjectId}`,
+      try {
+        const response =
+          await api.get<CollaborationSnapshot>(
+            `/collaboration/projects/${selectedProjectId}`,
+          )
+
+        setSnapshot(
+          response.data,
         )
 
-      setSnapshot(
-        response.data,
-      )
+        setError('')
 
-      setError('')
+        setSelectedThreadId(
+          (current) => {
+            if (
+              current !== 'all'
+              && response.data
+                .threads
+                .some(
+                  (thread) =>
+                    thread.id
+                    === current,
+                )
+            ) {
+              return current
+            }
 
-      setSelectedThreadId(
-        (current) => {
-          if (
-            current !== 'all'
-            && response.data
-              .threads
-              .some(
-                (thread) =>
-                  thread.id
-                  === current,
-              )
-          ) {
-            return current
-          }
-
-          return 'all'
-        },
-      )
-    } catch {
-      setError(
-        'No fue posible cargar '
-        + 'la colaboracion.',
-      )
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
+            return 'all'
+          },
+        )
+      } catch {
+        setError(
+          'No fue posible cargar '
+          + 'la colaboracion.',
+        )
+      } finally {
+        setLoading(false)
+        setRefreshing(false)
+      }
+    },
+    [selectedProjectId],
+  )
 
 
   useEffect(() => {
-    setSelectedThreadId(
-      'all',
-    )
+    let pollTimer:
+      number | undefined
 
-    setComposer('')
-    setNotice('')
-
-    void load()
-
-    if (
-      selectedProjectId
-      === 'all'
-    ) {
-      return
-    }
-
-    const timer =
-      window.setInterval(
+    const bootstrapTimer =
+      window.setTimeout(
         () => {
-          void load(true)
+          setSelectedThreadId(
+            'all',
+          )
+
+          setComposer('')
+          setNotice('')
+
+          void load()
+
+          if (
+            selectedProjectId
+            !== 'all'
+          ) {
+            pollTimer =
+              window.setInterval(
+                () => {
+                  void load(true)
+                },
+                8000,
+              )
+          }
         },
-        8000,
+        0,
       )
 
     return () => {
-      window.clearInterval(
-        timer,
+      window.clearTimeout(
+        bootstrapTimer,
       )
+
+      if (
+        pollTimer !== undefined
+      ) {
+        window.clearInterval(
+          pollTimer,
+        )
+      }
     }
-  }, [selectedProjectId])
+  }, [
+    load,
+    selectedProjectId,
+  ])
 
 
   const openThreads =

@@ -99,6 +99,54 @@ class Settings(BaseSettings):
         False
     )
 
+    MAX_ACTIVE_SESSIONS_PER_USER: int = (
+        5
+    )
+
+    AUTH_SESSION_HISTORY_DAYS: int = (
+        30
+    )
+
+    AUTH_LOGIN_IP_MAX_REQUESTS: int = (
+        30
+    )
+
+    AUTH_LOGIN_IDENTITY_MAX_REQUESTS: int = (
+        10
+    )
+
+    AUTH_LOGIN_WINDOW_SECONDS: int = (
+        300
+    )
+
+    AUTH_LOGIN_BLOCK_SECONDS: int = (
+        900
+    )
+
+    AUTH_REGISTER_MAX_REQUESTS: int = (
+        5
+    )
+
+    AUTH_REGISTER_WINDOW_SECONDS: int = (
+        600
+    )
+
+    AUTH_REGISTER_BLOCK_SECONDS: int = (
+        1800
+    )
+
+    AUTH_REFRESH_MAX_REQUESTS: int = (
+        60
+    )
+
+    AUTH_REFRESH_WINDOW_SECONDS: int = (
+        60
+    )
+
+    AUTH_REFRESH_BLOCK_SECONDS: int = (
+        300
+    )
+
     # --------------------------------------------------------
     # Web / CORS
     # --------------------------------------------------------

@@ -10,7 +10,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import {
+import { useCallback,
   useEffect,
   useMemo,
   useState,
@@ -243,52 +243,67 @@ export default function Ecosystem({
   ] = useState('')
 
 
-  async function loadSnapshot(
-    silent = false,
-  ) {
-    if (silent) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
+  const loadSnapshot = useCallback(
+    async (
+      silent = false,
+    ) => {
+      if (silent) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
+      }
 
-    try {
-      const response =
-        await api.get<EcosystemSnapshot>(
-          '/ecosystem',
-        )
-
-      setSnapshot(response.data)
-      setError('')
-
-      setSelectedAgent(
-        (current) => {
-          if (!current) {
-            return null
-          }
-
-          return (
-            response.data.agents.find(
-              (agent) =>
-                agent.id === current.id,
-            ) ?? null
+      try {
+        const response =
+          await api.get<EcosystemSnapshot>(
+            '/ecosystem',
           )
-        },
-      )
-    } catch {
-      setError(
-        'No fue posible cargar el ecosistema.',
-      )
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
+
+        setSnapshot(response.data)
+        setError('')
+
+        setSelectedAgent(
+          (current) => {
+            if (!current) {
+              return null
+            }
+
+            return (
+              response.data.agents.find(
+                (agent) =>
+                  agent.id === current.id,
+              ) ?? null
+            )
+          },
+        )
+      } catch {
+        setError(
+          'No fue posible cargar el ecosistema.',
+        )
+      } finally {
+        setLoading(false)
+        setRefreshing(false)
+      }
+    },
+    [],
+  )
 
 
   useEffect(() => {
-    void loadSnapshot()
-  }, [])
+    const timer =
+      window.setTimeout(
+        () => {
+          void loadSnapshot()
+        },
+        0,
+      )
+
+    return () => {
+      window.clearTimeout(
+        timer,
+      )
+    }
+  }, [loadSnapshot])
 
 
   const workingAgents = useMemo(

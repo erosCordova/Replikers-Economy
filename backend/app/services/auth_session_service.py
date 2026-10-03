@@ -10,6 +10,7 @@ import secrets
 from uuid import uuid4
 
 from sqlalchemy import (
+    delete,
     select,
     update,
 )
@@ -63,6 +64,123 @@ def hash_refresh_token(
     ).hexdigest()
 
 
+def enforce_user_session_policy(
+    db: Session,
+    *,
+    user_id: int,
+    exclude_session_id:
+        int | None = None,
+) -> None:
+    now = utc_now()
+
+    # Primero invalida sesiones expiradas.
+    db.execute(
+        update(
+            AuthSession
+        )
+        .where(
+            AuthSession.user_id
+            == user_id,
+            AuthSession.revoked_at
+            .is_(None),
+            AuthSession.expires_at
+            <= now,
+        )
+        .values(
+            revoked_at=now
+        )
+    )
+
+    history_cutoff = (
+        now
+        - timedelta(
+            days=
+                settings
+                .AUTH_SESSION_HISTORY_DAYS
+        )
+    )
+
+    # Conservamos historial desde el momento
+    # real de revocacion, no desde created_at.
+    db.execute(
+        delete(
+            AuthSession
+        )
+        .where(
+            AuthSession.user_id
+            == user_id,
+            AuthSession.revoked_at
+            .is_not(None),
+            AuthSession.revoked_at
+            < history_cutoff,
+        )
+    )
+
+    conditions = [
+        AuthSession.user_id
+        == user_id,
+
+        AuthSession.revoked_at
+        .is_(None),
+
+        AuthSession.expires_at
+        > now,
+    ]
+
+    # Durante una rotacion, la sesion actual
+    # sera reemplazada en esta misma transaccion.
+    # No debe provocar la expulsion adicional
+    # de otra sesion valida.
+    if exclude_session_id is not None:
+        conditions.append(
+            AuthSession.id
+            != exclude_session_id
+        )
+
+    active_sessions = list(
+        db.scalars(
+            select(
+                AuthSession
+            )
+            .where(
+                *conditions
+            )
+            .order_by(
+                AuthSession.created_at,
+                AuthSession.id,
+            )
+            .with_for_update()
+        )
+    )
+
+    maximum = max(
+        1,
+        settings
+        .MAX_ACTIVE_SESSIONS_PER_USER,
+    )
+
+    # Dejamos un hueco para la nueva sesion.
+    maximum_existing = max(
+        0,
+        maximum - 1,
+    )
+
+    excess = (
+        len(active_sessions)
+        - maximum_existing
+    )
+
+    if excess <= 0:
+        return
+
+    for session in (
+        active_sessions[
+            :excess
+        ]
+    ):
+        session.revoked_at = now
+
+
 def create_refresh_session(
     db: Session,
     *,
@@ -73,6 +191,13 @@ def create_refresh_session(
     str,
     AuthSession,
 ]:
+    enforce_user_session_policy(
+        db,
+        user_id=user_id,
+        exclude_session_id=
+            rotated_from_id,
+    )
+
     raw_token = (
         secrets.token_urlsafe(
             48

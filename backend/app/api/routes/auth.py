@@ -27,12 +27,19 @@ from app.auth.security import (
     hash_password,
     verify_password_constant_time,
 )
+from app.core.config import settings
 from app.models.user import User
 from app.schemas.user import (
     AuthResponse,
     UserLogin,
     UserPublic,
     UserRegister,
+)
+from app.services.auth_abuse_service import (
+    AuthRateLimitExceeded,
+    build_identity,
+    clear_auth_rate_limit,
+    consume_auth_rate_limit,
 )
 from app.services.auth_session_service import (
     RefreshSessionError,
@@ -41,6 +48,51 @@ from app.services.auth_session_service import (
     revoke_refresh_session,
     rotate_refresh_session,
 )
+
+
+def enforce_limit(
+    request: Request,
+    *,
+    action: str,
+    extra: str = "",
+    include_ip: bool = True,
+    max_requests: int,
+    window_seconds: int,
+    block_seconds: int,
+) -> None:
+    try:
+        consume_auth_rate_limit(
+            action=action,
+            identity=
+                build_identity(
+                    request,
+                    extra=extra,
+                    include_ip=
+                        include_ip,
+                ),
+            max_requests=max_requests,
+            window_seconds=
+                window_seconds,
+            block_seconds=
+                block_seconds,
+        )
+
+    except AuthRateLimitExceeded as exc:
+        raise HTTPException(
+            status_code=
+                status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                "Demasiadas solicitudes. "
+                "Intenta nuevamente mas tarde."
+            ),
+            headers={
+                "Retry-After":
+                    str(
+                        exc
+                        .retry_after_seconds
+                    ),
+            },
+        ) from exc
 
 
 router = APIRouter(
@@ -80,6 +132,20 @@ def register(
 ):
     validate_cookie_origin(
         request
+    )
+
+    enforce_limit(
+        request,
+        action="register_ip",
+        max_requests=
+            settings
+            .AUTH_REGISTER_MAX_REQUESTS,
+        window_seconds=
+            settings
+            .AUTH_REGISTER_WINDOW_SECONDS,
+        block_seconds=
+            settings
+            .AUTH_REGISTER_BLOCK_SECONDS,
     )
 
     email = (
@@ -179,6 +245,36 @@ def login(
         .strip()
     )
 
+    enforce_limit(
+        request,
+        action="login_ip",
+        max_requests=
+            settings
+            .AUTH_LOGIN_IP_MAX_REQUESTS,
+        window_seconds=
+            settings
+            .AUTH_LOGIN_WINDOW_SECONDS,
+        block_seconds=
+            settings
+            .AUTH_LOGIN_BLOCK_SECONDS,
+    )
+
+    enforce_limit(
+        request,
+        action="login_identity",
+        extra=email,
+        include_ip=False,
+        max_requests=
+            settings
+            .AUTH_LOGIN_IDENTITY_MAX_REQUESTS,
+        window_seconds=
+            settings
+            .AUTH_LOGIN_WINDOW_SECONDS,
+        block_seconds=
+            settings
+            .AUTH_LOGIN_BLOCK_SECONDS,
+    )
+
     user = db.scalar(
         select(User)
         .where(
@@ -238,6 +334,19 @@ def login(
         db.rollback()
         raise
 
+    # Un login valido demuestra conocimiento
+    # de la credencial y reinicia solamente el
+    # contador global de esa identidad.
+    clear_auth_rate_limit(
+        action="login_identity",
+        identity=
+            build_identity(
+                request,
+                extra=email,
+                include_ip=False,
+            ),
+    )
+
     set_refresh_cookie(
         response,
         refresh_token,
@@ -261,6 +370,20 @@ def refresh(
 ):
     validate_cookie_origin(
         request
+    )
+
+    enforce_limit(
+        request,
+        action="refresh_ip",
+        max_requests=
+            settings
+            .AUTH_REFRESH_MAX_REQUESTS,
+        window_seconds=
+            settings
+            .AUTH_REFRESH_WINDOW_SECONDS,
+        block_seconds=
+            settings
+            .AUTH_REFRESH_BLOCK_SECONDS,
     )
 
     raw_token = (
