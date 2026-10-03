@@ -10,7 +10,11 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from app.database.base import Base
 
@@ -40,6 +44,13 @@ class Task(Base):
     description: Mapped[str] = mapped_column(
         Text,
         nullable=False,
+    )
+
+    required_specialty: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+        default="Generalist",
+        server_default="Generalist",
     )
 
     status: Mapped[str] = mapped_column(

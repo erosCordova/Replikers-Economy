@@ -24,6 +24,9 @@ from app.models.user import User
 from app.orchestration.coordinator import (
     build_project_plan,
 )
+from app.replikers.catalogo_web import (
+    get_web_repliker,
+)
 from app.schemas.coordinator import (
     CoordinatorPlanResponse,
     PlannedTaskResponse,
@@ -31,12 +34,15 @@ from app.schemas.coordinator import (
 from app.services.activity_service import (
     record_activity,
 )
-from app.services.message_service import (
-    record_message,
-)
 from app.services.gemini_client import (
     GeminiConfigurationError,
     GeminiResponseError,
+)
+from app.services.message_service import (
+    record_message,
+)
+from app.services.web_repliker_registry_service import (
+    ECOSYSTEM_OWNER_EMAIL,
 )
 
 
@@ -44,6 +50,65 @@ router = APIRouter(
     prefix="/coordinator",
     tags=["Coordinador IA"],
 )
+
+
+def _get_official_iris(
+    db: Session,
+) -> Repliker:
+    definition = get_web_repliker(
+        "product_requirements"
+    )
+
+    if definition is None:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "La definicion oficial de Iris "
+                "no esta disponible."
+            ),
+        )
+
+    owner = db.scalar(
+        select(User)
+        .where(
+            User.email
+            == ECOSYSTEM_OWNER_EMAIL
+        )
+    )
+
+    if owner is None:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "El ecosistema oficial de "
+                "Replikers no esta inicializado."
+            ),
+        )
+
+    iris = db.scalar(
+        select(Repliker)
+        .options(
+            selectinload(
+                Repliker.skills
+            )
+        )
+        .where(
+            Repliker.owner_id == owner.id,
+            Repliker.name == definition.name,
+            Repliker.is_active.is_(True),
+        )
+    )
+
+    if iris is None:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Iris no esta disponible "
+                "en el ecosistema."
+            ),
+        )
+
+    return iris
 
 
 @router.post(
@@ -106,6 +171,10 @@ def plan_project(
             ),
         )
 
+    iris = _get_official_iris(
+        db
+    )
+
     replikers = list(
         db.scalars(
             select(Repliker)
@@ -116,15 +185,19 @@ def plan_project(
             )
             .where(
                 Repliker.is_active
-                .is_(True)
+                .is_(True),
+                Repliker.owner_id
+                != project.client_id,
             )
         ).all()
     )
 
     marketplace_data = [
         {
-            "id": repliker.id,
-            "name": repliker.name,
+            "id":
+                repliker.id,
+            "name":
+                repliker.name,
             "specialty":
                 repliker.specialty,
             "reputation":
@@ -133,19 +206,24 @@ def plan_project(
                 repliker.jobs_completed,
             "skills": [
                 {
-                    "name": skill.name,
-                    "level": skill.level,
+                    "name":
+                        skill.name,
+                    "level":
+                        skill.level,
                 }
                 for skill
                 in repliker.skills
             ],
         }
-        for repliker in replikers
+        for repliker
+        in replikers
     ]
 
     project_data = {
-        "id": project.id,
-        "title": project.title,
+        "id":
+            project.id,
+        "title":
+            project.title,
         "description":
             project.description,
         "currency":
@@ -154,7 +232,8 @@ def plan_project(
             project.budget_limit_cents,
         "requirements": [
             {
-                "title": requirement.title,
+                "title":
+                    requirement.title,
                 "description":
                     requirement.description,
                 "mandatory":
@@ -167,7 +246,8 @@ def plan_project(
 
     try:
         plan = build_project_plan(
-            project_data=project_data,
+            project_data=
+                project_data,
             marketplace_data=
                 marketplace_data,
         )
@@ -190,15 +270,23 @@ def plan_project(
             detail=str(exc),
         ) from exc
 
-    created_task_ids = []
+    created_task_ids: list[int] = []
 
     for planned_task in plan.tasks:
         task = Task(
-            project_id=project.id,
-            title=planned_task.title,
+            project_id=
+                project.id,
+            title=
+                planned_task.title,
             description=
                 planned_task.description,
-            status="planned",
+            required_specialty=(
+                planned_task
+                .required_specialty
+                .strip()
+            ),
+            status=
+                "planned",
             complexity=
                 planned_task.complexity,
             max_budget_cents=(
@@ -215,11 +303,13 @@ def plan_project(
         )
 
         for skill in (
-            planned_task.required_skills
+            planned_task
+            .required_skills
         ):
             db.add(
                 TaskSkillRequirement(
-                    task_id=task.id,
+                    task_id=
+                        task.id,
                     skill_name=
                         skill.skill_name,
                     minimum_level=
@@ -233,24 +323,31 @@ def plan_project(
         ):
             db.add(
                 TaskAcceptanceCriterion(
-                    task_id=task.id,
-                    description=criterion,
-                    status="pending",
-                    is_mandatory=True,
+                    task_id=
+                        task.id,
+                    description=
+                        criterion,
+                    status=
+                        "pending",
+                    is_mandatory=
+                        True,
                 )
             )
 
         record_activity(
             db=db,
-            actor_type="r00",
+            actor_type="repliker",
             event_type="task_created",
             project_id=project.id,
             task_id=task.id,
+            repliker_id=iris.id,
             title=(
-                "R00 creo una nueva tarea"
+                "Iris definio una tarea"
             ),
             description=(
                 f"{task.title}. "
+                f"Especialidad: "
+                f"{task.required_specialty}. "
                 f"Complejidad: "
                 f"{task.complexity}/100. "
                 f"Presupuesto maximo: "
@@ -272,20 +369,32 @@ def plan_project(
 
     project.status = "planned"
 
+    mandatory_specialists = [
+        specialist
+        for specialist
+        in plan.required_specialists
+        if specialist.mandatory
+    ]
+
     record_activity(
         db=db,
-        actor_type="r00",
-        event_type=(
-            "project_planned"
-        ),
-        project_id=project.id,
+        actor_type="repliker",
+        event_type=
+            "project_planned",
+        project_id=
+            project.id,
+        repliker_id=
+            iris.id,
         title=(
-            "R00 termino la planificacion"
+            "Iris termino el analisis "
+            "del proyecto"
         ),
         description=(
-            f"El proyecto fue dividido en "
-            f"{len(plan.tasks)} tareas con "
-            f"un presupuesto planificado de "
+            f"Se definieron "
+            f"{len(plan.tasks)} tareas y "
+            f"{len(mandatory_specialists)} "
+            f"especialidades obligatorias. "
+            f"Presupuesto planificado: "
             f"{project.currency} "
             f"{planned_budget / 100:.2f}."
         ),
@@ -293,18 +402,27 @@ def plan_project(
 
     record_message(
         db=db,
-        project_id=project.id,
-        sender_type="r00",
-        receiver_type="project",
-        message_type="planning_summary",
+        project_id=
+            project.id,
+        sender_type=
+            "repliker",
+        sender_repliker_id=
+            iris.id,
+        receiver_type=
+            "project",
+        message_type=
+            "planning_summary",
         content=(
-            f"He terminado la planificacion de "
+            f"Ya termine de organizar "
             f"'{project.title}'. "
             f"{plan.summary} "
-            f"Se definieron {len(plan.tasks)} "
-            f"tareas con un presupuesto total de "
-            f"{project.currency} "
-            f"{planned_budget / 100:.2f}."
+            f"Identifique "
+            f"{len(mandatory_specialists)} "
+            f"especialidades obligatorias "
+            f"y prepare "
+            f"{len(plan.tasks)} tareas. "
+            f"El siguiente paso es buscar "
+            f"Replikers compatibles."
         ),
     )
 
@@ -350,16 +468,24 @@ def plan_project(
         )
 
     return CoordinatorPlanResponse(
-        project_id=project.id,
-        coordinator="R00",
-        summary=plan.summary,
-        strategy=plan.strategy,
+        project_id=
+            project.id,
+        coordinator=
+            iris.name,
+        summary=
+            plan.summary,
+        strategy=
+            plan.strategy,
         planned_budget_cents=
             planned_budget,
         client_budget_cents=(
             project.budget_limit_cents
         ),
+        required_specialists=(
+            plan.required_specialists
+        ),
         market_gaps=
             plan.market_gaps,
-        tasks=response_tasks,
+        tasks=
+            response_tasks,
     )

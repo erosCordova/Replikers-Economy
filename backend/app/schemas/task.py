@@ -1,6 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 
 class TaskSkillCreate(BaseModel):
@@ -34,6 +38,12 @@ class TaskCreate(BaseModel):
     description: str = Field(
         min_length=5,
         max_length=5000,
+    )
+
+    required_specialty: str = Field(
+        default="Generalist",
+        min_length=2,
+        max_length=120,
     )
 
     complexity: int = Field(
@@ -95,11 +105,17 @@ class BidPublic(BaseModel):
 class TaskPublic(BaseModel):
     id: int
     project_id: int
+
     title: str
     description: str
+
+    required_specialty: str = "Generalist"
+
     status: str
     complexity: int
+
     max_budget_cents: int | None
+
     created_at: datetime
 
     required_skills: list[TaskSkillPublic]

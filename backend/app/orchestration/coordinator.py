@@ -11,6 +11,7 @@ from app.agentic.model import (
 )
 from app.schemas.coordinator import (
     AIProjectPlan,
+    PlannedSpecialist,
 )
 from app.services.gemini_client import (
     GeminiConfigurationError,
@@ -19,50 +20,52 @@ from app.services.gemini_client import (
 
 
 SYSTEM_INSTRUCTION = """
-Eres R00, el Coordinador autonomo de Repliker Economy.
+Eres Iris, el Repliker Product / Requirements oficial de
+Repliker Economy.
 
-Funcionas mediante LangChain.
-
-Tu responsabilidad es transformar el objetivo de un cliente humano
-en un plan de trabajo que pueda ser ejecutado por Replikers.
+R00 sigue siendo el motor interno de orquestacion del sistema.
+Tu eres el Repliker visible encargado de comprender el proyecto
+del cliente y preparar el trabajo para el mercado.
 
 REGLAS:
 
-1. No uses una plantilla fija.
-2. Analiza primero lo que realmente pidio el cliente.
+1. Analiza primero lo que realmente pidio el cliente.
+2. No utilices una plantilla fija de especialistas.
 3. Cubre todos los requisitos obligatorios.
 4. No inventes funcionalidades que el cliente no pidio.
-5. Solo agrega trabajo adicional cuando sea tecnicamente necesario
-   para entregar correctamente lo solicitado.
-6. Divide el proyecto en el menor numero razonable de tareas.
-7. Cada tarea debe producir un entregable concreto.
-8. Evita trabajo redundante.
-9. Define habilidades y nivel minimo por tarea.
-10. Define criterios verificables de aceptacion.
-11. No selecciones Replikers concretos.
-12. Otros Replikers decidiran posteriormente si desean competir.
-13. Una tarea puede ser compuesta.
-14. El Repliker ganador podra posteriormente decidir si la hace
-    solo o delega partes a otros Replikers.
-15. El presupuesto del cliente es un LIMITE MAXIMO, no un objetivo.
-16. No intentes gastar todo el presupuesto.
-17. Estima un presupuesto razonable segun el trabajo necesario.
-18. La suma nunca debe superar el limite del cliente.
-19. Considera costo, calidad, dificultad, riesgo y verificabilidad.
-20. market_gaps NO significa funcionalidades faltantes.
-21. market_gaps contiene EXCLUSIVAMENTE habilidades necesarias
-    para el proyecto que no estan suficientemente cubiertas por
-    los Replikers actualmente disponibles.
-22. Si todas las habilidades necesarias estan cubiertas por el
-    mercado, market_gaps debe ser una lista vacia.
-23. No inventes market_gaps sobre funciones que el cliente no pidio.
-24. El resultado final debe poder verificarse contra los requisitos
-    originales del cliente.
-25. No prometas perfeccion absoluta.
-26. Los importes monetarios se expresan en centimos.
-27. No expongas razonamiento privado paso a paso.
-28. summary y strategy deben contener solamente conclusiones
-    operativas utiles para el proyecto.
+5. Agrega trabajo adicional solamente cuando sea tecnicamente
+   necesario para entregar correctamente lo solicitado.
+6. Determina las especialidades profesionales necesarias.
+7. required_specialists contiene especialidades, nunca nombres
+   concretos de Replikers.
+8. No selecciones Replikers concretos.
+9. Cada Repliker decidira posteriormente si desea competir.
+10. Cada tarea debe declarar una required_specialty principal.
+11. Define las skills y nivel minimo necesarios para cada tarea.
+12. Divide el proyecto en el menor numero razonable de tareas.
+13. Cada tarea debe producir un entregable concreto.
+14. Evita trabajo redundante.
+15. Define criterios verificables de aceptacion.
+16. Product / Requirements no necesita una tarea para contratarse
+    a si mismo.
+17. Final Reviewer siempre debe formar parte de
+    required_specialists.
+18. Final Reviewer debe tener mandatory=true y final_gate=true.
+19. Final Reviewer no debe ser una tarea normal de desarrollo.
+20. Los demas especialistas deben tener final_gate=false.
+21. No incluyas Security, SEO, Accessibility, Content u otros
+    especialistas solamente porque existan en el mercado.
+22. Incluyelos cuando sean realmente necesarios para ese proyecto.
+23. El presupuesto del cliente es un limite maximo.
+24. No intentes gastar todo el presupuesto.
+25. La suma de las tareas nunca debe superar ese limite.
+26. market_gaps contiene solamente capacidades necesarias que el
+    mercado actual no cubre suficientemente.
+27. Si todo esta cubierto, market_gaps debe ser una lista vacia.
+28. No adaptes artificialmente el proyecto para utilizar agentes
+    existentes.
+29. No expongas razonamiento privado paso a paso.
+30. summary y strategy contienen solamente conclusiones operativas.
 """.strip()
 
 
@@ -72,7 +75,7 @@ def normalize_budgets(
 ) -> AIProjectPlan:
     if not plan.tasks:
         raise ValueError(
-            "R00 no genero ninguna tarea."
+            "Iris no genero ninguna tarea."
         )
 
     if budget_limit_cents is None:
@@ -90,6 +93,16 @@ def normalize_budgets(
 
     if total <= budget_limit_cents:
         return plan
+
+    minimum_total = (
+        100 * len(plan.tasks)
+    )
+
+    if minimum_total > budget_limit_cents:
+        raise ValueError(
+            "El presupuesto limite es demasiado "
+            "bajo para las tareas necesarias."
+        )
 
     factor = (
         budget_limit_cents
@@ -112,40 +125,150 @@ def normalize_budgets(
         - sum(amounts)
     )
 
-    if amounts:
-        amounts[-1] += difference
+    amounts[-1] += difference
+
+    if amounts[-1] < 100:
+        deficit = 100 - amounts[-1]
+        amounts[-1] = 100
+
+        for index in range(
+            len(amounts) - 2,
+            -1,
+            -1,
+        ):
+            available = max(
+                0,
+                amounts[index] - 100,
+            )
+
+            transfer = min(
+                available,
+                deficit,
+            )
+
+            amounts[index] -= transfer
+            deficit -= transfer
+
+            if deficit == 0:
+                break
+
+        if deficit > 0:
+            raise ValueError(
+                "No fue posible normalizar "
+                "el presupuesto de Iris."
+            )
 
     for task, amount in zip(
         plan.tasks,
         amounts,
     ):
-        task.max_budget_cents = max(
-            100,
-            amount,
+        task.max_budget_cents = amount
+
+    if (
+        sum(
+            task.max_budget_cents
+            for task in plan.tasks
         )
-
-    final_total = sum(
-        task.max_budget_cents
-        for task in plan.tasks
-    )
-
-    if final_total > budget_limit_cents:
+        > budget_limit_cents
+    ):
         raise ValueError(
             "No fue posible normalizar "
-            "el presupuesto generado por R00."
+            "el presupuesto generado por Iris."
         )
 
     return plan
 
 
-def _build_r00_chain():
-    """
-    R00 deja de utilizar directamente google.genai.
+def normalize_specialists(
+    plan: AIProjectPlan,
+) -> AIProjectPlan:
+    specialists: dict[
+        str,
+        PlannedSpecialist,
+    ] = {}
 
-    LangChain construye el modelo y exige una
-    respuesta validada mediante AIProjectPlan.
-    """
+    for specialist in plan.required_specialists:
+        name = specialist.specialty.strip()
 
+        if not name:
+            continue
+
+        normalized = name.lower()
+
+        if normalized == "product / requirements":
+            continue
+
+        specialist.specialty = name
+
+        if normalized == "final reviewer":
+            specialist.mandatory = True
+            specialist.final_gate = True
+        else:
+            specialist.final_gate = False
+
+        specialists[normalized] = specialist
+
+    for task in plan.tasks:
+        specialty = (
+            task.required_specialty
+            .strip()
+        )
+
+        if not specialty:
+            specialty = "Generalist"
+            task.required_specialty = specialty
+
+        normalized = specialty.lower()
+
+        if normalized == "final reviewer":
+            raise GeminiResponseError(
+                "Final Reviewer no debe aparecer "
+                "como una tarea normal."
+            )
+
+        if normalized == "product / requirements":
+            raise GeminiResponseError(
+                "Product / Requirements no debe "
+                "crearse como una tarea normal."
+            )
+
+        if normalized not in specialists:
+            specialists[normalized] = (
+                PlannedSpecialist(
+                    specialty=specialty,
+                    reason=(
+                        "Especialidad principal "
+                        "requerida por una tarea "
+                        "del proyecto."
+                    ),
+                    mandatory=True,
+                    final_gate=False,
+                )
+            )
+
+    final_key = "final reviewer"
+
+    if final_key not in specialists:
+        specialists[final_key] = (
+            PlannedSpecialist(
+                specialty="Final Reviewer",
+                reason=(
+                    "Revision integral obligatoria "
+                    "antes de entregar el proyecto."
+                ),
+                mandatory=True,
+                final_gate=True,
+            )
+        )
+
+    plan.required_specialists = list(
+        specialists.values()
+    )
+
+    return plan
+
+
+def _build_iris_chain():
     model = get_chat_model(
         temperature=0.1
     )
@@ -168,26 +291,29 @@ def build_project_plan(
                 marketplace_data,
             "rules": [
                 (
-                    "Primero determina lo que "
+                    "Determina primero lo que "
                     "necesita el proyecto."
                 ),
                 (
-                    "No adaptes artificialmente "
-                    "el proyecto para utilizar "
-                    "agentes existentes."
+                    "No selecciones candidatos "
+                    "por nombre."
                 ),
                 (
-                    "Usa market_gaps solamente "
-                    "para habilidades necesarias "
-                    "que el mercado actual no cubre."
+                    "No adaptes el proyecto para "
+                    "usar agentes existentes."
+                ),
+                (
+                    "Usa market_gaps solo para "
+                    "capacidades realmente "
+                    "necesarias y no cubiertas."
                 ),
             ],
         },
     }
 
     prompt = (
-        "Genera el plan autonomo de trabajo "
-        "para este proyecto.\n\n"
+        "Analiza los requisitos y genera "
+        "el plan de trabajo.\n\n"
         + json.dumps(
             context,
             ensure_ascii=False,
@@ -196,7 +322,7 @@ def build_project_plan(
     )
 
     try:
-        chain = _build_r00_chain()
+        chain = _build_iris_chain()
 
         result = chain.invoke(
             [
@@ -217,7 +343,7 @@ def build_project_plan(
 
     except Exception as exc:
         raise GeminiResponseError(
-            "R00 no pudo generar un plan "
+            "Iris no pudo generar un plan "
             "estructurado mediante LangChain. "
             f"Detalle: {exc}"
         ) from exc
@@ -227,6 +353,7 @@ def build_project_plan(
         AIProjectPlan,
     ):
         plan = result
+
     else:
         try:
             plan = (
@@ -235,11 +362,16 @@ def build_project_plan(
                     result
                 )
             )
+
         except Exception as exc:
             raise GeminiResponseError(
                 "LangChain genero una respuesta "
                 "que no cumple AIProjectPlan."
             ) from exc
+
+    plan = normalize_specialists(
+        plan
+    )
 
     return normalize_budgets(
         plan=plan,

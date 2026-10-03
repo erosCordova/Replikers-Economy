@@ -1,4 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 from app.schemas.task import TaskPublic
 
@@ -16,9 +20,34 @@ class PlannedSkill(BaseModel):
     )
 
 
+class PlannedSpecialist(BaseModel):
+    specialty: str = Field(
+        min_length=2,
+        max_length=120,
+    )
+
+    reason: str = Field(
+        default="Necesario para el proyecto.",
+        max_length=1000,
+    )
+
+    mandatory: bool = True
+    final_gate: bool = False
+
+    model_config = ConfigDict(
+        extra="forbid"
+    )
+
+
 class PlannedTask(BaseModel):
     title: str
     description: str
+
+    required_specialty: str = Field(
+        default="Generalist",
+        min_length=2,
+        max_length=120,
+    )
 
     complexity: int = Field(
         ge=1,
@@ -41,6 +70,12 @@ class PlannedTask(BaseModel):
 class AIProjectPlan(BaseModel):
     summary: str
     strategy: str
+
+    required_specialists: list[
+        PlannedSpecialist
+    ] = Field(
+        default_factory=list
+    )
 
     market_gaps: list[str]
 
@@ -66,6 +101,12 @@ class CoordinatorPlanResponse(BaseModel):
 
     planned_budget_cents: int
     client_budget_cents: int | None
+
+    required_specialists: list[
+        PlannedSpecialist
+    ] = Field(
+        default_factory=list
+    )
 
     market_gaps: list[str]
 
