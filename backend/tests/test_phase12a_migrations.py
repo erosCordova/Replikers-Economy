@@ -53,12 +53,16 @@ class Phase12AMigrationTests(
             f"sqlite:///{path}"
         )
 
+        # unittest ejecuta los cleanups en orden LIFO.
+        # Registramos primero el directorio temporal
+        # para que engine.dispose() ocurra antes
+        # de intentar eliminar el archivo SQLite.
         self.addCleanup(
-            engine.dispose
+            temporary.cleanup
         )
 
         self.addCleanup(
-            temporary.cleanup
+            engine.dispose
         )
 
         return engine

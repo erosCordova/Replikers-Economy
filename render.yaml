@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: replikers-economy-api
+    runtime: python
+    plan: free
+    rootDir: backend
+
+    buildCommand: >
+      python -m pip install --upgrade pip &&
+      python -m pip install -r requirements.txt
+
+    startCommand: >
+      python -m alembic upgrade head &&
+      python -m app.scripts.production_check &&
+      python -m uvicorn app.main:app
+      --host 0.0.0.0
+      --port $PORT
+
+    healthCheckPath: /api/v1/health/ready
+
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+
+      - key: DATABASE_URL
+        sync: false
+
+      - key: SECRET_KEY
+        sync: false
+
+      - key: FRONTEND_URL
+        sync: false
+
+      - key: GEMINI_API_KEY
+        sync: false
+
+      - key: REFRESH_COOKIE_SAMESITE
+        value: none
+
+      - key: REFRESH_COOKIE_SECURE
+        value: "true"
+
+      - key: ALLOW_INSECURE_LOCAL_ORIGINS
+        value: "false"
+
+      - key: ECONOMY_MODE
+        value: simulation
+
+      - key: REAL_PAYMENTS_ENABLED
+        value: "false"
