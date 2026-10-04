@@ -491,10 +491,12 @@ export async function connectRealtime(
         return
       }
 
-      console.warn(
-        'Realtime SSE desconectado:',
-        error,
-      )
+      if (import.meta.env.DEV) {
+        console.warn(
+          'Flujo en tiempo real desconectado:',
+          error,
+        )
+      }
     }
 
     if (signal.aborted) {

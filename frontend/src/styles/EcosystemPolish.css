@@ -681,19 +681,6 @@
       rgba(37,99,235,.07);
 }
 
-.ecosystem-message {
-  border-radius:
-    8px;
-
-  transition:
-    background .16s ease;
-}
-
-.ecosystem-message:hover {
-  background:
-    #f8fafc;
-}
-
 
 /* ---------------------------------------------------------
    PROFILE

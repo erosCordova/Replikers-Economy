@@ -251,133 +251,16 @@
    DASHBOARD HERO
    ========================================================= */
 
-.hero-panel {
-  min-height: 225px;
-
-  padding: 34px 38px;
-
-  border: 0;
-
-  border-radius: 14px;
-
-  background:
-    radial-gradient(
-      circle at 86% 50%,
-      rgba(34,211,238,.16),
-      transparent 230px
-    ),
-    radial-gradient(
-      circle at 60% -30%,
-      rgba(96,165,250,.17),
-      transparent 300px
-    ),
-    linear-gradient(
-      125deg,
-      #172554 0%,
-      #172b4d 48%,
-      #164e63 130%
-    );
-
-  box-shadow:
-    0 14px 32px rgba(15,23,42,.11);
-}
-
-
-.hero-label {
-  padding: 6px 9px;
-
-  border-radius: 7px;
-
-  color: #dbeafe;
-
-  background:
-    rgba(255,255,255,.07);
-
-  backdrop-filter: blur(8px);
-}
-
-
-.hero-panel h1 {
-  font-size:
-    clamp(30px, 3vw, 42px);
-}
-
-
-.hero-panel p {
-  color: #cbd5e1;
-}
-
-
-.hero-action {
-  border: 0;
-
-  border-radius: 8px;
-
-  box-shadow:
-    0 5px 15px rgba(0,0,0,.12);
-
-  transition:
-    transform .15s ease,
-    box-shadow .15s ease;
-}
-
-
-.hero-action:hover {
-  transform: translateY(-1px);
-
-  box-shadow:
-    0 8px 20px rgba(0,0,0,.18);
-}
-
 
 /* =========================================================
    ORBIT
    ========================================================= */
-
-.economy-orbit {
-  border-color:
-    rgba(255,255,255,.16);
-}
-
-
-.economy-orbit::before {
-  border-color:
-    rgba(255,255,255,.18);
-}
-
-
-.orbit-center {
-  border: 0;
-
-  border-radius: 16px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb,
-      #0891b2
-    );
-
-  box-shadow:
-    0 12px 32px rgba(37,99,235,.35);
-}
-
-
-.orbit-node {
-  border-radius: 11px;
-
-  background:
-    rgba(255,255,255,.1);
-
-  backdrop-filter: blur(8px);
-}
 
 
 /* =========================================================
    CARDS
    ========================================================= */
 
-.metric-card,
 .panel,
 .project-card,
 .agent-card,
@@ -390,50 +273,6 @@
 
   box-shadow:
     var(--premium-shadow);
-}
-
-
-.metric-card {
-  min-height: 112px;
-
-  border-radius: 12px;
-
-  transition:
-    transform .18s ease,
-    box-shadow .18s ease,
-    border-color .18s ease;
-}
-
-
-.metric-card:hover {
-  transform: translateY(-2px);
-
-  border-color: #cbd5e1;
-
-  box-shadow:
-    var(--premium-shadow-hover);
-}
-
-
-.metric-icon {
-  width: 43px;
-  height: 43px;
-
-  border: 0;
-
-  border-radius: 10px;
-}
-
-
-.metric-icon.purple {
-  color: #4f46e5;
-
-  background:
-    linear-gradient(
-      135deg,
-      #eef2ff,
-      #e0e7ff
-    );
 }
 
 
@@ -461,23 +300,6 @@
 }
 
 
-.metric-icon.orange {
-  color: #d97706;
-
-  background:
-    linear-gradient(
-      135deg,
-      #fffbeb,
-      #fef3c7
-    );
-}
-
-
-.metric-card strong {
-  font-size: 23px;
-}
-
-
 .panel {
   border-radius: 12px;
 }
@@ -496,16 +318,6 @@
 /* =========================================================
    TIMELINE
    ========================================================= */
-
-.timeline-icon {
-  border: 0;
-
-  border-radius: 8px;
-
-  color: #2563eb;
-
-  background: #eff6ff;
-}
 
 
 .timeline-icon.r00 {
@@ -526,26 +338,6 @@
 /* =========================================================
    AGENTS
    ========================================================= */
-
-.agent-avatar {
-  border: 0;
-
-  border-radius: 9px;
-
-  color: #2563eb;
-
-  background:
-    linear-gradient(
-      135deg,
-      #eff6ff,
-      #ecfeff
-    );
-}
-
-
-.agent-score {
-  border-radius: 7px;
-}
 
 
 .large-agent-avatar {

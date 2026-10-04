@@ -542,292 +542,25 @@ textarea {
    DASHBOARD HERO
    ========================================================= */
 
-.hero-panel {
-  min-height: 210px;
-
-  padding: 30px 34px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  overflow: hidden;
-
-  border: 1px solid #263a59;
-  border-radius: 10px;
-
-  color: #ffffff;
-  background: #172b4d;
-
-  box-shadow: var(--shadow);
-}
-
-
-.hero-panel > div:first-child {
-  max-width: 660px;
-}
-
-
-.hero-label {
-  width: max-content;
-
-  padding: 5px 8px;
-
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 5px;
-
-  color: #c7d7fe;
-  background: rgba(255,255,255,.04);
-
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-
-
-.hero-panel h1 {
-  margin: 16px 0 9px;
-
-  font-size: clamp(28px, 3vw, 39px);
-  font-weight: 650;
-  letter-spacing: -.04em;
-}
-
-
-.hero-panel p {
-  max-width: 620px;
-
-  margin: 0;
-
-  color: #c7d0df;
-
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-
-.hero-action {
-  min-height: 39px;
-
-  margin-top: 20px;
-  padding: 0 13px;
-
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 6px;
-
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  color: #172b4d;
-  background: #ffffff;
-
-  font-size: 11px;
-  font-weight: 650;
-}
-
-
-.hero-action:hover {
-  background: #f2f4f7;
-}
-
 
 /* decorative R00 block becomes restrained */
-
-.economy-orbit {
-  width: 180px;
-  height: 180px;
-
-  position: relative;
-  flex: 0 0 180px;
-
-  border: 1px solid rgba(255,255,255,.10);
-  border-radius: 50%;
-}
-
-
-.economy-orbit::before {
-  content: '';
-
-  position: absolute;
-  inset: 30px;
-
-  border: 1px dashed rgba(255,255,255,.14);
-  border-radius: 50%;
-}
-
-
-.orbit-center {
-  width: 78px;
-  height: 78px;
-
-  position: absolute;
-  inset: 50%;
-
-  transform: translate(-50%, -50%);
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 10px;
-
-  background: #1d4ed8;
-}
-
-
-.orbit-center strong {
-  margin-top: 3px;
-  font-size: 10px;
-}
-
-
-.orbit-node {
-  width: 38px;
-  height: 38px;
-
-  position: absolute;
-
-  display: grid;
-  place-items: center;
-
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 8px;
-
-  color: #d0d5dd;
-  background: #1d2939;
-}
-
-
-.node-one {
-  top: 11px;
-  left: 26px;
-}
-
-
-.node-two {
-  top: 69px;
-  right: -7px;
-}
-
-
-.node-three {
-  bottom: 11px;
-  left: 26px;
-}
 
 
 /* =========================================================
    METRICS
    ========================================================= */
 
-.metric-grid {
-  margin-top: 16px;
 
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-
-.metric-card {
-  min-height: 108px;
-
-  padding: 17px;
-
-  display: flex;
-  align-items: center;
-  gap: 13px;
-
-  border: 1px solid var(--border);
-  border-radius: 8px;
-
-  background: var(--panel);
-
-  box-shadow: var(--shadow);
-}
-
-
-.metric-icon {
-  width: 40px;
-  height: 40px;
-
-  flex: 0 0 auto;
-
-  display: grid;
-  place-items: center;
-
-  border: 1px solid var(--border);
-  border-radius: 7px;
-
-  background: #f8fafc;
-}
-
-
-.metric-icon.purple,
 .metric-icon.blue,
-.metric-icon.green,
-.metric-icon.orange {
+.metric-icon.green {
   color: #344054;
   background: #f8fafc;
-}
-
-
-.metric-card > div:last-child {
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-}
-
-
-.metric-card span {
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 500;
-}
-
-
-.metric-card strong {
-  margin: 3px 0;
-
-  color: var(--text-strong);
-
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: -.03em;
-}
-
-
-.metric-card .metric-money {
-  font-size: 17px;
-}
-
-
-.metric-card small {
-  color: var(--muted-light);
-  font-size: 9px;
 }
 
 
 /* =========================================================
    PANELS
    ========================================================= */
-
-.dashboard-columns {
-  margin-top: 16px;
-
-  display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: 16px;
-}
 
 
 .panel {
@@ -877,52 +610,6 @@ textarea {
    ACTIVITY
    ========================================================= */
 
-.activity-timeline {
-  padding: 18px 20px 5px;
-}
-
-
-.timeline-item {
-  padding-bottom: 20px;
-
-  position: relative;
-
-  display: flex;
-  gap: 12px;
-}
-
-
-.timeline-item:not(:last-child)::after {
-  content: '';
-
-  width: 1px;
-
-  position: absolute;
-  top: 31px;
-  bottom: 0;
-  left: 15px;
-
-  background: var(--border);
-}
-
-
-.timeline-icon {
-  width: 31px;
-  height: 31px;
-
-  z-index: 2;
-  flex: 0 0 auto;
-
-  display: grid;
-  place-items: center;
-
-  border: 1px solid var(--border);
-  border-radius: 6px;
-
-  color: #475467;
-  background: #f9fafb;
-}
-
 
 .timeline-icon.r00 {
   color: #ffffff;
@@ -931,147 +618,9 @@ textarea {
 }
 
 
-.timeline-item strong {
-  color: #344054;
-  font-size: 11px;
-  font-weight: 650;
-}
-
-
-.timeline-item p {
-  margin: 3px 0 0;
-
-  color: var(--muted);
-
-  font-size: 10px;
-  line-height: 1.55;
-}
-
-
-.timeline-item.future {
-  opacity: .62;
-}
-
-
 /* =========================================================
    AGENT MINI LIST
    ========================================================= */
-
-.mini-agent-list {
-  padding: 9px 18px;
-}
-
-
-.mini-agent {
-  min-height: 55px;
-
-  padding: 8px 0;
-
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px;
-  align-items: center;
-
-  border-bottom: 1px solid #f2f4f7;
-}
-
-
-.mini-agent:last-child {
-  border-bottom: 0;
-}
-
-
-.agent-avatar {
-  width: 35px;
-  height: 35px;
-
-  display: grid;
-  place-items: center;
-
-  border: 1px solid var(--border);
-  border-radius: 6px;
-
-  color: #344054;
-  background: #f9fafb;
-}
-
-
-.mini-agent > div:nth-child(2) {
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-}
-
-
-.mini-agent strong {
-  color: #344054;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-
-.mini-agent span {
-  margin-top: 2px;
-
-  color: var(--muted);
-
-  font-size: 9px;
-}
-
-
-.agent-score {
-  min-width: 31px;
-
-  padding: 4px 6px;
-
-  border: 1px solid #abefc6;
-  border-radius: 5px;
-
-  color: var(--success);
-  background: var(--success-bg);
-
-  font-size: 9px;
-  font-weight: 700;
-  text-align: center;
-}
-
-
-.text-action {
-  margin: 5px 18px 16px;
-  padding: 0;
-
-  border: 0;
-
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  color: var(--primary);
-  background: transparent;
-
-  font-size: 10px;
-  font-weight: 650;
-}
-
-
-.empty-compact {
-  min-height: 145px;
-
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-
-  color: var(--muted-light);
-}
-
-
-.empty-compact p {
-  margin: 0;
-  font-size: 10px;
-}
 
 
 /* =========================================================
@@ -2489,7 +2038,6 @@ textarea {
    ========================================================= */
 
 @media (max-width: 1150px) {
-  .metric-grid,
   .plan-money-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2497,11 +2045,6 @@ textarea {
   .project-grid,
   .agent-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .economy-orbit {
-    opacity: .7;
-    transform: scale(.9);
   }
 }
 
@@ -2538,7 +2081,6 @@ textarea {
     display: grid;
   }
 
-  .dashboard-columns,
   .project-builder-layout {
     grid-template-columns: 1fr;
   }
@@ -2579,16 +2121,6 @@ textarea {
     padding: 17px 14px 40px;
   }
 
-  .hero-panel {
-    min-height: auto;
-    padding: 25px 20px;
-  }
-
-  .economy-orbit {
-    display: none;
-  }
-
-  .metric-grid,
   .plan-money-grid,
   .project-grid,
   .agent-grid {

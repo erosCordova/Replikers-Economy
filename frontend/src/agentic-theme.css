@@ -163,8 +163,7 @@ body {
    BOTONES
    ========================================================= */
 
-.primary-button,
-.hero-action {
+.primary-button {
   border: 0 !important;
 
   background:
@@ -186,8 +185,7 @@ body {
     !important;
 }
 
-.primary-button:hover,
-.hero-action:hover {
+.primary-button:hover {
   transform:
     translateY(-2px);
 
@@ -202,7 +200,6 @@ body {
    DASHBOARD CARDS
    ========================================================= */
 
-.metric-card,
 .project-card,
 .agent-card,
 .task-card {
@@ -221,7 +218,6 @@ body {
     !important;
 }
 
-.metric-card:hover,
 .project-card:hover,
 .agent-card:hover,
 .task-card:hover {
@@ -268,20 +264,6 @@ body {
 
   color:
     #059669
-    !important;
-}
-
-.metric-icon.orange {
-  background:
-    linear-gradient(
-      145deg,
-      #ffedd5,
-      #fef3c7
-    )
-    !important;
-
-  color:
-    #ea580c
     !important;
 }
 
@@ -826,12 +808,10 @@ h3 {
   prefers-reduced-motion: reduce
 ) {
   .nav-item,
-  .metric-card,
   .project-card,
   .agent-card,
   .task-card,
-  .primary-button,
-  .hero-action {
+  .primary-button {
     transition:
       none
       !important;

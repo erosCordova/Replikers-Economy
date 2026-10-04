@@ -510,7 +510,12 @@ function App() {
           : [],
       )
     } catch (error) {
-      console.error(error)
+      if (import.meta.env.DEV) {
+        console.error(
+          'No se pudieron cargar los datos privados:',
+          error,
+        )
+      }
     } finally {
       setLoadingData(false)
     }

@@ -507,7 +507,18 @@ export default function ReplikerStudioPanel() {
 
   useEffect(
     () => {
-      void loadBase()
+      const timer =
+        window.setTimeout(
+          () => {
+            void loadBase()
+          },
+          0,
+        )
+
+      return () =>
+        window.clearTimeout(
+          timer,
+        )
     },
     [],
   )
@@ -515,16 +526,27 @@ export default function ReplikerStudioPanel() {
 
   useEffect(
     () => {
-      if (
-        selectedId === null
-      ) {
-        setDraft(null)
-        return
-      }
+      const timer =
+        window.setTimeout(
+          () => {
+            if (
+              selectedId === null
+            ) {
+              setDraft(null)
+              return
+            }
 
-      void loadStudio(
-        selectedId,
-      )
+            void loadStudio(
+              selectedId,
+            )
+          },
+          0,
+        )
+
+      return () =>
+        window.clearTimeout(
+          timer,
+        )
     },
     [selectedId],
   )
