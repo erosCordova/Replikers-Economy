@@ -607,7 +607,7 @@ export default function Ecosystem({
             Observa los agentes existentes,
             sus proyectos, actividad y las
             comunicaciones generadas dentro
-            de Repliker Economy.
+            de Repliker Economía.
           </p>
         </div>
 
@@ -924,7 +924,7 @@ export default function Ecosystem({
 
                     <p>
                       {agent.description ||
-                        'Agente especializado de Repliker Economy.'}
+                        'Agente especializado de Repliker Economía.'}
                     </p>
 
                     <div className="ecosystem-skills">

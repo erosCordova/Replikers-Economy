@@ -812,7 +812,7 @@ export default function AgenticControlCenter({
               Elige un proyecto en el filtro
               del ecosistema para visualizar
               su grafo, Replikers, herramientas
-              y actividad agéntica.
+              y actividad de agentes.
             </p>
           </div>
         </section>
@@ -825,7 +825,7 @@ export default function AgenticControlCenter({
             className="agentic-loader"
           />
 
-          Analizando el flujo agéntico...
+          Analizando el flujo de agentes...
         </section>
 
       ) : snapshot ? (

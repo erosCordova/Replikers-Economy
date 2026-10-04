@@ -37,6 +37,7 @@ def _editable_repliker(
     db: Session,
     repliker_id: int,
     current_user: User,
+    write: bool = False,
 ) -> Repliker:
     repliker = db.get(
         Repliker,
@@ -48,6 +49,16 @@ def _editable_repliker(
             status_code=404,
             detail=(
                 "Repliker no encontrado."
+            ),
+        )
+
+    if write and repliker.is_system:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Los Replikers oficiales "
+                "están protegidos y no "
+                "pueden modificarse."
             ),
         )
 
@@ -116,6 +127,7 @@ def update_repliker_developer(
         db=db,
         repliker_id=repliker_id,
         current_user=current_user,
+        write=True,
     )
 
     try:

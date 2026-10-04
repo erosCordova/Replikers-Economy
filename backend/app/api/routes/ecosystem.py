@@ -71,6 +71,17 @@ def update_repliker_appearance(
             detail="Repliker no encontrado.",
         )
 
+    if repliker.is_system:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Los Replikers oficiales "
+                "están protegidos y no "
+                "pueden personalizarse "
+                "desde una cuenta."
+            ),
+        )
+
     if (
         repliker.owner_id
         != current_user.id

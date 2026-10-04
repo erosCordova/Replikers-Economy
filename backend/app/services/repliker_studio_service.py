@@ -27,6 +27,11 @@ from app.services.agentic_service import (
 )
 
 
+from app.services.repliker_publication_service import (
+    validate_repliker_for_publication,
+)
+
+
 class ReplikerStudioError(
     ValueError
 ):
@@ -473,6 +478,11 @@ def update_repliker_studio(
         repliker,
         ["skills"],
     )
+
+    if repliker.is_published:
+        validate_repliker_for_publication(
+            repliker
+        )
 
     record_activity(
         db=db,

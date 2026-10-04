@@ -74,7 +74,18 @@ def _repliker_access(
     *,
     repliker: Repliker,
     current_user: User,
+    write: bool = False,
 ):
+    if write and repliker.is_system:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Los Replikers oficiales "
+                "están protegidos y no "
+                "pueden modificarse."
+            ),
+        )
+
     if (
         repliker.owner_id
         != current_user.id
@@ -87,7 +98,7 @@ def _repliker_access(
                 "Solo el propietario "
                 "del Repliker o un "
                 "administrador puede "
-                "modificar sus tools."
+                "modificar sus herramientas."
             ),
         )
 
@@ -214,6 +225,7 @@ def update_repliker_tools(
     _repliker_access(
         repliker=repliker,
         current_user=current_user,
+        write=True,
     )
 
     try:

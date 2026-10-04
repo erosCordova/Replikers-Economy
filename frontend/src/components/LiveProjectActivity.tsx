@@ -387,7 +387,7 @@ export default function LiveProjectActivity({
           </span>
 
           <h2>
-            Actividad agentica en vivo
+            Actividad de agentes en vivo
           </h2>
 
           <p>

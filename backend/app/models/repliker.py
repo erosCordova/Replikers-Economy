@@ -8,7 +8,9 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     func,
+    true,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -85,6 +87,29 @@ class Repliker(Base):
         Boolean,
         nullable=False,
         default=True,
+    )
+
+    is_system: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
+        index=True,
+    )
+
+    is_published: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=false(),
+        index=True,
+    )
+
+    published_at: Mapped[
+        datetime | None
+    ] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

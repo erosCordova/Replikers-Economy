@@ -82,7 +82,7 @@ async function performRefresh() {
     token.trim().length === 0
   ) {
     throw new Error(
-      'El backend no devolvio ' +
+      'El servidor no devolvió ' +
       'un access token valido.',
     )
   }
@@ -143,7 +143,7 @@ export async function logoutSession() {
     )
   } catch {
     // El cierre local debe ocurrir aunque
-    // el backend no pueda responder.
+    // el servidor no pueda responder.
   } finally {
     clearAccessToken()
   }

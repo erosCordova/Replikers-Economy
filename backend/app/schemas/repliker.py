@@ -1,6 +1,10 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 
 class ReplikerSkillCreate(BaseModel):
@@ -47,15 +51,24 @@ class ReplikerCreate(BaseModel):
         le=1_000_000,
     )
 
-    skills: list[ReplikerSkillCreate] = Field(
+    skills: list[
+        ReplikerSkillCreate
+    ] = Field(
         default_factory=list,
         max_length=50,
     )
 
 
+class ReplikerPublicationUpdate(
+    BaseModel
+):
+    published: bool
+
+
 class ReplikerPublic(BaseModel):
     id: int
     owner_id: int
+
     name: str
     specialty: str
     description: str
@@ -70,9 +83,18 @@ class ReplikerPublic(BaseModel):
     jobs_completed: int
     is_active: bool
 
+    is_system: bool = False
+    is_published: bool = True
+
+    published_at: (
+        datetime | None
+    ) = None
+
     created_at: datetime
 
-    skills: list[ReplikerSkillPublic]
+    skills: list[
+        ReplikerSkillPublic
+    ]
 
     model_config = ConfigDict(
         from_attributes=True

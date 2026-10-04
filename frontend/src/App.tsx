@@ -165,7 +165,7 @@ function errorMessage(error: unknown) {
     }
 
     if (!error.response) {
-      return 'No se pudo conectar con el backend.'
+      return 'No se pudo conectar con el servidor.'
     }
   }
 
@@ -190,6 +190,63 @@ function statusLabel(status?: string) {
   }
 
   return labels[status ?? ''] ?? status ?? 'Desconocido'
+}
+
+
+function specialtyLabelApp(
+  value: string,
+): string {
+  const labels: Record<string, string> = {
+    'Generalist':
+      'Generalista',
+
+    'Product / Requirements':
+      'Producto y Requisitos',
+
+    'Software Architect':
+      'Arquitecto de Software',
+
+    'UX Research':
+      'Investigación de Experiencia de Usuario',
+
+    'UI Designer':
+      'Diseñador de Interfaz',
+
+    'Frontend Developer':
+      'Desarrollador de Interfaz',
+
+    'Backend Developer':
+      'Desarrollador de Servidor',
+
+    'Database Engineer':
+      'Ingeniero de Base de Datos',
+
+    'Integration Specialist':
+      'Especialista en Integraciones',
+
+    'Security Engineer':
+      'Ingeniero de Seguridad',
+
+    'QA Engineer':
+      'Ingeniero de Pruebas',
+
+    'DevOps Engineer':
+      'Ingeniero de Operaciones y Despliegue',
+
+    'Accessibility Specialist':
+      'Especialista en Accesibilidad',
+
+    'SEO/Performance Specialist':
+      'Especialista en Posicionamiento y Rendimiento',
+
+    'Content/Copy Specialist':
+      'Especialista en Contenido',
+
+    'Final Reviewer':
+      'Revisor Final',
+  }
+
+  return labels[value] ?? value
 }
 
 
@@ -597,7 +654,7 @@ function App() {
           <Network size={32} />
         </div>
 
-        <h1>Repliker Economy</h1>
+        <h1>Repliker Economía</h1>
 
         <div className="spinner" />
 
@@ -675,8 +732,8 @@ function App() {
             />
 
             {backendOnline
-              ? 'Backend conectado'
-              : 'Backend sin conexion'}
+              ? 'Servidor conectado'
+              : 'Servidor sin conexión'}
           </div>
 
           <div className="auth-icon">
@@ -913,7 +970,7 @@ function App() {
             }
           >
             <Bot size={19} />
-            Marketplace
+            Mercado
           </button>
 
           <button
@@ -1003,7 +1060,7 @@ function App() {
 
             <div>
               <span className="eyebrow">
-                REPLIKER ECONOMY
+                REPLIKER ECONOMÍA
               </span>
 
               <h2>
@@ -1017,7 +1074,7 @@ function App() {
                   'Mis proyectos'}
 
                 {section === 'marketplace' &&
-                  'Marketplace'}
+                  'Mercado'}
 
                 {section === 'ecosystem' &&
                   'Ecosistema'}
@@ -1481,7 +1538,7 @@ function App() {
                         </h3>
 
                         <span className="specialty">
-                          {repliker.specialty}
+                          {specialtyLabelApp(repliker.specialty)}
                         </span>
 
                         <p>

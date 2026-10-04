@@ -22,10 +22,15 @@ from app.models.user import User
 from app.schemas.repliker import (
     ReplikerCreate,
     ReplikerPublic,
+    ReplikerPublicationUpdate,
 )
 from app.schemas.repliker_studio import (
     ReplikerStudioPublic,
     ReplikerStudioUpdate,
+)
+from app.services.repliker_publication_service import (
+    ReplikerPublicationError,
+    set_repliker_publication,
 )
 from app.services.repliker_studio_service import (
     ReplikerStudioError,
@@ -89,7 +94,49 @@ def _editable_repliker(
                 "Solo el propietario "
                 "del Repliker o un "
                 "administrador puede "
-                "modificar su configuración."
+                "acceder a su configuración."
+            ),
+        )
+
+    if (
+        lock
+        and repliker.is_system
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Los Replikers oficiales "
+                "están protegidos y no "
+                "pueden modificarse."
+            ),
+        )
+
+    return repliker
+
+
+def _public_repliker(
+    *,
+    db: Session,
+    repliker_id: int,
+) -> Repliker:
+    repliker = db.scalar(
+        select(Repliker)
+        .options(
+            selectinload(
+                Repliker.skills
+            )
+        )
+        .where(
+            Repliker.id
+            == repliker_id
+        )
+    )
+
+    if repliker is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Repliker no encontrado."
             ),
         )
 
@@ -120,6 +167,12 @@ def create_repliker(
             payload.description.strip(),
         base_price_credits=
             payload.base_price_credits,
+
+        # Todo Repliker creado por un
+        # usuario comienza como borrador.
+        is_system=False,
+        is_published=False,
+        published_at=None,
     )
 
     db.add(
@@ -159,21 +212,9 @@ def create_repliker(
 
     db.commit()
 
-    statement = (
-        select(Repliker)
-        .options(
-            selectinload(
-                Repliker.skills
-            )
-        )
-        .where(
-            Repliker.id
-            == repliker.id
-        )
-    )
-
-    return db.scalar(
-        statement
+    return _public_repliker(
+        db=db,
+        repliker_id=repliker.id,
     )
 
 
@@ -232,7 +273,9 @@ def marketplace(
         )
         .where(
             Repliker.is_active
-            .is_(True)
+            .is_(True),
+            Repliker.is_published
+            .is_(True),
         )
         .order_by(
             Repliker
@@ -248,6 +291,54 @@ def marketplace(
         db.scalars(
             statement
         ).all()
+    )
+
+
+@router.put(
+    "/{repliker_id}/publication",
+    response_model=ReplikerPublic,
+)
+def update_repliker_publication(
+    repliker_id: int,
+    payload:
+        ReplikerPublicationUpdate,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    repliker = _editable_repliker(
+        db=db,
+        repliker_id=repliker_id,
+        current_user=current_user,
+        lock=True,
+    )
+
+    try:
+        set_repliker_publication(
+            repliker=repliker,
+            published=
+                payload.published,
+        )
+
+        db.commit()
+
+    except (
+        ReplikerPublicationError,
+        ValueError,
+    ) as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+    return _public_repliker(
+        db=db,
+        repliker_id=repliker_id,
     )
 
 
@@ -318,6 +409,7 @@ def save_repliker_studio(
 
     except (
         ReplikerStudioError,
+        ReplikerPublicationError,
         ValueError,
     ) as exc:
         db.rollback()
@@ -338,24 +430,12 @@ def get_repliker(
         get_db
     ),
 ):
-    statement = (
-        select(Repliker)
-        .options(
-            selectinload(
-                Repliker.skills
-            )
-        )
-        .where(
-            Repliker.id
-            == repliker_id
-        )
+    repliker = _public_repliker(
+        db=db,
+        repliker_id=repliker_id,
     )
 
-    repliker = db.scalar(
-        statement
-    )
-
-    if repliker is None:
+    if not repliker.is_published:
         raise HTTPException(
             status_code=404,
             detail=(

@@ -77,7 +77,7 @@ const demoAgents = [
   },
   {
     name: 'UXArchitect',
-    specialty: 'Diseño y Frontend',
+    specialty: 'Diseño e Interfaz',
     score: 88,
     jobs: 56,
     tags: ['React', 'UI/UX', 'Vite'],
@@ -87,7 +87,7 @@ const demoAgents = [
     specialty: 'IA y Automatización',
     score: 96,
     jobs: 203,
-    tags: ['LangChain', 'Gemini', 'Python'],
+    tags: ['Agentes autónomos', 'Inteligencia artificial', 'Programación'],
   },
 ]
 
@@ -101,7 +101,7 @@ const activity = [
   },
   {
     title: 'Nuevo contrato',
-    detail: 'Repliker CodeMaster',
+    detail: 'Repliker Maestro de Código',
     time: 'hace 12 min',
     type: 'contract',
   },
@@ -254,8 +254,8 @@ function ShowcaseDashboard({
             />
 
             {backendOnline
-              ? 'Backend conectado'
-              : 'Verificando backend'}
+              ? 'Servidor conectado'
+              : 'Verificando servidor'}
           </div>
         </article>
       </section>
@@ -471,7 +471,7 @@ function ShowcaseDashboard({
               <strong>
                 Task #12 · Analizador de datos
               </strong>
-              <span>Repliker DataAnalyzer</span>
+              <span>Repliker Analista de Datos</span>
 
               <div className="execution-progress">
                 <div>
@@ -556,7 +556,7 @@ function ShowcaseDashboard({
         </div>
 
         <span>
-          Sesión de {firstName} · Repliker Economy
+          Sesión de {firstName} · Repliker Economía
         </span>
       </footer>
     </div>

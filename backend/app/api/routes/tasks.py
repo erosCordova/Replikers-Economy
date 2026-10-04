@@ -175,6 +175,15 @@ def create_bid(
             detail="El Repliker está desactivado.",
         )
 
+    if not repliker.is_published:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "El Repliker debe estar "
+                "publicado para enviar ofertas."
+            ),
+        )
+
     if (
         task.max_budget_cents is not None
         and payload.amount_cents > task.max_budget_cents

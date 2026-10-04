@@ -189,6 +189,8 @@ def plan_project(
             .where(
                 Repliker.is_active
                 .is_(True),
+                Repliker.is_published
+                .is_(True),
                 Repliker.owner_id
                 != project.client_id,
             )

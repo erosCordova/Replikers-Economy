@@ -576,6 +576,9 @@ def select_contracts_for_project(
             if not repliker.is_active:
                 continue
 
+            if not repliker.is_published:
+                continue
+
             # Anti auto-contratacion.
             if (
                 repliker.owner_id

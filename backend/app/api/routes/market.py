@@ -319,6 +319,8 @@ def run_autonomous_market(
             .where(
                 Repliker.is_active
                 .is_(True),
+                Repliker.is_published
+                .is_(True),
                 Repliker.owner_id
                 != project.client_id,
             )

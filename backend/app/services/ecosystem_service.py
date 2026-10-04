@@ -143,7 +143,9 @@ def build_ecosystem_snapshot(
             )
             .where(
                 Repliker.is_active
-                .is_(True)
+                .is_(True),
+                Repliker.is_published
+                .is_(True),
             )
             .order_by(
                 Repliker

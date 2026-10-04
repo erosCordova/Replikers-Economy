@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import secrets
 
 from sqlalchemy import select
@@ -241,6 +242,12 @@ def ensure_web_repliker_registry(
                 total_earnings_credits=0,
                 jobs_completed=0,
                 is_active=True,
+                is_system=True,
+                is_published=True,
+                published_at=
+                    datetime.now(
+                        timezone.utc
+                    ),
             )
 
             db.add(repliker)
@@ -267,6 +274,10 @@ def ensure_web_repliker_registry(
                     .base_price_credits,
                 "is_active":
                     True,
+                "is_system":
+                    True,
+                "is_published":
+                    True,
             }
 
             for field, expected in (
@@ -285,6 +296,14 @@ def ensure_web_repliker_registry(
                         expected,
                     )
                     changed = True
+
+            if repliker.published_at is None:
+                repliker.published_at = (
+                    datetime.now(
+                        timezone.utc
+                    )
+                )
+                changed = True
 
             if changed:
                 replikers_updated += 1

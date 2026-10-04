@@ -196,6 +196,9 @@ def rank_task_candidates(
         if not repliker.is_active:
             continue
 
+        if not repliker.is_published:
+            continue
+
         status = normalize_market_text(
             repliker.status
         )

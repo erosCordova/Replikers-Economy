@@ -4,6 +4,8 @@ import {
   BrainCircuit,
   CirclePlus,
   Code2,
+  Globe2,
+  EyeOff,
   Plus,
   RefreshCw,
   Save,
@@ -39,6 +41,10 @@ interface OwnedRepliker {
   description: string
 
   base_price_credits: number
+
+  is_system: boolean
+  is_published: boolean
+  published_at: string | null
 
   skills: ReplikerSkill[]
 }
@@ -351,6 +357,11 @@ export default function ReplikerStudioPanel() {
   const [
     saving,
     setSaving,
+  ] = useState(false)
+
+  const [
+    publishing,
+    setPublishing,
   ] = useState(false)
 
   const [
@@ -783,6 +794,75 @@ export default function ReplikerStudioPanel() {
 
     } finally {
       setSaving(false)
+    }
+  }
+
+
+  async function updatePublication(
+    published: boolean,
+  ) {
+    if (
+      selectedId === null
+      || selectedRepliker === null
+    ) {
+      return
+    }
+
+    setPublishing(true)
+    setNotice('')
+
+    try {
+      const response =
+        await api.put<OwnedRepliker>(
+          `/replikers/${selectedId}/publication`,
+          {
+            published,
+          },
+        )
+
+      const updated =
+        response.data
+
+      setReplikers(
+        (current) =>
+          current.map(
+            (item) =>
+              item.id === updated.id
+                ? updated
+                : item,
+          ),
+      )
+
+      setNotice(
+        published
+          ? (
+              'Repliker publicado. '
+              + 'Ya forma parte del ecosistema '
+              + 'y puede recibir nuevas oportunidades.'
+            )
+          : (
+              'Repliker retirado del ecosistema. '
+              + 'No recibirá nuevas oportunidades, '
+              + 'pero conserva sus compromisos actuales.'
+            ),
+      )
+
+    } catch {
+      setNotice(
+        published
+          ? (
+              'No fue posible publicar el Repliker. '
+              + 'Guarda una descripción y al menos '
+              + 'una habilidad antes de publicarlo.'
+            )
+          : (
+              'No fue posible retirar '
+              + 'el Repliker del ecosistema.'
+            ),
+      )
+
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -1248,12 +1328,36 @@ export default function ReplikerStudioPanel() {
                 </div>
 
                 <div
-                  className="studio-version"
+                  className="studio-editor-badges"
                 >
-                  {draft.config_version
-                    > 0
-                    ? `Versión ${draft.config_version}`
-                    : 'Configuración inicial'}
+                  <div
+                    className={
+                      selectedRepliker
+                        ?.is_published
+                        ? (
+                            'studio-publication-badge '
+                            + 'published'
+                          )
+                        : (
+                            'studio-publication-badge '
+                            + 'draft'
+                          )
+                    }
+                  >
+                    {selectedRepliker
+                      ?.is_published
+                      ? 'Publicado'
+                      : 'Borrador'}
+                  </div>
+
+                  <div
+                    className="studio-version"
+                  >
+                    {draft.config_version
+                      > 0
+                      ? `Versión ${draft.config_version}`
+                      : 'Configuración inicial'}
+                  </div>
                 </div>
               </div>
 
@@ -2400,6 +2504,51 @@ export default function ReplikerStudioPanel() {
                   </span>
                 </div>
 
+                <div
+                  className="studio-save-actions"
+                >
+                  <button
+                    type="button"
+                    className={
+                      selectedRepliker
+                        ?.is_published
+                        ? 'studio-button secondary large'
+                        : 'studio-button publish large'
+                    }
+                    disabled={
+                      saving
+                      || publishing
+                    }
+                    onClick={() =>
+                      void updatePublication(
+                        !selectedRepliker
+                          ?.is_published,
+                      )
+                    }
+                  >
+                    {selectedRepliker
+                      ?.is_published
+                      ? (
+                          <EyeOff
+                            size={17}
+                          />
+                        )
+                      : (
+                          <Globe2
+                            size={17}
+                          />
+                        )}
+
+                    {publishing
+                      ? 'Actualizando...'
+                      : (
+                          selectedRepliker
+                            ?.is_published
+                            ? 'Retirar del ecosistema'
+                            : 'Publicar en el ecosistema'
+                        )}
+                  </button>
+
                 <button
                   type="button"
                   className="studio-button primary large"
@@ -2416,6 +2565,7 @@ export default function ReplikerStudioPanel() {
                     ? 'Guardando...'
                     : 'Guardar configuración'}
                 </button>
+                </div>
               </div>
             </>
           )}
