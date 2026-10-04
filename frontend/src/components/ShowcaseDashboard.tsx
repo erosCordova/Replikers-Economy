@@ -6,7 +6,6 @@ import {
   ChevronRight,
   CircleDollarSign,
   Cpu,
-  Gauge,
   Network,
   Plus,
   Rocket,
@@ -14,123 +13,510 @@ import {
   Sparkles,
   Target,
   Users,
-  WalletCards,
 } from 'lucide-react'
+
+
+interface DashboardProject {
+  id: number
+  title: string
+  description: string
+  status: string
+}
+
+
+interface DashboardSkill {
+  id?: number
+  name?: string
+  skill_name?: string
+  level?: number
+}
+
+
+interface DashboardRepliker {
+  id: number
+  name: string
+  specialty: string
+  status: string
+  reputation_score: number
+  jobs_completed: number
+  is_active: boolean
+  skills?: DashboardSkill[]
+}
+
+
+interface EcosystemAgent {
+  id: number
+  name: string
+  specialty: string
+  status: string
+  reputation_score: number
+  jobs_completed: number
+  is_active: boolean
+
+  current_project_id: number | null
+  current_task_id: number | null
+  current_activity: string | null
+}
+
+
+interface EcosystemProject {
+  id: number
+  title: string
+  status: string
+  task_count: number
+  agents_involved: number
+}
+
+
+interface ActivityEvent {
+  id: number
+
+  project_id: number | null
+  task_id: number | null
+  repliker_id: number | null
+
+  actor_type: string
+  event_type: string
+
+  title: string
+  description: string
+  created_at: string
+}
+
+
+interface EcosystemMessage {
+  id: number
+}
+
+
+export interface DashboardEcosystemSnapshot {
+  agents: EcosystemAgent[]
+  projects: EcosystemProject[]
+  events: ActivityEvent[]
+  messages: EcosystemMessage[]
+}
 
 
 interface ShowcaseDashboardProps {
   userName: string
-  projectCount: number
-  replikerCount: number
+
+  projects: DashboardProject[]
+  replikers: DashboardRepliker[]
+
+  ecosystem: DashboardEcosystemSnapshot
+
   plannedValue: string
   backendOnline: boolean | null
+
   onCreateProject: () => void
   onOpenMarketplace: () => void
 }
 
 
-const demoProjects = [
-  {
-    name: 'Plataforma de comercio electrónico con IA',
-    description:
-      'Desarrollo de una plataforma completa con agentes especializados.',
-    progress: 75,
-    status: 'En ejecución',
-    tasks: '6/8 tareas',
-    contracts: '3 contratos',
-  },
-  {
-    name: 'Sistema de análisis inteligente',
-    description:
-      'Procesamiento de datos, automatización y reportes inteligentes.',
-    progress: 60,
-    status: 'Revisión de calidad',
-    tasks: '3/5 tareas',
-    contracts: '2 contratos',
-  },
-  {
-    name: 'Aplicación empresarial autónoma',
-    description:
-      'Arquitectura coordinada por R00 y ejecutada por Replikers.',
-    progress: 35,
-    status: 'Planificación',
-    tasks: '2/6 tareas',
-    contracts: '1 contrato',
-  },
-]
+const specialtyLabels:
+  Record<string, string> = {
+    Generalist:
+      'Generalista',
+
+    'Product / Requirements':
+      'Producto y Requisitos',
+
+    'Software Architect':
+      'Arquitecto de Software',
+
+    'UX Research':
+      'Investigación de Experiencia de Usuario',
+
+    'UI Designer':
+      'Diseñador de Interfaz',
+
+    'Frontend Developer':
+      'Desarrollador de Interfaz',
+
+    'Backend Developer':
+      'Desarrollador de Servidor',
+
+    'Database Engineer':
+      'Ingeniero de Base de Datos',
+
+    'Integration Specialist':
+      'Especialista en Integraciones',
+
+    'Security Engineer':
+      'Ingeniero de Seguridad',
+
+    'QA Engineer':
+      'Ingeniero de Pruebas',
+
+    'DevOps Engineer':
+      'Ingeniero de Operaciones y Despliegue',
+
+    'Accessibility Specialist':
+      'Especialista en Accesibilidad',
+
+    'SEO/Performance Specialist':
+      'Especialista en Posicionamiento y Rendimiento',
+
+    'Content/Copy Specialist':
+      'Especialista en Contenido',
+
+    'Final Reviewer':
+      'Revisor Final',
+  }
 
 
-const demoAgents = [
-  {
-    name: 'Maestro de Código',
-    specialty: 'Desarrollo integral',
-    score: 94,
-    jobs: 127,
-    tags: ['Programación', 'Interfaz digital', 'Servicios digitales'],
-  },
-  {
-    name: 'Analista de Datos',
-    specialty: 'Datos e Inteligencia Artificial',
-    score: 91,
-    jobs: 89,
-    tags: ['Programación', 'Análisis de datos', 'Aprendizaje automático'],
-  },
-  {
-    name: 'Arquitecto de Experiencia',
-    specialty: 'Diseño e Interfaz',
-    score: 88,
-    jobs: 56,
-    tags: ['Desarrollo de interfaz', 'Interfaz y experiencia', 'Aplicaciones web'],
-  },
-  {
-    name: 'Constructor IA',
-    specialty: 'IA y Automatización',
-    score: 96,
-    jobs: 203,
-    tags: ['Agentes autónomos', 'Inteligencia artificial', 'Programación'],
-  },
-]
+const projectStatusLabels:
+  Record<string, string> = {
+    draft:
+      'Borrador',
+
+    planned:
+      'Planificado',
+
+    planning:
+      'Planificación',
+
+    open:
+      'Abierto',
+
+    market:
+      'En mercado',
+
+    contracted:
+      'Contratado',
+
+    executing:
+      'En ejecución',
+
+    running:
+      'En ejecución',
+
+    qa:
+      'En pruebas',
+
+    awaiting_final_review:
+      'En revisión final',
+
+    correcting:
+      'En corrección',
+
+    completed:
+      'Completado',
+
+    failed:
+      'Fallido',
+
+    blocked:
+      'Bloqueado',
+
+    cancelled:
+      'Cancelado',
+
+    canceled:
+      'Cancelado',
+  }
 
 
-const activity = [
-  {
-    title: 'Ejecución iniciada',
-    detail: 'Tarea #12 · Analizador de datos',
-    time: 'hace 5 min',
-    type: 'play',
-  },
-  {
-    title: 'Nuevo contrato',
-    detail: 'Repliker Maestro de Código',
-    time: 'hace 12 min',
-    type: 'contract',
-  },
-  {
-    title: 'Pruebas aprobadas',
-    detail: 'Tarea #8 · Servicio de autenticación',
-    time: 'hace 28 min',
-    type: 'qa',
-  },
-  {
-    title: 'Proyecto actualizado',
-    detail: 'Plataforma de comercio electrónico',
-    time: 'hace 1 hora',
-    type: 'project',
-  },
-]
+function visibleSpecialty(
+  value: string,
+) {
+  return (
+    specialtyLabels[value]
+    ?? 'Especialidad personalizada'
+  )
+}
+
+
+function projectStatusLabel(
+  value: string,
+) {
+  return (
+    projectStatusLabels[
+      value.toLowerCase()
+    ]
+    ?? 'En proceso'
+  )
+}
+
+
+function isWorking(
+  agent: EcosystemAgent,
+) {
+  const status =
+    agent.status.toLowerCase()
+
+  return (
+    agent.current_project_id !== null
+    || [
+      'working',
+      'busy',
+      'assigned',
+      'executing',
+      'running',
+    ].includes(status)
+  )
+}
+
+
+function relativeTime(
+  value: string,
+) {
+  const date =
+    new Date(value)
+
+  const milliseconds =
+    Date.now()
+    - date.getTime()
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return 'Fecha no disponible'
+  }
+
+  const minutes =
+    Math.max(
+      0,
+      Math.floor(
+        milliseconds
+        / 60000,
+      ),
+    )
+
+  if (minutes < 1) {
+    return 'ahora'
+  }
+
+  if (minutes < 60) {
+    return (
+      `hace ${minutes} `
+      + (
+        minutes === 1
+          ? 'minuto'
+          : 'minutos'
+      )
+    )
+  }
+
+  const hours =
+    Math.floor(
+      minutes / 60,
+    )
+
+  if (hours < 24) {
+    return (
+      `hace ${hours} `
+      + (
+        hours === 1
+          ? 'hora'
+          : 'horas'
+      )
+    )
+  }
+
+  const days =
+    Math.floor(
+      hours / 24,
+    )
+
+  return (
+    `hace ${days} `
+    + (
+      days === 1
+        ? 'día'
+        : 'días'
+    )
+  )
+}
+
+
+function skillLabel(
+  skill: DashboardSkill,
+) {
+  return (
+    skill.name
+    ?? skill.skill_name
+    ?? 'Habilidad'
+  )
+}
+
+
+function eventKind(
+  event: ActivityEvent,
+) {
+  const text =
+    (
+      event.event_type
+      + ' '
+      + event.title
+    ).toLowerCase()
+
+  if (
+    text.includes('qa')
+    || text.includes('review')
+    || text.includes('calidad')
+  ) {
+    return 'quality'
+  }
+
+  if (
+    text.includes('contract')
+    || text.includes('contrato')
+  ) {
+    return 'contract'
+  }
+
+  if (
+    text.includes('project')
+    || text.includes('proyecto')
+    || text.includes('plan')
+  ) {
+    return 'project'
+  }
+
+  return 'activity'
+}
 
 
 function ShowcaseDashboard({
   userName,
-  projectCount,
-  replikerCount,
+  projects,
+  replikers,
+  ecosystem,
   plannedValue,
   backendOnline,
   onCreateProject,
   onOpenMarketplace,
 }: ShowcaseDashboardProps) {
   const firstName =
-    userName.trim().split(' ')[0] || 'Cliente'
+    userName
+      .trim()
+      .split(' ')[0]
+    || 'Cliente'
+
+
+  const visibleProjects =
+    projects.slice(
+      0,
+      3,
+    )
+
+
+  const featuredReplikers =
+    [...replikers]
+      .filter(
+        (repliker) =>
+          repliker.is_active,
+      )
+      .sort(
+        (a, b) =>
+          (
+            b.reputation_score
+            - a.reputation_score
+          )
+          || (
+            b.jobs_completed
+            - a.jobs_completed
+          ),
+      )
+      .slice(
+        0,
+        4,
+      )
+
+
+  const sortedActivity =
+    [...ecosystem.events]
+      .sort(
+        (a, b) =>
+          new Date(
+            b.created_at,
+          ).getTime()
+          - new Date(
+            a.created_at,
+          ).getTime(),
+      )
+
+
+  const recentActivity =
+    sortedActivity.slice(
+      0,
+      4,
+    )
+
+
+  const workingAgents =
+    ecosystem.agents.filter(
+      isWorking,
+    )
+
+
+  const currentWork =
+    workingAgents[0]
+    ?? null
+
+
+  const latestQualityEvent =
+    sortedActivity.find(
+      (event) =>
+        eventKind(event)
+        === 'quality',
+    )
+    ?? null
+
+
+  const taskCount =
+    ecosystem.projects.reduce(
+      (
+        total,
+        project,
+      ) =>
+        total
+        + project.task_count,
+      0,
+    )
+
+
+  function projectMetadata(
+    projectId: number,
+  ) {
+    return (
+      ecosystem.projects.find(
+        (project) =>
+          project.id
+          === projectId,
+      )
+      ?? null
+    )
+  }
+
+
+  function projectName(
+    projectId: number | null,
+  ) {
+    if (
+      projectId === null
+    ) {
+      return ''
+    }
+
+    return (
+      projects.find(
+        (project) =>
+          project.id
+          === projectId,
+      )?.title
+      ?? ecosystem.projects.find(
+        (project) =>
+          project.id
+          === projectId,
+      )?.title
+      ?? `Proyecto #${projectId}`
+    )
+  }
+
 
   return (
     <div className="showcase-dashboard">
@@ -154,7 +540,7 @@ function ShowcaseDashboard({
             <p>
               Publica proyectos, coordina trabajo con R00,
               contrata Replikers y recibe resultados
-              verificados mediante ejecución y Pruebas.
+              verificados mediante ejecución y pruebas.
             </p>
 
             <div className="showcase-hero-actions">
@@ -215,33 +601,79 @@ function ShowcaseDashboard({
           </div>
 
           <div className="activity-list">
-            {activity.map((item, index) => (
-              <div
-                className="activity-row"
-                key={item.title}
-              >
-                <div
-                  className={`activity-symbol symbol-${index + 1}`}
-                >
-                  {item.type === 'qa' ? (
-                    <CheckCircle2 size={17} />
-                  ) : item.type === 'contract' ? (
-                    <BriefcaseBusiness size={17} />
-                  ) : item.type === 'project' ? (
-                    <Target size={17} />
-                  ) : (
-                    <Rocket size={17} />
-                  )}
+            {recentActivity.length === 0 ? (
+              <div className="activity-row">
+                <div className="activity-symbol">
+                  <Activity size={17} />
                 </div>
 
                 <div className="activity-copy">
-                  <strong>{item.title}</strong>
-                  <span>{item.detail}</span>
-                </div>
+                  <strong>
+                    Sin actividad registrada
+                  </strong>
 
-                <small>{item.time}</small>
+                  <span>
+                    Las acciones reales aparecerán aquí.
+                  </span>
+                </div>
               </div>
-            ))}
+            ) : (
+              recentActivity.map(
+                (
+                  item,
+                  index,
+                ) => {
+                  const kind =
+                    eventKind(item)
+
+                  return (
+                    <div
+                      className="activity-row"
+                      key={item.id}
+                    >
+                      <div
+                        className={
+                          `activity-symbol symbol-${index + 1}`
+                        }
+                      >
+                        {kind === 'quality' ? (
+                          <CheckCircle2 size={17} />
+                        ) : kind === 'contract' ? (
+                          <BriefcaseBusiness size={17} />
+                        ) : kind === 'project' ? (
+                          <Target size={17} />
+                        ) : (
+                          <Rocket size={17} />
+                        )}
+                      </div>
+
+                      <div className="activity-copy">
+                        <strong>
+                          {item.title}
+                        </strong>
+
+                        <span>
+                          {item.description
+                            || (
+                              item.project_id
+                                ? projectName(
+                                    item.project_id,
+                                  )
+                                : 'Actividad del sistema'
+                            )}
+                        </span>
+                      </div>
+
+                      <small>
+                        {relativeTime(
+                          item.created_at,
+                        )}
+                      </small>
+                    </div>
+                  )
+                },
+              )
+            )}
           </div>
 
           <div className="live-status">
@@ -255,10 +687,11 @@ function ShowcaseDashboard({
 
             {backendOnline
               ? 'Servidor conectado'
-              : 'Verificando servidor'}
+              : 'Servidor sin conexión'}
           </div>
         </article>
       </section>
+
 
       <section className="showcase-metrics">
         <article>
@@ -267,23 +700,29 @@ function ShowcaseDashboard({
           </div>
 
           <div>
-            <span>Proyectos activos</span>
+            <span>Proyectos</span>
             <strong>
-              {Math.max(projectCount, 3)}
+              {projects.length}
             </strong>
-            <small>ecosistema del cliente</small>
+            <small>
+              registrados en tu cuenta
+            </small>
           </div>
         </article>
 
         <article>
           <div className="showcase-metric-icon violet">
-            <WalletCards size={21} />
+            <Users size={21} />
           </div>
 
           <div>
-            <span>Contratos activos</span>
-            <strong>2</strong>
-            <small>trabajo contratado</small>
+            <span>Replikers</span>
+            <strong>
+              {replikers.length}
+            </strong>
+            <small>
+              publicados en el mercado
+            </small>
           </div>
         </article>
 
@@ -293,38 +732,49 @@ function ShowcaseDashboard({
           </div>
 
           <div>
-            <span>Ejecuciones</span>
-            <strong>1</strong>
-            <small>actualmente en curso</small>
+            <span>Trabajando</span>
+            <strong>
+              {workingAgents.length}
+            </strong>
+            <small>
+              Replikers con actividad
+            </small>
           </div>
         </article>
 
         <article>
           <div className="showcase-metric-icon amber">
-            <ShieldCheck size={21} />
+            <Activity size={21} />
           </div>
 
           <div>
-            <span>Revisiones de calidad</span>
-            <strong>2</strong>
-            <small>1 aprobada · 1 revisión</small>
+            <span>Actividad</span>
+            <strong>
+              {ecosystem.events.length}
+            </strong>
+            <small>
+              eventos registrados
+            </small>
           </div>
         </article>
 
         <article>
           <div className="showcase-metric-icon cyan">
-            <Users size={21} />
+            <Network size={21} />
           </div>
 
           <div>
-            <span>Replikers</span>
+            <span>Comunicaciones</span>
             <strong>
-              {Math.max(replikerCount, 24)}
+              {ecosystem.messages.length}
             </strong>
-            <small>disponibles en mercado</small>
+            <small>
+              mensajes operativos
+            </small>
           </div>
         </article>
       </section>
+
 
       <section className="showcase-main-grid">
         <article className="showcase-panel projects-panel">
@@ -344,58 +794,99 @@ function ShowcaseDashboard({
           </div>
 
           <div className="showcase-project-list">
-            {demoProjects.map((project, index) => (
-              <div
-                className="showcase-project"
-                key={project.name}
-              >
-                <div
-                  className={`project-symbol project-symbol-${index + 1}`}
-                >
-                  {index === 0 ? (
-                    <BriefcaseBusiness size={22} />
-                  ) : index === 1 ? (
-                    <Gauge size={22} />
-                  ) : (
-                    <Cpu size={22} />
-                  )}
+            {visibleProjects.length === 0 ? (
+              <div className="showcase-project">
+                <div className="project-symbol">
+                  <BriefcaseBusiness size={22} />
                 </div>
 
                 <div className="project-copy">
                   <div className="project-title-row">
                     <div>
-                      <strong>{project.name}</strong>
-                      <p>{project.description}</p>
-                    </div>
+                      <strong>
+                        Aún no tienes proyectos
+                      </strong>
 
-                    <span className="project-status">
-                      {project.status}
-                    </span>
-                  </div>
-
-                  <div className="project-bottom">
-                    <div className="project-info">
-                      <span>{project.tasks}</span>
-                      <span>{project.contracts}</span>
-                    </div>
-
-                    <div className="progress-group">
-                      <div className="progress-track">
-                        <div
-                          style={{
-                            width: `${project.progress}%`,
-                          }}
-                        />
-                      </div>
-
-                      <span>{project.progress}%</span>
+                      <p>
+                        Crea un proyecto para comenzar.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            ) : (
+              visibleProjects.map(
+                (
+                  project,
+                  index,
+                ) => {
+                  const metadata =
+                    projectMetadata(
+                      project.id,
+                    )
+
+                  return (
+                    <div
+                      className="showcase-project"
+                      key={project.id}
+                    >
+                      <div
+                        className={
+                          `project-symbol project-symbol-${index + 1}`
+                        }
+                      >
+                        {index === 0 ? (
+                          <BriefcaseBusiness size={22} />
+                        ) : index === 1 ? (
+                          <Target size={22} />
+                        ) : (
+                          <Cpu size={22} />
+                        )}
+                      </div>
+
+                      <div className="project-copy">
+                        <div className="project-title-row">
+                          <div>
+                            <strong>
+                              {project.title}
+                            </strong>
+
+                            <p>
+                              {project.description}
+                            </p>
+                          </div>
+
+                          <span className="project-status">
+                            {projectStatusLabel(
+                              project.status,
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="project-bottom">
+                          <div className="project-info">
+                            <span>
+                              {metadata
+                                ? `${metadata.task_count} tareas`
+                                : 'Tareas no registradas'}
+                            </span>
+
+                            <span>
+                              {metadata
+                                ? `${metadata.agents_involved} Replikers`
+                                : 'Sin asignaciones registradas'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                },
+              )
+            )}
           </div>
         </article>
+
 
         <article className="showcase-panel agents-panel">
           <div className="showcase-section-title">
@@ -414,42 +905,110 @@ function ShowcaseDashboard({
           </div>
 
           <div className="showcase-agent-list">
-            {demoAgents.map((agent, index) => (
-              <div
-                className="showcase-agent"
-                key={agent.name}
-              >
-                <div
-                  className={`agent-portrait agent-portrait-${index + 1}`}
-                >
+            {featuredReplikers.length === 0 ? (
+              <div className="showcase-agent">
+                <div className="agent-portrait">
                   <Bot size={22} />
                 </div>
 
                 <div className="agent-copy">
                   <div className="agent-name">
-                    <strong>{agent.name}</strong>
-                    <span />
+                    <strong>
+                      Sin Replikers publicados
+                    </strong>
                   </div>
 
-                  <p>{agent.specialty}</p>
-
-                  <div className="agent-tags">
-                    {agent.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="agent-rating">
-                  <strong>{agent.score}</strong>
-                  <span>/100</span>
-                  <small>{agent.jobs} trabajos</small>
+                  <p>
+                    El mercado aún no tiene publicaciones.
+                  </p>
                 </div>
               </div>
-            ))}
+            ) : (
+              featuredReplikers.map(
+                (
+                  agent,
+                  index,
+                ) => (
+                  <div
+                    className="showcase-agent"
+                    key={agent.id}
+                  >
+                    <div
+                      className={
+                        `agent-portrait agent-portrait-${index + 1}`
+                      }
+                    >
+                      <Bot size={22} />
+                    </div>
+
+                    <div className="agent-copy">
+                      <div className="agent-name">
+                        <strong>
+                          {agent.name}
+                        </strong>
+                        <span />
+                      </div>
+
+                      <p>
+                        {visibleSpecialty(
+                          agent.specialty,
+                        )}
+                      </p>
+
+                      <div className="agent-tags">
+                        {(agent.skills ?? [])
+                          .slice(
+                            0,
+                            3,
+                          )
+                          .map(
+                            (
+                              skill,
+                              skillIndex,
+                            ) => (
+                              <span
+                                key={
+                                  skill.id
+                                  ?? `${agent.id}-${skillIndex}`
+                                }
+                              >
+                                {skillLabel(
+                                  skill,
+                                )}
+                              </span>
+                            ),
+                          )}
+
+                        {(agent.skills ?? []).length === 0 && (
+                          <span>
+                            Sin habilidades públicas
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="agent-rating">
+                      <strong>
+                        {agent.reputation_score}
+                      </strong>
+
+                      <span>/100</span>
+
+                      <small>
+                        {agent.jobs_completed}{' '}
+                        {agent.jobs_completed === 1
+                          ? 'trabajo'
+                          : 'trabajos'}
+                      </small>
+                    </div>
+                  </div>
+                ),
+              )
+            )}
           </div>
         </article>
       </section>
+
 
       <section className="showcase-bottom-grid">
         <article className="showcase-panel execution-card">
@@ -468,26 +1027,50 @@ function ShowcaseDashboard({
             </div>
 
             <div>
-              <strong>
-                Tarea #12 · Analizador de datos
-              </strong>
-              <span>Repliker Analista de Datos</span>
+              {currentWork ? (
+                <>
+                  <strong>
+                    {currentWork.current_activity
+                      || (
+                        currentWork.current_task_id
+                          ? `Tarea #${currentWork.current_task_id}`
+                          : 'Actividad en curso'
+                      )}
+                  </strong>
 
-              <div className="execution-progress">
-                <div>
-                  <span style={{ width: '68%' }} />
-                </div>
-                <small>68%</small>
-              </div>
+                  <span>
+                    Repliker {currentWork.name}
+                  </span>
+
+                  {currentWork.current_project_id && (
+                    <small>
+                      {projectName(
+                        currentWork.current_project_id,
+                      )}
+                    </small>
+                  )}
+                </>
+              ) : (
+                <>
+                  <strong>
+                    Sin trabajo en curso
+                  </strong>
+
+                  <span>
+                    No hay Replikers ejecutando tareas.
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </article>
+
 
         <article className="showcase-panel qa-card">
           <div className="showcase-section-title compact">
             <div>
               <span>CONTROL DE CALIDAD</span>
-              <h3>Revisión de calidad</h3>
+              <h3>Última revisión registrada</h3>
             </div>
 
             <ShieldCheck size={19} />
@@ -499,18 +1082,38 @@ function ShowcaseDashboard({
             </div>
 
             <div>
-              <strong>
-                Tarea #8 · Servicio de autenticación
-              </strong>
-              <span>4/5 criterios aprobados</span>
-            </div>
+              {latestQualityEvent ? (
+                <>
+                  <strong>
+                    {latestQualityEvent.title}
+                  </strong>
 
-            <div className="qa-score">
-              <strong>90</strong>
-              <span>/100</span>
+                  <span>
+                    {latestQualityEvent.description
+                      || 'Revisión registrada por el sistema'}
+                  </span>
+
+                  <small>
+                    {relativeTime(
+                      latestQualityEvent.created_at,
+                    )}
+                  </small>
+                </>
+              ) : (
+                <>
+                  <strong>
+                    Sin revisiones registradas
+                  </strong>
+
+                  <span>
+                    Todavía no existen eventos de calidad.
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </article>
+
 
         <article className="showcase-panel ecosystem-card">
           <div className="showcase-section-title compact">
@@ -525,34 +1128,53 @@ function ShowcaseDashboard({
           <div className="ecosystem-stats">
             <div>
               <Users size={21} />
+
               <strong>
-                {Math.max(replikerCount, 24)}
+                {replikers.length}
               </strong>
-              <span>agentes</span>
+
+              <span>
+                en mercado
+              </span>
             </div>
 
             <div>
-              <Rocket size={21} />
-              <strong>12</strong>
-              <span>ejecuciones</span>
+              <Target size={21} />
+
+              <strong>
+                {taskCount}
+              </strong>
+
+              <span>
+                tareas
+              </span>
             </div>
 
             <div>
               <Activity size={21} />
+
               <strong>
-                {backendOnline ? '100%' : '98%'}
+                {backendOnline
+                  ? 'Sí'
+                  : 'No'}
               </strong>
-              <span>operativo</span>
+
+              <span>
+                servidor
+              </span>
             </div>
           </div>
         </article>
       </section>
 
+
       <footer className="showcase-footer">
         <div>
           <CircleDollarSign size={18} />
           Valor planificado:{' '}
-          <strong>{plannedValue}</strong>
+          <strong>
+            {plannedValue}
+          </strong>
         </div>
 
         <span>

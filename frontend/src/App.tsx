@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { FormEvent } from 'react'
 import {
   Activity,
@@ -32,11 +38,17 @@ import {
   restoreSession,
 } from './api'
 import {
+  connectRealtime,
+} from './services/realtime'
+import {
   purgeLegacyAuthStorage,
   setAccessToken,
 } from './auth/session'
 import Ecosystem from './pages/Ecosystem'
 import ShowcaseDashboard from './components/ShowcaseDashboard'
+import type {
+  DashboardEcosystemSnapshot,
+} from './components/ShowcaseDashboard'
 import './App.css'
 import './theme.css'
 import './agentic-theme.css'
@@ -401,8 +413,23 @@ function App() {
   const [replikers, setReplikers] =
     useState<Repliker[]>([])
 
+  const [
+    dashboardEcosystem,
+    setDashboardEcosystem,
+  ] = useState<DashboardEcosystemSnapshot>({
+    agents: [],
+    projects: [],
+    events: [],
+    messages: [],
+  })
+
   const [loadingData, setLoadingData] =
     useState(false)
+
+  const dashboardRefreshTimerRef =
+    useRef<number | null>(
+      null,
+    )
 
   const [plan, setPlan] =
     useState<CoordinatorPlan | null>(() => {
@@ -459,93 +486,134 @@ function App() {
   )
 
 
-  async function checkBackend() {
-    try {
-      await api.get('/health', {
-        timeout: 5000,
-      })
+  const checkBackend =
+    useCallback(
+      async () => {
+        try {
+          await api.get('/health', {
+            timeout: 5000,
+          })
 
-      setBackendOnline(true)
-    } catch {
-      setBackendOnline(false)
-    }
-  }
-
-
-  async function loadMarketplace() {
-    try {
-      const response =
-        await api.get('/replikers/marketplace')
-
-      setReplikers(
-        Array.isArray(response.data)
-          ? response.data
-          : [],
-      )
-    } catch {
-      setReplikers([])
-    }
-  }
+          setBackendOnline(true)
+        } catch {
+          setBackendOnline(false)
+        }
+      },
+      [],
+    )
 
 
-  async function loadPrivateData() {
-    setLoadingData(true)
+  const loadMarketplace =
+    useCallback(
+      async () => {
+        try {
+          const response =
+            await api.get(
+              '/replikers/marketplace',
+            )
 
-    try {
-      const [projectsResponse, marketResponse] =
-        await Promise.all([
-          api.get('/projects/mine'),
-          api.get('/replikers/marketplace'),
-        ])
-
-      setProjects(
-        Array.isArray(projectsResponse.data)
-          ? projectsResponse.data
-          : [],
-      )
-
-      setReplikers(
-        Array.isArray(marketResponse.data)
-          ? marketResponse.data
-          : [],
-      )
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error(
-          'No se pudieron cargar los datos privados:',
-          error,
-        )
-      }
-    } finally {
-      setLoadingData(false)
-    }
-  }
+          setReplikers(
+            Array.isArray(
+              response.data,
+            )
+              ? response.data
+              : [],
+          )
+        } catch {
+          setReplikers([])
+        }
+      },
+      [],
+    )
 
 
-  async function bootstrap() {
-    purgeLegacyAuthStorage()
+  const loadPrivateData =
+    useCallback(
+      async () => {
+        setLoadingData(true)
 
-    await checkBackend()
+        try {
+          const [
+            projectsResponse,
+            marketResponse,
+            ecosystemResponse,
+          ] =
+            await Promise.all([
+              api.get('/projects/mine'),
+              api.get('/replikers/marketplace'),
+              api.get<DashboardEcosystemSnapshot>(
+                '/ecosystem',
+              ),
+            ])
 
-    try {
-      const restoredUser =
-        await restoreSession<User>()
+          setProjects(
+            Array.isArray(
+              projectsResponse.data,
+            )
+              ? projectsResponse.data
+              : [],
+          )
 
-      if (!restoredUser) {
-        setUser(null)
-        await loadMarketplace()
-        return
-      }
+          setReplikers(
+            Array.isArray(
+              marketResponse.data,
+            )
+              ? marketResponse.data
+              : [],
+          )
 
-      setUser(
-        restoredUser,
-      )
+          setDashboardEcosystem(
+            ecosystemResponse.data,
+          )
+        } catch (error) {
+          if (import.meta.env.DEV) {
+            console.error(
+              'No se pudieron cargar los datos privados:',
+              error,
+            )
+          }
+        } finally {
+          setLoadingData(false)
+        }
+      },
+      [],
+    )
 
-      await loadPrivateData()
-    } finally {
-      setAuthLoading(false)
-    }
-  }
+
+  const bootstrap =
+    useCallback(
+      async () => {
+        purgeLegacyAuthStorage()
+
+        await checkBackend()
+
+        try {
+          const restoredUser =
+            await restoreSession<User>()
+
+          if (!restoredUser) {
+            setUser(null)
+
+            await loadMarketplace()
+
+            return
+          }
+
+          setUser(
+            restoredUser,
+          )
+
+          await loadPrivateData()
+        } finally {
+          setAuthLoading(false)
+        }
+      },
+      [
+        checkBackend,
+        loadMarketplace,
+        loadPrivateData,
+      ],
+    )
 
 
   useEffect(() => {
@@ -562,7 +630,72 @@ function App() {
         timer,
       )
     }
-  }, [])
+  }, [bootstrap])
+
+
+  useEffect(() => {
+    if (
+      !user
+      || section !== 'dashboard'
+    ) {
+      return
+    }
+
+    const controller =
+      new AbortController()
+
+    void connectRealtime({
+      userId:
+        user.id,
+
+      signal:
+        controller.signal,
+
+      onStatus:
+        () => undefined,
+
+      onEvent:
+        () => {
+          if (
+            dashboardRefreshTimerRef.current
+            !== null
+          ) {
+            return
+          }
+
+          dashboardRefreshTimerRef.current =
+            window.setTimeout(
+              () => {
+                dashboardRefreshTimerRef.current =
+                  null
+
+                void loadPrivateData()
+              },
+              350,
+            )
+        },
+    })
+
+    return () => {
+      controller.abort()
+
+      if (
+        dashboardRefreshTimerRef.current
+        !== null
+      ) {
+        window.clearTimeout(
+          dashboardRefreshTimerRef.current,
+        )
+
+        dashboardRefreshTimerRef.current =
+          null
+      }
+    }
+  }, [
+    loadPrivateData,
+    section,
+    user,
+  ])
 
 
   async function handleAuth(
@@ -623,6 +756,14 @@ function App() {
 
     setUser(null)
     setProjects([])
+
+    setDashboardEcosystem({
+      agents: [],
+      projects: [],
+      events: [],
+      messages: [],
+    })
+
     setSection('dashboard')
 
     await loadMarketplace()
@@ -1246,8 +1387,9 @@ function App() {
           {section === 'dashboard' && (
             <ShowcaseDashboard
               userName={user.full_name}
-              projectCount={projects.length}
-              replikerCount={replikers.length}
+              projects={projects}
+              replikers={replikers}
+              ecosystem={dashboardEcosystem}
               plannedValue={money(plannedValue)}
               backendOnline={backendOnline}
               onCreateProject={() =>
