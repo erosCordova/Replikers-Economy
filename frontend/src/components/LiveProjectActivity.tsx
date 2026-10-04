@@ -58,17 +58,17 @@ function stageLabel(
 
   const labels:
     Record<string, string> = {
-      inspect: 'Inspeccion',
-      planning: 'Planificacion R00',
+      inspect: 'Inspección',
+      planning: 'Planificación R00',
       market: 'Mercado',
-      funding: 'Financiacion',
-      contracting: 'Contratacion',
-      delegation: 'Delegacion',
-      execution: 'Ejecucion',
-      qa: 'QA',
-      retry: 'Retry',
-      integration: 'Integracion',
-      economy: 'Economia',
+      funding: 'Financiación',
+      contracting: 'Contratación',
+      delegation: 'Delegación',
+      execution: 'Ejecución',
+      qa: 'Pruebas',
+      retry: 'Reintento',
+      integration: 'Integración',
+      economy: 'Economía',
     }
 
   return (
@@ -392,8 +392,8 @@ export default function LiveProjectActivity({
 
           <p>
             R00, mercado, Replikers,
-            ejecucion, QA, retries y
-            economia simulada.
+            ejecución, pruebas, reintentos y
+            economía simulada.
           </p>
         </div>
 
@@ -428,10 +428,10 @@ export default function LiveProjectActivity({
           'R00',
           'Mercado',
           'Contrato',
-          'Delegacion',
-          'Ejecucion',
-          'QA',
-          'Economia',
+          'Delegación',
+          'Ejecución',
+          'Pruebas',
+          'Economía',
         ].map(
           (label) => (
             <span key={label}>

@@ -22,6 +22,7 @@ import CollaborationPanel from '../components/CollaborationPanel'
 import LiveProjectActivity from '../components/LiveProjectActivity'
 import AgenticControlCenter from '../components/AgenticControlCenter'
 import ReplikerStudioPanel from '../components/ReplikerStudioPanel'
+import LivingEcosystem from '../components/LivingEcosystem'
 import type {
   ReplikerAppearance,
 } from '../components/ReplikerAvatar'
@@ -172,6 +173,59 @@ function dateTimeLabel(
       minute: '2-digit',
     },
   ).format(date)
+}
+
+
+function projectStatusLabelEs(
+  value: string,
+) {
+  const labels:
+    Record<string, string> = {
+      draft:
+        'Borrador',
+
+      planned:
+        'Planificado',
+
+      planning:
+        'Planificación',
+
+      open:
+        'Abierto',
+
+      market:
+        'En mercado',
+
+      contracted:
+        'Contratado',
+
+      executing:
+        'En ejecución',
+
+      qa:
+        'En pruebas',
+
+      awaiting_final_review:
+        'Esperando revisión final',
+
+      correcting:
+        'En corrección',
+
+      completed:
+        'Completado',
+
+      failed:
+        'Fallido',
+  }
+
+  return (
+    labels[
+      value
+        .trim()
+        .toLowerCase()
+    ]
+    ?? 'En proceso'
+  )
 }
 
 
@@ -748,6 +802,26 @@ export default function Ecosystem({
       </section>
 
 
+      <LivingEcosystem
+        agents={snapshot.agents}
+        projects={snapshot.projects}
+        events={snapshot.events}
+        messages={snapshot.messages}
+        selectedProjectId={
+          selectedProjectId
+        }
+        onSelectProject={
+          setSelectedProjectId
+        }
+        onSelectAgent={
+          openAgent
+        }
+        specialtyLabel={
+          specialtyLabelEs
+        }
+      />
+
+
       <div className="ecosystem-controlbar">
         <div className="ecosystem-filters">
           <SlidersHorizontal size={17} />
@@ -1062,7 +1136,7 @@ export default function Ecosystem({
                   </div>
 
                   <div className="ecosystem-project-status">
-                    {project.status}
+                    {projectStatusLabelEs(project.status)}
                   </div>
                 </button>
               ),
