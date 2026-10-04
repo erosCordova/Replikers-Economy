@@ -1935,3 +1935,76 @@
     flex-direction: column;
   }
 }
+
+
+/* =========================================================
+   FASE 20 - BOSQUE COMO EXPERIENCIA PRINCIPAL
+   ========================================================= */
+
+.ecosystem-hero-bosque {
+  margin-bottom: 16px;
+}
+
+
+.ecosystem-tools-area {
+  margin-top: 24px;
+
+  padding-top: 20px;
+
+  border-top:
+    1px solid #e4eee7;
+}
+
+
+.ecosystem-tools-heading {
+  margin-bottom: 14px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+.ecosystem-tools-heading > span {
+  color: #268056;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: .09em;
+}
+
+
+.ecosystem-tools-heading h2 {
+  margin:
+    4px 0 3px;
+
+  color: #183a28;
+
+  font-size: 19px;
+
+  letter-spacing: -.03em;
+}
+
+
+.ecosystem-tools-heading p {
+  margin: 0;
+
+  color: #718478;
+
+  font-size: 9px;
+}
+
+
+.ecosystem-bosque-support {
+  margin-top: 14px;
+}
+
+
+@media (
+  max-width: 780px
+) {
+  .ecosystem-tools-area {
+    margin-top: 18px;
+    padding-top: 16px;
+  }
+}

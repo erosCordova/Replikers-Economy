@@ -14,7 +14,7 @@ import {
 } from 'node:url'
 
 
-const srcPath =
+const rutaSrc =
   fileURLToPath(
     new URL(
       '../src/',
@@ -23,113 +23,122 @@ const srcPath =
   )
 
 
-function collectFiles(
-  directory,
+function recopilarArchivos(
+  directorio,
 ) {
-  const result = []
+  const resultado = []
 
   for (
-    const entry
-    of readdirSync(directory)
+    const entrada
+    of readdirSync(directorio)
   ) {
-    const path =
+    const ruta =
       join(
-        directory,
-        entry,
+        directorio,
+        entrada,
       )
 
-    const stat =
-      statSync(path)
+    const estado =
+      statSync(ruta)
 
-    if (stat.isDirectory()) {
-      result.push(
-        ...collectFiles(path),
+    if (estado.isDirectory()) {
+      resultado.push(
+        ...recopilarArchivos(
+          ruta,
+        ),
       )
 
       continue
     }
 
     if (
-      path.endsWith('.ts') ||
-      path.endsWith('.tsx')
+      ruta.endsWith('.ts') ||
+      ruta.endsWith('.tsx')
     ) {
-      result.push(path)
+      resultado.push(
+        ruta,
+      )
     }
   }
 
-  return result
+  return resultado
 }
 
 
-const violations = []
+const infracciones = []
 
 
 for (
-  const file
-  of collectFiles(srcPath)
+  const archivo
+  of recopilarArchivos(
+    rutaSrc,
+  )
 ) {
-  const content =
+  const contenido =
     readFileSync(
-      file,
+      archivo,
       'utf8',
     )
 
-  const display =
+  const rutaVisible =
     relative(
-      srcPath,
-      file,
+      rutaSrc,
+      archivo,
     ).replaceAll(
       '\\',
       '/',
     )
 
   if (
-    display !== 'auth/session.ts' &&
-    content.includes(
+    rutaVisible !==
+      'auth/sesion.ts' &&
+    contenido.includes(
       'repliker_token',
     )
   ) {
-    violations.push(
-      `${display}: referencia directa ` +
+    infracciones.push(
+      `${rutaVisible}: referencia directa ` +
       'a repliker_token',
     )
   }
 
   if (
-    display === 'auth/session.ts' &&
+    rutaVisible ===
+      'auth/sesion.ts' &&
     (
-      content.includes(
-        'localStorage.setItem'
+      contenido.includes(
+        'localStorage.setItem',
       ) ||
-      content.includes(
-        'sessionStorage.setItem'
+      contenido.includes(
+        'sessionStorage.setItem',
       )
     )
   ) {
-    violations.push(
-      'auth/session.ts: el token ' +
+    infracciones.push(
+      'auth/sesion.ts: el token ' +
       'no puede persistirse',
     )
   }
 }
 
 
-if (violations.length > 0) {
+if (
+  infracciones.length > 0
+) {
   console.error(
     'AUTH_STORAGE_CHECK ................. ERROR',
   )
 
   for (
-    const violation
-    of violations
+    const infraccion
+    of infracciones
   ) {
     console.error(
-      violation,
+      infraccion,
     )
   }
 
   process.exitCode = 1
-
 } else {
   console.log(
     'AUTH_STORAGE_CHECK ................. OK',
@@ -141,7 +150,7 @@ if (violations.length > 0) {
 }
 
 
-const apiSource =
+const fuenteApi =
   readFileSync(
     new URL(
       '../src/api.ts',
@@ -152,8 +161,8 @@ const apiSource =
 
 
 if (
-  !apiSource.includes(
-    'withCredentials: true'
+  !fuenteApi.includes(
+    'withCredentials: true',
   )
 ) {
   console.error(

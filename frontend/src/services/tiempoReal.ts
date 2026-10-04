@@ -4,7 +4,7 @@ import {
 import {
   clearAccessToken,
   getAccessToken,
-} from '../auth/session'
+} from '../auth/sesion'
 
 
 export type RealtimeConnectionStatus =

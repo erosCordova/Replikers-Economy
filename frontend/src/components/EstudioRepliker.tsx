@@ -1,4 +1,9 @@
 import {
+  descripcionHerramientaVisible,
+  nombreHerramientaVisible,
+} from '../utils/textoVisible'
+
+import {
   BookOpen,
   Bot,
   BrainCircuit,
@@ -22,7 +27,7 @@ import {
 
 import { api } from '../api'
 
-import '../styles/ReplikerStudio.css'
+import '../styles/EstudioRepliker.css'
 
 
 interface ReplikerSkill {
@@ -312,7 +317,7 @@ const emptyNewRepliker:
   }
 
 
-export default function ReplikerStudioPanel() {
+export default function EstudioRepliker() {
   const [
     replikers,
     setReplikers,
@@ -452,7 +457,7 @@ export default function ReplikerStudioPanel() {
     } catch {
       setNotice(
         'No fue posible cargar '
-        + 'el Taller de Replikers.',
+        + 'el Taller de Repliker.',
       )
 
     } finally {
@@ -951,7 +956,7 @@ export default function ReplikerStudioPanel() {
               size={17}
             />
 
-            Taller de Replikers
+            Taller de Repliker
           </div>
 
           <h2>
@@ -1219,7 +1224,7 @@ export default function ReplikerStudioPanel() {
           <div
             className="studio-sidebar-title"
           >
-            Mis Replikers
+            Mis Repliker
           </div>
 
           {loading ? (
@@ -1235,7 +1240,7 @@ export default function ReplikerStudioPanel() {
                 className="studio-empty"
               >
                 Todavía no tienes
-                Replikers propios.
+                Repliker propios.
               </div>
 
             ) : (
@@ -2364,12 +2369,12 @@ export default function ReplikerStudioPanel() {
                             />
 
                             <strong>
-                              {tool.label}
+                              {nombreHerramientaVisible(tool.name, tool.label)}
                             </strong>
                           </div>
 
                           <p>
-                            {tool.description}
+                            {descripcionHerramientaVisible(tool.name, tool.description)}
                           </p>
 
                           <span>

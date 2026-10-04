@@ -15,12 +15,12 @@ import { useCallback,
 } from 'react'
 
 import { api } from '../api'
-import ReplikerAvatar from './ReplikerAvatar'
+import ReplikerHumano from './ReplikerHumano'
 import type {
   ReplikerAppearance,
-} from './ReplikerAvatar'
+} from './ReplikerHumano'
 
-import '../styles/Collaboration.css'
+import '../styles/Colaboracion.css'
 
 
 interface CollaborationAgent {
@@ -259,7 +259,7 @@ function messageStatusLabel(
 }
 
 
-export default function CollaborationPanel({
+export default function PanelColaboracion({
   selectedProjectId,
   agents,
   projects,
@@ -991,7 +991,7 @@ export default function CollaborationPanel({
                   >
                     <div className="collaboration-avatar">
                       {senderAgent ? (
-                        <ReplikerAvatar
+                        <ReplikerHumano
                           appearance={
                             senderAgent
                               .appearance

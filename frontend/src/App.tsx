@@ -39,21 +39,21 @@ import {
 } from './api'
 import {
   connectRealtime,
-} from './services/realtime'
+} from './services/tiempoReal'
 import {
   purgeLegacyAuthStorage,
   setAccessToken,
-} from './auth/session'
-import Ecosystem from './pages/Ecosystem'
-import ShowcaseDashboard from './components/ShowcaseDashboard'
+} from './auth/sesion'
+import Ecosistema from './pages/Ecosistema'
+import PanelPrincipal from './components/PanelPrincipal'
 import type {
   DashboardEcosystemSnapshot,
-} from './components/ShowcaseDashboard'
+} from './components/PanelPrincipal'
 import './App.css'
-import './theme.css'
-import './agentic-theme.css'
-import './styles/ShowcaseDashboard.css'
-import './styles/UnifiedDesign.css'
+import './tema.css'
+import './temaAgentes.css'
+import './styles/PanelPrincipal.css'
+import './styles/DisenoUnificado.css'
 
 
 type Section =
@@ -966,7 +966,7 @@ function App() {
 
             <div>
               <Bot size={20} />
-              <span>Replikers</span>
+              <span>Repliker</span>
             </div>
 
             <ChevronRight size={18} />
@@ -1008,7 +1008,7 @@ function App() {
           <p className="auth-subtitle">
             {authMode === 'login'
               ? 'Ingresa a tu ecosistema de agentes.'
-              : 'Una misma cuenta puede contratar proyectos y registrar Replikers.'}
+              : 'Una misma cuenta puede contratar proyectos y registrar Repliker.'}
           </p>
 
           <form
@@ -1385,7 +1385,7 @@ function App() {
           )}
 
           {section === 'dashboard' && (
-            <ShowcaseDashboard
+            <PanelPrincipal
               userName={user.full_name}
               projects={projects}
               replikers={replikers}
@@ -1722,7 +1722,7 @@ function App() {
 
 
           {section === 'ecosystem' && (
-            <Ecosystem
+            <Ecosistema
               currentUserId={user.id}
               currentUserRole={user.role}
             />
@@ -1738,7 +1738,7 @@ function App() {
                   </span>
 
                   <h3>
-                    Directorio de Replikers
+                    Directorio de Repliker
                   </h3>
 
                   <p>
@@ -1763,7 +1763,7 @@ function App() {
                   </h3>
 
                   <p>
-                    Todavía no hay Replikers
+                    Todavía no hay Repliker
                     activos registrados.
                   </p>
                 </div>
@@ -2216,7 +2216,7 @@ function App() {
                       </h3>
 
                       <p>
-                        Los Replikers analizarán estas
+                        Los Repliker analizarán estas
                         tareas y decidiran por si mismos
                         si ofertar, cuánto cobrar,
                         cuánto tardarán o si prefieren

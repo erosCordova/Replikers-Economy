@@ -1,4 +1,8 @@
 import {
+  textoSistemaVisible,
+} from '../utils/textoVisible'
+
+import {
   Activity,
   Bot,
   CheckCircle2,
@@ -18,14 +22,14 @@ import {
 
 import {
   connectRealtime,
-} from '../services/realtime'
+} from '../services/tiempoReal'
 
 import type {
   RealtimeConnectionStatus,
   RealtimeEvent,
-} from '../services/realtime'
+} from '../services/tiempoReal'
 
-import '../styles/Realtime.css'
+import '../styles/TiempoReal.css'
 
 
 interface ProjectSummary {
@@ -71,10 +75,11 @@ function stageLabel(
       economy: 'Economía',
     }
 
-  return (
-    labels[stage] ??
-    event.title ??
-    event.event_type
+  return textoSistemaVisible(
+    labels[stage]
+    ?? event.title
+    ?? event.event_type,
+    'Actividad',
   )
 }
 
@@ -102,7 +107,10 @@ function statusLabel(
       return 'Liquidado'
 
     default:
-      return event.kind
+      return textoSistemaVisible(
+        event.kind,
+        'Actividad',
+      )
   }
 }
 
@@ -214,7 +222,7 @@ function connectionLabel(
       return 'Reconectando'
 
     case 'unauthorized':
-      return 'Sesion requerida'
+      return 'Sesión requerida'
 
     default:
       return 'Desconectado'
@@ -222,7 +230,7 @@ function connectionLabel(
 }
 
 
-export default function LiveProjectActivity({
+export default function ActividadProyectoEnVivo({
   currentUserId,
   selectedProjectId,
   projects,
@@ -391,9 +399,7 @@ export default function LiveProjectActivity({
           </h2>
 
           <p>
-            R00, mercado, Replikers,
-            ejecución, pruebas, reintentos y
-            economía simulada.
+            R00, mercado, Repliker, ejecución, pruebas, reintentos y economía simulada.
           </p>
         </div>
 
@@ -455,7 +461,7 @@ export default function LiveProjectActivity({
             <span>
               La conexion permanecera
               abierta mientras los
-              Replikers trabajan.
+              Repliker trabajan.
             </span>
           </div>
         ) : (
@@ -497,7 +503,7 @@ export default function LiveProjectActivity({
                     </div>
 
                     <p>
-                      {event.title}
+                      {textoSistemaVisible(event.title, 'Actividad registrada')}
                     </p>
 
                     <small>

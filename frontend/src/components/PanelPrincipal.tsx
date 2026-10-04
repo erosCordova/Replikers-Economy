@@ -1,4 +1,8 @@
 import {
+  textoSistemaVisible,
+} from '../utils/textoVisible'
+
+import {
   Activity,
   Bot,
   BriefcaseBusiness,
@@ -97,7 +101,7 @@ export interface DashboardEcosystemSnapshot {
 }
 
 
-interface ShowcaseDashboardProps {
+interface PanelPrincipalProps {
   userName: string
 
   projects: DashboardProject[]
@@ -380,7 +384,7 @@ function eventKind(
 }
 
 
-function ShowcaseDashboard({
+function PanelPrincipal({
   userName,
   projects,
   replikers,
@@ -389,7 +393,7 @@ function ShowcaseDashboard({
   backendOnline,
   onCreateProject,
   onOpenMarketplace,
-}: ShowcaseDashboardProps) {
+}: PanelPrincipalProps) {
   const firstName =
     userName
       .trim()
@@ -530,7 +534,7 @@ function ShowcaseDashboard({
 
             <h1>
               Bienvenido a{' '}
-              <span>Replikers</span>
+              <span>Repliker</span>
             </h1>
 
             <h2>
@@ -539,7 +543,7 @@ function ShowcaseDashboard({
 
             <p>
               Publica proyectos, coordina trabajo con R00,
-              contrata Replikers y recibe resultados
+              contrata Repliker y recibe resultados
               verificados mediante ejecución y pruebas.
             </p>
 
@@ -649,11 +653,11 @@ function ShowcaseDashboard({
 
                       <div className="activity-copy">
                         <strong>
-                          {item.title}
+                          {textoSistemaVisible(item.title, 'Actividad registrada')}
                         </strong>
 
                         <span>
-                          {item.description
+                          {textoSistemaVisible(item.description)
                             || (
                               item.project_id
                                 ? projectName(
@@ -716,7 +720,7 @@ function ShowcaseDashboard({
           </div>
 
           <div>
-            <span>Replikers</span>
+            <span>Repliker</span>
             <strong>
               {replikers.length}
             </strong>
@@ -737,7 +741,7 @@ function ShowcaseDashboard({
               {workingAgents.length}
             </strong>
             <small>
-              Replikers con actividad
+              Repliker con actividad
             </small>
           </div>
         </article>
@@ -873,7 +877,7 @@ function ShowcaseDashboard({
 
                             <span>
                               {metadata
-                                ? `${metadata.agents_involved} Replikers`
+                                ? `${metadata.agents_involved} Repliker`
                                 : 'Sin asignaciones registradas'}
                             </span>
                           </div>
@@ -892,7 +896,7 @@ function ShowcaseDashboard({
           <div className="showcase-section-title">
             <div>
               <span>MERCADO</span>
-              <h3>Replikers destacados</h3>
+              <h3>Repliker destacados</h3>
             </div>
 
             <button
@@ -914,7 +918,7 @@ function ShowcaseDashboard({
                 <div className="agent-copy">
                   <div className="agent-name">
                     <strong>
-                      Sin Replikers publicados
+                      Sin Repliker publicados
                     </strong>
                   </div>
 
@@ -1030,7 +1034,7 @@ function ShowcaseDashboard({
               {currentWork ? (
                 <>
                   <strong>
-                    {currentWork.current_activity
+                    {textoSistemaVisible(currentWork.current_activity)
                       || (
                         currentWork.current_task_id
                           ? `Tarea #${currentWork.current_task_id}`
@@ -1057,7 +1061,7 @@ function ShowcaseDashboard({
                   </strong>
 
                   <span>
-                    No hay Replikers ejecutando tareas.
+                    No hay Repliker ejecutando tareas.
                   </span>
                 </>
               )}
@@ -1085,11 +1089,11 @@ function ShowcaseDashboard({
               {latestQualityEvent ? (
                 <>
                   <strong>
-                    {latestQualityEvent.title}
+                    {textoSistemaVisible(latestQualityEvent.title, 'Revisión registrada')}
                   </strong>
 
                   <span>
-                    {latestQualityEvent.description
+                    {textoSistemaVisible(latestQualityEvent.description)
                       || 'Revisión registrada por el sistema'}
                   </span>
 
@@ -1186,4 +1190,4 @@ function ShowcaseDashboard({
 }
 
 
-export default ShowcaseDashboard
+export default PanelPrincipal

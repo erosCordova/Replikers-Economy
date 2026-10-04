@@ -1,34 +1,28 @@
 import {
-  Activity,
-  BriefcaseBusiness,
-  Gauge,
   Palette,
   Radio,
   RefreshCw,
-  SlidersHorizontal,
-  Sparkles,
-  Users,
   X,
 } from 'lucide-react'
-import { useCallback,
+import {
+  useCallback,
   useEffect,
-  useMemo,
   useState,
 } from 'react'
 
 import { api } from '../api'
-import ReplikerAvatar from '../components/ReplikerAvatar'
-import CollaborationPanel from '../components/CollaborationPanel'
-import LiveProjectActivity from '../components/LiveProjectActivity'
-import AgenticControlCenter from '../components/AgenticControlCenter'
-import ReplikerStudioPanel from '../components/ReplikerStudioPanel'
-import LivingEcosystem from '../components/LivingEcosystem'
+import ReplikerHumano from '../components/ReplikerHumano'
+import PanelColaboracion from '../components/PanelColaboracion'
+import ActividadProyectoEnVivo from '../components/ActividadProyectoEnVivo'
+import CentroControlAgentes from '../components/CentroControlAgentes'
+import EstudioRepliker from '../components/EstudioRepliker'
+import BosqueRepliker from '../components/BosqueRepliker'
 import type {
   ReplikerAppearance,
-} from '../components/ReplikerAvatar'
+} from '../components/ReplikerHumano'
 
-import '../styles/Ecosystem.css'
-import '../styles/EcosystemPolish.css'
+import '../styles/Ecosistema.css'
+import '../styles/PulidoEcosistema.css'
 
 
 interface EcosystemSkill {
@@ -119,12 +113,6 @@ interface Props {
 }
 
 
-type AgentFilter =
-  | 'all'
-  | 'working'
-  | 'available'
-
-
 const appearanceDefaults: ReplikerAppearance = {
   avatar_style: 'synthetic',
   primary_color: '#2563eb',
@@ -151,80 +139,6 @@ function isWorking(
       'assigned',
       'executing',
     ].includes(status)
-  )
-}
-
-
-function dateTimeLabel(
-  value: string,
-) {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return new Intl.DateTimeFormat(
-    'es-PE',
-    {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    },
-  ).format(date)
-}
-
-
-function projectStatusLabelEs(
-  value: string,
-) {
-  const labels:
-    Record<string, string> = {
-      draft:
-        'Borrador',
-
-      planned:
-        'Planificado',
-
-      planning:
-        'Planificación',
-
-      open:
-        'Abierto',
-
-      market:
-        'En mercado',
-
-      contracted:
-        'Contratado',
-
-      executing:
-        'En ejecución',
-
-      qa:
-        'En pruebas',
-
-      awaiting_final_review:
-        'Esperando revisión final',
-
-      correcting:
-        'En corrección',
-
-      completed:
-        'Completado',
-
-      failed:
-        'Fallido',
-  }
-
-  return (
-    labels[
-      value
-        .trim()
-        .toLowerCase()
-    ]
-    ?? 'En proceso'
   )
 }
 
@@ -292,7 +206,7 @@ function specialtyLabelEs(
 }
 
 
-export default function Ecosystem({
+export default function Ecosistema({
   currentUserId,
   currentUserRole,
 }: Props) {
@@ -313,8 +227,6 @@ export default function Ecosystem({
   const [error, setError] =
     useState('')
 
-  const [agentFilter, setAgentFilter] =
-    useState<AgentFilter>('all')
 
   const [
     selectedProjectId,
@@ -407,134 +319,6 @@ export default function Ecosystem({
       )
     }
   }, [loadSnapshot])
-
-
-  const workingAgents = useMemo(
-    () =>
-      snapshot.agents.filter(
-        isWorking,
-      ),
-    [snapshot.agents],
-  )
-
-
-  const availableAgents = useMemo(
-    () =>
-      snapshot.agents.filter(
-        (agent) =>
-          agent.is_active &&
-          !isWorking(agent),
-      ),
-    [snapshot.agents],
-  )
-
-
-  const filteredAgents = useMemo(
-    () => {
-      let agents =
-        snapshot.agents
-
-      if (agentFilter === 'working') {
-        agents =
-          agents.filter(
-            isWorking,
-          )
-      }
-
-      if (agentFilter === 'available') {
-        agents =
-          agents.filter(
-            (agent) =>
-              agent.is_active &&
-              !isWorking(agent),
-          )
-      }
-
-      if (
-        selectedProjectId !== 'all'
-      ) {
-        agents =
-          agents.filter(
-            (agent) =>
-              agent.current_project_id ===
-              selectedProjectId,
-          )
-      }
-
-      return agents
-    },
-    [
-      snapshot.agents,
-      agentFilter,
-      selectedProjectId,
-    ],
-  )
-
-
-  const filteredEvents = useMemo(
-    () => {
-      if (
-        selectedProjectId === 'all'
-      ) {
-        return snapshot.events
-      }
-
-      return snapshot.events.filter(
-        (event) =>
-          event.project_id ===
-          selectedProjectId,
-      )
-    },
-    [
-      snapshot.events,
-      selectedProjectId,
-    ],
-  )
-
-
-
-
-  function agentName(
-    replikerId: number | null,
-    actorType?: string,
-  ) {
-    if (actorType === 'r00') {
-      return 'R00'
-    }
-
-    if (actorType === 'system') {
-      return 'Sistema'
-    }
-
-    if (replikerId === null) {
-      return actorType || 'Sistema'
-    }
-
-    return (
-      snapshot.agents.find(
-        (agent) =>
-          agent.id === replikerId,
-      )?.name ??
-      `Repliker #${replikerId}`
-    )
-  }
-
-
-  function projectName(
-    projectId: number | null,
-  ) {
-    if (projectId === null) {
-      return 'Sin proyecto'
-    }
-
-    return (
-      snapshot.projects.find(
-        (project) =>
-          project.id === projectId,
-      )?.title ??
-      `Proyecto #${projectId}`
-    )
-  }
 
 
   function openAgent(
@@ -646,28 +430,31 @@ export default function Ecosystem({
 
   return (
     <section className="ecosystem-page">
-      <section className="ecosystem-hero">
+      <section className="ecosystem-hero ecosystem-hero-bosque">
         <div>
           <div className="ecosystem-live-pill">
             <Radio size={14} />
-            Observación del sistema
+
+            Ecosistema vivo
           </div>
 
           <h1>
-            Ecosistema de Replikers
+            Bosque Repliker
           </h1>
 
           <p>
-            Observa los agentes existentes,
-            sus proyectos, actividad y las
-            comunicaciones generadas dentro
-            de Repliker Economía.
+            Explora a los Repliker dentro de
+            un entorno vivo. Observa quién está
+            disponible, quién participa en una
+            misión y cómo se forman colaboraciones
+            alrededor de proyectos reales.
           </p>
         </div>
 
         <div className="ecosystem-hero-actions">
           <div className="ecosystem-auto-refresh">
             <span className="ecosystem-live-dot" />
+
             Actualización automática
           </div>
 
@@ -700,109 +487,7 @@ export default function Ecosystem({
       )}
 
 
-      <ReplikerStudioPanel />
-
-
-      <AgenticControlCenter
-        selectedProjectId={
-          selectedProjectId
-        }
-        currentUserId={
-          currentUserId
-        }
-        currentUserRole={
-          currentUserRole
-        }
-        projects={
-          snapshot.projects
-        }
-      />
-
-
-      <section className="ecosystem-metrics">
-        <article>
-          <div className="ecosystem-metric-icon blue">
-            <Users size={20} />
-          </div>
-
-          <div>
-            <span>
-              Replikers
-            </span>
-
-            <strong>
-              {snapshot.agents.length}
-            </strong>
-
-            <small>
-              agentes registrados
-            </small>
-          </div>
-        </article>
-
-        <article>
-          <div className="ecosystem-metric-icon cyan">
-            <Activity size={20} />
-          </div>
-
-          <div>
-            <span>
-              Trabajando
-            </span>
-
-            <strong>
-              {workingAgents.length}
-            </strong>
-
-            <small>
-              en actividad
-            </small>
-          </div>
-        </article>
-
-        <article>
-          <div className="ecosystem-metric-icon green">
-            <Sparkles size={20} />
-          </div>
-
-          <div>
-            <span>
-              Disponibles
-            </span>
-
-            <strong>
-              {availableAgents.length}
-            </strong>
-
-            <small>
-              pueden competir
-            </small>
-          </div>
-        </article>
-
-        <article>
-          <div className="ecosystem-metric-icon violet">
-            <BriefcaseBusiness size={20} />
-          </div>
-
-          <div>
-            <span>
-              Proyectos abiertos
-            </span>
-
-            <strong>
-              {snapshot.projects.length}
-            </strong>
-
-            <small>
-              visibles para tu cuenta
-            </small>
-          </div>
-        </article>
-      </section>
-
-
-      <LivingEcosystem
+      <BosqueRepliker
         agents={snapshot.agents}
         projects={snapshot.projects}
         events={snapshot.events}
@@ -822,447 +507,71 @@ export default function Ecosystem({
       />
 
 
-      <div className="ecosystem-controlbar">
-        <div className="ecosystem-filters">
-          <SlidersHorizontal size={17} />
-
-          <button
-            type="button"
-            className={
-              agentFilter === 'all'
-                ? 'active'
-                : ''
-            }
-            onClick={() =>
-              setAgentFilter('all')
-            }
-          >
-            Todos
-          </button>
-
-          <button
-            type="button"
-            className={
-              agentFilter === 'working'
-                ? 'active'
-                : ''
-            }
-            onClick={() =>
-              setAgentFilter('working')
-            }
-          >
-            Trabajando
-          </button>
-
-          <button
-            type="button"
-            className={
-              agentFilter === 'available'
-                ? 'active'
-                : ''
-            }
-            onClick={() =>
-              setAgentFilter(
-                'available',
-              )
-            }
-          >
-            Disponibles
-          </button>
-        </div>
-
-        <select
-          value={selectedProjectId}
-          onChange={(event) => {
-            const value =
-              event.target.value
-
-            setSelectedProjectId(
-              value === 'all'
-                ? 'all'
-                : Number(value),
-            )
-          }}
-        >
-          <option value="all">
-            Todos los proyectos
-          </option>
-
-          {snapshot.projects.map(
-            (project) => (
-              <option
-                key={project.id}
-                value={project.id}
-              >
-                #{project.id} · {project.title}
-              </option>
-            ),
-          )}
-        </select>
-      </div>
-
-
-      <div className="ecosystem-section-heading">
-        <div>
+      <section className="ecosystem-tools-area">
+        <div className="ecosystem-tools-heading">
           <span>
-            RED DE AGENTES
+            HERRAMIENTAS DEL ECOSISTEMA
           </span>
 
           <h2>
-            Replikers del ecosistema
+            Operaciones avanzadas
           </h2>
+
+          <p>
+            Configuración, supervisión y
+            colaboración del ecosistema.
+          </p>
         </div>
 
-        <small>
-          Selecciona un Repliker para
-          abrir su perfil.
-        </small>
-      </div>
+
+        <EstudioRepliker />
 
 
-      {filteredAgents.length === 0 ? (
-        <div className="ecosystem-empty">
-          <Users size={35} />
-
-          <strong>
-            No hay Replikers para este filtro
-          </strong>
-
-          <span>
-            Cuando existan agentes compatibles
-            apareceran aqui.
-          </span>
-        </div>
-      ) : (
-        <div className="ecosystem-agent-grid">
-          {filteredAgents.map(
-            (agent) => {
-              const working =
-                isWorking(agent)
-
-              return (
-                <article
-                  key={agent.id}
-                  className="ecosystem-agent-card"
-                  onClick={() =>
-                    openAgent(agent)
-                  }
-                >
-                  <div className="ecosystem-agent-visual">
-                    <ReplikerAvatar
-                      appearance={
-                        agent.appearance
-                      }
-                      name={agent.name}
-                      size="large"
-                      active={
-                        agent.is_active
-                      }
-                    />
-
-                    <span
-                      className={
-                        working
-                          ? 'ecosystem-agent-status working'
-                          : 'ecosystem-agent-status available'
-                      }
-                    >
-                      <span />
-
-                      {agentStatusLabel(
-                        agent,
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="ecosystem-agent-main">
-                    <div className="ecosystem-agent-title">
-                      <div>
-                        <h3>
-                          {agent.name}
-                        </h3>
-
-                        <span>
-                          {specialtyLabelEs(agent.specialty)}
-                        </span>
-                      </div>
-
-                      <div className="ecosystem-reputation">
-                        <Gauge size={15} />
-
-                        {Math.round(
-                          agent.reputation_score,
-                        )}
-                      </div>
-                    </div>
-
-                    <p>
-                      {agent.description ||
-                        'Agente especializado de Repliker Economía.'}
-                    </p>
-
-                    <div className="ecosystem-skills">
-                      {agent.skills
-                        .slice(0, 4)
-                        .map(
-                          (skill) => (
-                            <span
-                              key={`${agent.id}-${skill.name}`}
-                            >
-                              {skill.name}
-
-                              <b>
-                                {skill.level}
-                              </b>
-                            </span>
-                          ),
-                        )}
-                    </div>
-
-                    <div className="ecosystem-agent-work">
-                      {working ? (
-                        <>
-                          <div>
-                            <span>
-                              Proyecto actual
-                            </span>
-
-                            <strong>
-                              {projectName(
-                                agent.current_project_id,
-                              )}
-                            </strong>
-                          </div>
-
-                          <div>
-                            <span>
-                              Actividad
-                            </span>
-
-                            <strong>
-                              {agent.current_activity ??
-                                'En ejecucion'}
-                            </strong>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="ecosystem-available-note">
-                          Disponible para nuevas
-                          oportunidades
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              )
-            },
-          )}
-        </div>
-      )}
-
-
-      <section className="ecosystem-projects-block">
-        <div className="ecosystem-section-heading">
-          <div>
-            <span>
-              PROYECTOS
-            </span>
-
-            <h2>
-              Operaciones en curso
-            </h2>
-          </div>
-        </div>
-
-        {snapshot.projects.length === 0 ? (
-          <div className="ecosystem-empty compact">
-            <BriefcaseBusiness size={30} />
-
-            <strong>
-              No hay proyectos activos
-            </strong>
-
-            <span>
-              Los proyectos apareceran
-              cuando entren al ecosistema.
-            </span>
-          </div>
-        ) : (
-          <div className="ecosystem-project-grid">
-            {snapshot.projects.map(
-              (project) => (
-                <button
-                  type="button"
-                  key={project.id}
-                  className={
-                    selectedProjectId ===
-                    project.id
-                      ? 'ecosystem-project-card selected'
-                      : 'ecosystem-project-card'
-                  }
-                  onClick={() =>
-                    setSelectedProjectId(
-                      selectedProjectId ===
-                        project.id
-                        ? 'all'
-                        : project.id,
-                    )
-                  }
-                >
-                  <div>
-                    <span>
-                      PROYECTO #{project.id}
-                    </span>
-
-                    <strong>
-                      {project.title}
-                    </strong>
-                  </div>
-
-                  <div className="ecosystem-project-stats">
-                    <span>
-                      <b>
-                        {project.task_count}
-                      </b>
-                      tareas
-                    </span>
-
-                    <span>
-                      <b>
-                        {project.agents_involved}
-                      </b>
-                      agentes
-                    </span>
-                  </div>
-
-                  <div className="ecosystem-project-status">
-                    {projectStatusLabelEs(project.status)}
-                  </div>
-                </button>
-              ),
-            )}
-          </div>
-        )}
-      </section>
-
-
-      <LiveProjectActivity
-        currentUserId={
-          currentUserId
-        }
-        selectedProjectId={
-          selectedProjectId
-        }
-        projects={
-          snapshot.projects
-        }
-        onRealtimeActivity={() => {
-          void loadSnapshot(true)
-        }}
-      />
-
-
-      <section className="ecosystem-observation-grid">
-        <article className="ecosystem-panel">
-          <div className="ecosystem-panel-header">
-            <div>
-              <span>
-                ACTIVIDAD
-              </span>
-
-              <h3>
-                Que esta ocurriendo
-              </h3>
-            </div>
-
-            <Activity size={19} />
-          </div>
-
-          <div className="ecosystem-event-list">
-            {filteredEvents.length === 0 ? (
-              <div className="ecosystem-panel-empty">
-                <Activity size={28} />
-
-                <strong>
-                  Sin actividad registrada
-                </strong>
-
-                <p>
-                  Cuando los Replikers comiencen
-                  a ejecutar, negociar o delegar,
-                  sus acciones apareceran aqui.
-                </p>
-              </div>
-            ) : (
-              filteredEvents
-                .slice(0, 20)
-                .map(
-                  (event) => (
-                    <div
-                      key={event.id}
-                      className="ecosystem-event"
-                    >
-                      <div className="ecosystem-event-line">
-                        <span />
-                      </div>
-
-                      <div>
-                        <div className="ecosystem-event-meta">
-                          <strong>
-                            {agentName(
-                              event.repliker_id,
-                              event.actor_type,
-                            )}
-                          </strong>
-
-                          <time>
-                            {dateTimeLabel(
-                              event.created_at,
-                            )}
-                          </time>
-                        </div>
-
-                        <h4>
-                          {event.title}
-                        </h4>
-
-                        {event.description && (
-                          <p>
-                            {event.description}
-                          </p>
-                        )}
-
-                        {event.project_id && (
-                          <small>
-                            {projectName(
-                              event.project_id,
-                            )}
-
-                            {event.task_id
-                              ? ` · Tarea #${event.task_id}`
-                              : ''}
-                          </small>
-                        )}
-                      </div>
-                    </div>
-                  ),
-                )
-            )}
-          </div>
-        </article>
-
-
-        <CollaborationPanel
+        <CentroControlAgentes
           selectedProjectId={
             selectedProjectId
           }
-          agents={
-            snapshot.agents
+          currentUserId={
+            currentUserId
+          }
+          currentUserRole={
+            currentUserRole
           }
           projects={
             snapshot.projects
           }
         />
+
+
+        <ActividadProyectoEnVivo
+          currentUserId={
+            currentUserId
+          }
+          selectedProjectId={
+            selectedProjectId
+          }
+          projects={
+            snapshot.projects
+          }
+          onRealtimeActivity={() => {
+            void loadSnapshot(true)
+          }}
+        />
+
+
+        <section className="ecosystem-bosque-support">
+          <PanelColaboracion
+            selectedProjectId={
+              selectedProjectId
+            }
+            agents={
+              snapshot.agents
+            }
+            projects={
+              snapshot.projects
+            }
+          />
+        </section>
       </section>
 
 
@@ -1290,7 +599,7 @@ export default function Ecosystem({
             </button>
 
             <div className="ecosystem-profile-visual">
-              <ReplikerAvatar
+              <ReplikerHumano
                 appearance={
                   appearanceDraft
                 }
@@ -1391,23 +700,23 @@ export default function Ecosystem({
                     }
                   >
                     <option value="synthetic">
-                      Sintetico
+                      Natural
                     </option>
 
                     <option value="premium">
-                      Premium
+                      Elegante
                     </option>
 
                     <option value="minimal">
-                      Minimal
+                      Sencillo
                     </option>
 
                     <option value="neon">
-                      Neon
+                      Creativo
                     </option>
 
                     <option value="industrial">
-                      Industrial
+                      Técnico
                     </option>
                   </select>
                 </label>
@@ -1468,15 +777,15 @@ export default function Ecosystem({
                     }
                   >
                     <option value="core">
-                      Core
+                      Ovalado
                     </option>
 
                     <option value="angular">
-                      Angular
+                      Definido
                     </option>
 
                     <option value="orb">
-                      Orbital
+                      Redondeado
                     </option>
                   </select>
                 </label>
@@ -1498,15 +807,15 @@ export default function Ecosystem({
                     }
                   >
                     <option value="glow">
-                      Luminosos
+                      Amables
                     </option>
 
                     <option value="line">
-                      Lineales
+                      Serenos
                     </option>
 
                     <option value="dual">
-                      Duales
+                      Enfocados
                     </option>
                   </select>
                 </label>
@@ -1532,7 +841,7 @@ export default function Ecosystem({
                     </option>
 
                     <option value="visor">
-                      Visor
+                      Gafas
                     </option>
 
                     <option value="headphones">
@@ -1540,11 +849,11 @@ export default function Ecosystem({
                     </option>
 
                     <option value="antenna">
-                      Antena
+                      Broche
                     </option>
 
                     <option value="halo">
-                      Halo digital
+                      Diadema
                     </option>
                   </select>
                 </label>
@@ -1566,11 +875,11 @@ export default function Ecosystem({
                     }
                   >
                     <option value="grid">
-                      Rejilla
+                      Bosque suave
                     </option>
 
                     <option value="circuit">
-                      Circuito
+                      Degradado
                     </option>
 
                     <option value="halo">

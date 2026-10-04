@@ -1,4 +1,10 @@
 import {
+  descripcionHerramientaVisible,
+  nombreHerramientaVisible,
+  textoSistemaVisible,
+} from '../utils/textoVisible'
+
+import {
   Activity,
   Bot,
   BrainCircuit,
@@ -23,7 +29,7 @@ import { useCallback,
 
 import { api } from '../api'
 
-import '../styles/AgenticControlCenter.css'
+import '../styles/CentroControlAgentes.css'
 
 
 interface AgenticTool {
@@ -357,7 +363,7 @@ function dateTimeLabel(
 }
 
 
-export default function AgenticControlCenter({
+export default function CentroControlAgentes({
   selectedProjectId,
   currentUserId,
   currentUserRole,
@@ -904,9 +910,9 @@ export default function AgenticControlCenter({
             </strong>
 
             <p>
-              Elige un proyecto en el filtro
-              del ecosistema para visualizar
-              su grafo, Replikers, herramientas
+              Selecciona un proyecto directamente
+              en el Bosque Repliker para visualizar
+              su grafo, Repliker, herramientas
               y actividad de agentes.
             </p>
           </div>
@@ -1102,7 +1108,7 @@ export default function AgenticControlCenter({
                 />
 
                 <strong>
-                  Replikers conectados
+                  Repliker conectados
                 </strong>
               </div>
 
@@ -1118,7 +1124,7 @@ export default function AgenticControlCenter({
               <div
                 className="agentic-empty"
               >
-                Todavía no hay Replikers
+                Todavía no hay Repliker
                 vinculados a este proyecto.
               </div>
 
@@ -1184,7 +1190,7 @@ export default function AgenticControlCenter({
                                   size={12}
                                 />
 
-                                {tool.label}
+                                {nombreHerramientaVisible(tool.name, tool.label)}
                               </span>
                             ),
                           )}
@@ -1276,13 +1282,11 @@ export default function AgenticControlCenter({
                                       </span>
 
                                       <strong>
-                                        {tool.label}
+                                        {nombreHerramientaVisible(tool.name, tool.label)}
                                       </strong>
 
                                       <small>
-                                        {
-                                          tool.description
-                                        }
+                                        {descripcionHerramientaVisible(tool.name, tool.description)}
                                       </small>
                                     </button>
                                   )
@@ -1374,7 +1378,7 @@ export default function AgenticControlCenter({
                           >
                             <div>
                               <strong>
-                                {event.title}
+                                {textoSistemaVisible(event.title, 'Actividad registrada')}
                               </strong>
 
                               <span>
@@ -1387,9 +1391,7 @@ export default function AgenticControlCenter({
                             </div>
 
                             <p>
-                              {
-                                event.description
-                              }
+                              {textoSistemaVisible(event.description, 'Actividad registrada')}
                             </p>
                           </div>
                         </article>
@@ -1404,7 +1406,7 @@ export default function AgenticControlCenter({
         <section
           className="agentic-empty"
         >
-          No existe información agéntica
+          No existe información de agentes
           disponible para este proyecto.
         </section>
       )}
