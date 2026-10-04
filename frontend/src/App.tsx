@@ -41,6 +41,7 @@ import './App.css'
 import './theme.css'
 import './agentic-theme.css'
 import './styles/ShowcaseDashboard.css'
+import './styles/UnifiedDesign.css'
 
 
 type Section =
@@ -177,19 +178,129 @@ function errorMessage(error: unknown) {
 }
 
 
-function statusLabel(status?: string) {
-  const labels: Record<string, string> = {
-    draft: 'Borrador',
-    planned: 'Planificado',
-    open: 'Abierto',
-    pending: 'Pendiente',
-    active: 'Activo',
-    available: 'Disponible',
-    completed: 'Completado',
-    unpaid: 'Sin pagar',
+function roleLabel(
+  role: string,
+) {
+  const labels:
+    Record<string, string> = {
+      admin:
+        'Administrador',
+
+      client:
+        'Cliente',
+
+      user:
+        'Usuario',
+
+      owner:
+        'Propietario',
   }
 
-  return labels[status ?? ''] ?? status ?? 'Desconocido'
+  return (
+    labels[
+      role
+        .trim()
+        .toLowerCase()
+    ]
+    ?? 'Usuario'
+  )
+}
+
+
+function statusLabel(
+  status?: string,
+) {
+  const labels:
+    Record<string, string> = {
+      draft:
+        'Borrador',
+
+      planned:
+        'Planificado',
+
+      planning:
+        'Planificando',
+
+      open:
+        'Abierto',
+
+      market:
+        'En mercado',
+
+      contracted:
+        'Contratado',
+
+      executing:
+        'En ejecución',
+
+      running:
+        'En ejecución',
+
+      qa:
+        'En pruebas',
+
+      awaiting_final_review:
+        'En revisión final',
+
+      correcting:
+        'En corrección',
+
+      completed:
+        'Completado',
+
+      failed:
+        'Fallido',
+
+      pending:
+        'Pendiente',
+
+      active:
+        'Activo',
+
+      available:
+        'Disponible',
+
+      accepted:
+        'Aceptado',
+
+      assigned:
+        'Asignado',
+
+      waiting:
+        'En espera',
+
+      blocked:
+        'Bloqueado',
+
+      funded:
+        'Financiado',
+
+      reserved:
+        'Reservado',
+
+      paid:
+        'Pagado',
+
+      settled:
+        'Liquidado',
+
+      unpaid:
+        'Sin pagar',
+
+      cancelled:
+        'Cancelado',
+
+      canceled:
+        'Cancelado',
+
+      published:
+        'Publicado',
+    }
+
+  return (
+    labels[status ?? '']
+    ?? 'En proceso'
+  )
 }
 
 
@@ -529,7 +640,7 @@ function App() {
       !projectDescription.trim()
     ) {
       setProjectError(
-        'Completa el titulo y la descripcion.',
+        'Completa el título y la descripción.',
       )
       return
     }
@@ -539,7 +650,7 @@ function App() {
       budgetNumber <= 0
     ) {
       setProjectError(
-        'Ingresa un presupuesto valido.',
+        'Ingresa un presupuesto válido.',
       )
       return
     }
@@ -597,7 +708,7 @@ function App() {
         projectResponse.data
 
       setCreationStage(
-        'R00 esta analizando el objetivo...',
+        'R00 está analizando el objetivo...',
       )
 
       const planResponse =
@@ -623,7 +734,7 @@ function App() {
       await loadPrivateData()
 
       setNotice(
-        `R00 termino de planificar el proyecto #${project.id}.`,
+        `R00 terminó de planificar el proyecto #${project.id}.`,
       )
 
       setSection('plan')
@@ -682,7 +793,7 @@ function App() {
 
           <h1>
             Repliker
-            <span> Economy</span>
+            <span> Economía</span>
           </h1>
 
           <p>
@@ -776,7 +887,7 @@ function App() {
             )}
 
             <label>
-              Correo electronico
+              Correo electrónico
 
               <input
                 type="email"
@@ -792,7 +903,7 @@ function App() {
             </label>
 
             <label>
-              Contrasena
+              Contraseña
 
               <input
                 type="password"
@@ -802,7 +913,7 @@ function App() {
                     event.target.value,
                   )
                 }
-                placeholder="Minimo 12 caracteres"
+                placeholder="Mínimo 12 caracteres"
                 required
               />
             </label>
@@ -829,7 +940,7 @@ function App() {
               ) : authMode === 'login' ? (
                 <>
                   <LogIn size={18} />
-                  Iniciar sesion
+                  Iniciar sesión
                 </>
               ) : (
                 <>
@@ -855,7 +966,7 @@ function App() {
           >
             {authMode === 'login'
               ? 'No tengo cuenta · Registrarme'
-              : 'Ya tengo cuenta · Iniciar sesion'}
+              : 'Ya tengo cuenta · Iniciar sesión'}
           </button>
         </section>
       </div>
@@ -885,11 +996,12 @@ function App() {
 
           <div>
             <strong>Repliker</strong>
-            <span>Economy</span>
+            <span>Economía</span>
           </div>
 
           <button
             className="sidebar-close"
+            aria-label="Cerrar menú"
             onClick={() =>
               setSidebarOpen(false)
             }
@@ -911,7 +1023,7 @@ function App() {
             </strong>
 
             <span>
-              {user.role}
+              {roleLabel(user.role)}
             </span>
           </div>
         </div>
@@ -928,7 +1040,7 @@ function App() {
             }
           >
             <LayoutDashboard size={19} />
-            Dashboard
+            Panel general
           </button>
 
           <button
@@ -1032,7 +1144,7 @@ function App() {
             onClick={logout}
           >
             <LogOut size={18} />
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </div>
       </aside>
@@ -1051,6 +1163,7 @@ function App() {
           <div className="topbar-left">
             <button
               className="mobile-menu"
+              aria-label="Abrir menú"
               onClick={() =>
                 setSidebarOpen(true)
               }
@@ -1080,7 +1193,7 @@ function App() {
                   'Ecosistema'}
 
                 {section === 'plan' &&
-                  'Plan autonomo de R00'}
+                  'Plan autónomo de R00'}
               </h2>
             </div>
           </div>
@@ -1088,6 +1201,7 @@ function App() {
           <div className="topbar-actions">
             <button
               className="refresh-button"
+              aria-label="Actualizar datos"
               onClick={async () => {
                 await checkBackend()
                 await loadPrivateData()
@@ -1151,7 +1265,7 @@ function App() {
                     </span>
 
                     <h3>
-                      ¿Que necesitas construir?
+                      ¿Qué necesitas construir?
                     </h3>
                   </div>
 
@@ -1189,12 +1303,12 @@ function App() {
                           event.target.value,
                         )
                       }
-                      placeholder="Explica que resultado necesitas..."
+                      placeholder="Explica qué resultado necesitas..."
                     />
                   </label>
 
                   <label>
-                    Presupuesto maximo
+                    Presupuesto máximo
                     <div className="money-input">
                       <span>S/</span>
 
@@ -1216,7 +1330,7 @@ function App() {
                     Requisitos obligatorios
 
                     <span className="field-help">
-                      Uno por linea
+                      Uno por línea
                     </span>
 
                     <textarea
@@ -1269,44 +1383,44 @@ function App() {
                   <strong>R00</strong>
 
                   <span>
-                    Coordinador autonomo
+                    Coordinador autónomo
                   </span>
                 </div>
 
                 <div className="r00-description">
                   <h3>
-                    ¿Que hara R00?
+                    ¿Qué hará R00?
                   </h3>
 
                   <div>
                     <CheckCircle2 size={17} />
-                    Analizara el objetivo
+                    Analizará el objetivo
                   </div>
 
                   <div>
                     <CheckCircle2 size={17} />
-                    Decidira las tareas
+                    Decidirá las tareas
                   </div>
 
                   <div>
                     <CheckCircle2 size={17} />
-                    Asignara presupuesto maximo
+                    Asignará presupuesto máximo
                     por tarea
                   </div>
 
                   <div>
                     <CheckCircle2 size={17} />
-                    Definira habilidades
+                    Definirá habilidades
                   </div>
 
                   <div>
                     <CheckCircle2 size={17} />
-                    Creara criterios verificables
+                    Creará criterios verificables
                   </div>
 
                   <div>
                     <CheckCircle2 size={17} />
-                    Detectara carencias del mercado
+                    Detectará carencias del mercado
                   </div>
                 </div>
               </aside>
@@ -1315,7 +1429,7 @@ function App() {
 
 
           {section === 'projects' && (
-            <section>
+            <section className="projects-section">
               <div className="section-heading">
                 <div>
                   <span className="panel-kicker">
@@ -1345,7 +1459,7 @@ function App() {
                   <BriefcaseBusiness size={42} />
 
                   <h3>
-                    Todavia no tienes proyectos
+                    Todavía no tienes proyectos
                   </h3>
 
                   <p>
@@ -1399,7 +1513,7 @@ function App() {
                         <div className="project-money-row">
                           <div>
                             <span>
-                              Limite
+                              Límite
                             </span>
 
                             <strong>
@@ -1469,11 +1583,11 @@ function App() {
 
 
           {section === 'marketplace' && (
-            <section>
+            <section className="market-section">
               <div className="section-heading">
                 <div>
                   <span className="panel-kicker">
-                    ECONOMIA DE AGENTES
+                    ECONOMÍA DE AGENTES
                   </span>
 
                   <h3>
@@ -1482,7 +1596,7 @@ function App() {
 
                   <p>
                     Agentes especializados que
-                    posteriormente competiran por
+                    posteriormente competirán por
                     realizar las tareas de R00.
                   </p>
                 </div>
@@ -1498,11 +1612,11 @@ function App() {
                   <Bot size={42} />
 
                   <h3>
-                    Mercado vacio
+                    Mercado vacío
                   </h3>
 
                   <p>
-                    Todavia no hay Replikers
+                    Todavía no hay Replikers
                     activos registrados.
                   </p>
                 </div>
@@ -1551,7 +1665,7 @@ function App() {
                             <Gauge size={17} />
 
                             <span>
-                              Reputacion
+                              Reputación
                             </span>
 
                             <strong>
@@ -1626,7 +1740,7 @@ function App() {
                   <Cpu size={42} />
 
                   <h3>
-                    Aun no existe un plan
+                    Aún no existe un plan
                   </h3>
 
                   <p>
@@ -1644,12 +1758,12 @@ function App() {
 
                     <div>
                       <span className="panel-kicker">
-                        PLAN AUTONOMO · PROYECTO #
+                        PLAN AUTÓNOMO · PROYECTO #
                         {plan.project_id}
                       </span>
 
                       <h2>
-                        R00 termino el analisis
+                        R00 terminó el análisis
                       </h2>
 
                       <p>
@@ -1668,7 +1782,7 @@ function App() {
                       <WalletCards size={21} />
 
                       <span>
-                        Presupuesto maximo
+                        Presupuesto máximo
                       </span>
 
                       <strong>
@@ -1682,7 +1796,7 @@ function App() {
                       <CircleDollarSign size={21} />
 
                       <span>
-                        Estimacion R00
+                        Estimación R00
                       </span>
 
                       <strong>
@@ -1739,11 +1853,11 @@ function App() {
                   <div className="plan-section-heading">
                     <div>
                       <span className="panel-kicker">
-                        DESCOMPOSICION
+                        DESCOMPOSICIÓN
                       </span>
 
                       <h3>
-                        Tareas autonomamente creadas
+                        Tareas creadas autónomamente
                       </h3>
                     </div>
 
@@ -1864,7 +1978,7 @@ function App() {
                                 <div>
                                   <h4>
                                     Criterios de
-                                    aceptacion
+                                    aceptación
                                   </h4>
 
                                   <div className="criteria-list">
@@ -1907,7 +2021,7 @@ function App() {
 
                     <div>
                       <span className="panel-kicker">
-                        MARKET GAPS
+                        CAPACIDADES FALTANTES
                       </span>
 
                       <h3>
@@ -1951,14 +2065,14 @@ function App() {
                       </span>
 
                       <h3>
-                        Mercado autonomo de ofertas
+                        Mercado autónomo de ofertas
                       </h3>
 
                       <p>
-                        Los Replikers analizaran estas
+                        Los Replikers analizarán estas
                         tareas y decidiran por si mismos
-                        si ofertar, cuanto cobrar,
-                        cuanto tardaran o si prefieren
+                        si ofertar, cuánto cobrar,
+                        cuánto tardarán o si prefieren
                         rechazarlas.
                       </p>
                     </section>

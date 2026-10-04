@@ -187,6 +187,59 @@ function statusLabel(
 }
 
 
+function messageTypeLabel(
+  value: string,
+) {
+  const labels:
+    Record<string, string> = {
+      request:
+        'Solicitud',
+
+      response:
+        'Respuesta',
+
+      clarification:
+        'Aclaración',
+
+      blocker:
+        'Bloqueo',
+
+      handoff:
+        'Transferencia',
+
+      status:
+        'Estado',
+
+      system:
+        'Sistema',
+
+      result:
+        'Resultado',
+
+      correction:
+        'Corrección',
+
+      approval:
+        'Aprobación',
+
+      rejection:
+        'Rechazo',
+
+      message:
+        'Mensaje',
+    }
+
+  return (
+    labels[
+      value
+        .trim()
+        .toLowerCase()
+    ]
+    ?? 'Mensaje operativo'
+  )
+}
+
+
 function messageStatusLabel(
   status: string,
 ) {
@@ -634,7 +687,7 @@ export default function CollaborationPanel({
       )
 
       setNotice(
-        'Conversacion resuelta.',
+        'Conversación resuelta.',
       )
 
       await load(true)
@@ -656,7 +709,7 @@ export default function CollaborationPanel({
         <div className="ecosystem-panel-header">
           <div>
             <span>
-              COLABORACION
+              COLABORACIÓN
             </span>
 
             <h3>
@@ -682,7 +735,7 @@ export default function CollaborationPanel({
             Elige un proyecto para
             abrir sus conversaciones,
             solicitudes, bloqueos y
-            handoffs.
+            transferencias.
           </p>
         </div>
       </article>
@@ -695,7 +748,7 @@ export default function CollaborationPanel({
       <div className="ecosystem-panel-header">
         <div>
           <span>
-            COLABORACION
+            COLABORACIÓN
           </span>
 
           <h3>
@@ -711,6 +764,7 @@ export default function CollaborationPanel({
         <button
           type="button"
           className="collaboration-refresh"
+          aria-label="Actualizar comunicaciones"
           onClick={() =>
             void load(true)
           }
@@ -907,7 +961,7 @@ export default function CollaborationPanel({
               <span>
                 La conversacion comenzara
                 cuando R00, el cliente o
-                un Repliker envie un mensaje.
+                un Repliker envíe un mensaje.
               </span>
             </div>
           ) : (
@@ -1006,7 +1060,7 @@ export default function CollaborationPanel({
                         </span>
 
                         <span>
-                          {message.message_type}
+                          {messageTypeLabel(message.message_type)}
                         </span>
 
                         <span
@@ -1101,7 +1155,7 @@ export default function CollaborationPanel({
         <textarea
           value={composer}
           maxLength={4000}
-          placeholder="Escribe una solicitud, aclaracion o informacion para R00..."
+          placeholder="Escribe una solicitud, aclaración o información para R00..."
           onChange={(event) =>
             setComposer(
               event.target.value,

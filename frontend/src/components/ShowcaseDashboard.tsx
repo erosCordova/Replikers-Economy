@@ -31,7 +31,7 @@ interface ShowcaseDashboardProps {
 
 const demoProjects = [
   {
-    name: 'Plataforma de E-commerce con IA',
+    name: 'Plataforma de comercio electrónico con IA',
     description:
       'Desarrollo de una plataforma completa con agentes especializados.',
     progress: 75,
@@ -44,7 +44,7 @@ const demoProjects = [
     description:
       'Procesamiento de datos, automatización y reportes inteligentes.',
     progress: 60,
-    status: 'Revisión QA',
+    status: 'Revisión de calidad',
     tasks: '3/5 tareas',
     contracts: '2 contratos',
   },
@@ -62,28 +62,28 @@ const demoProjects = [
 
 const demoAgents = [
   {
-    name: 'CodeMaster',
-    specialty: 'Desarrollo Full Stack',
+    name: 'Maestro de Código',
+    specialty: 'Desarrollo integral',
     score: 94,
     jobs: 127,
-    tags: ['Python', 'React', 'FastAPI'],
+    tags: ['Programación', 'Interfaz digital', 'Servicios digitales'],
   },
   {
-    name: 'DataAnalyzer',
+    name: 'Analista de Datos',
     specialty: 'Datos e Inteligencia Artificial',
     score: 91,
     jobs: 89,
-    tags: ['Python', 'Pandas', 'ML'],
+    tags: ['Programación', 'Análisis de datos', 'Aprendizaje automático'],
   },
   {
-    name: 'UXArchitect',
+    name: 'Arquitecto de Experiencia',
     specialty: 'Diseño e Interfaz',
     score: 88,
     jobs: 56,
-    tags: ['React', 'UI/UX', 'Vite'],
+    tags: ['Desarrollo de interfaz', 'Interfaz y experiencia', 'Aplicaciones web'],
   },
   {
-    name: 'AIBuilder',
+    name: 'Constructor IA',
     specialty: 'IA y Automatización',
     score: 96,
     jobs: 203,
@@ -95,7 +95,7 @@ const demoAgents = [
 const activity = [
   {
     title: 'Ejecución iniciada',
-    detail: 'Task #12 · Analizador de datos',
+    detail: 'Tarea #12 · Analizador de datos',
     time: 'hace 5 min',
     type: 'play',
   },
@@ -106,14 +106,14 @@ const activity = [
     type: 'contract',
   },
   {
-    title: 'QA aprobado',
-    detail: 'Task #8 · API de autenticación',
+    title: 'Pruebas aprobadas',
+    detail: 'Tarea #8 · Servicio de autenticación',
     time: 'hace 28 min',
     type: 'qa',
   },
   {
     title: 'Proyecto actualizado',
-    detail: 'Plataforma de E-commerce',
+    detail: 'Plataforma de comercio electrónico',
     time: 'hace 1 hora',
     type: 'project',
   },
@@ -154,7 +154,7 @@ function ShowcaseDashboard({
             <p>
               Publica proyectos, coordina trabajo con R00,
               contrata Replikers y recibe resultados
-              verificados mediante ejecución y QA.
+              verificados mediante ejecución y Pruebas.
             </p>
 
             <div className="showcase-hero-actions">
@@ -305,7 +305,7 @@ function ShowcaseDashboard({
           </div>
 
           <div>
-            <span>Revisiones QA</span>
+            <span>Revisiones de calidad</span>
             <strong>2</strong>
             <small>1 aprobada · 1 revisión</small>
           </div>
@@ -469,7 +469,7 @@ function ShowcaseDashboard({
 
             <div>
               <strong>
-                Task #12 · Analizador de datos
+                Tarea #12 · Analizador de datos
               </strong>
               <span>Repliker Analista de Datos</span>
 
@@ -487,7 +487,7 @@ function ShowcaseDashboard({
           <div className="showcase-section-title compact">
             <div>
               <span>CONTROL DE CALIDAD</span>
-              <h3>Revisión QA</h3>
+              <h3>Revisión de calidad</h3>
             </div>
 
             <ShieldCheck size={19} />
@@ -500,7 +500,7 @@ function ShowcaseDashboard({
 
             <div>
               <strong>
-                Task #8 · API de autenticación
+                Tarea #8 · Servicio de autenticación
               </strong>
               <span>4/5 criterios aprobados</span>
             </div>

@@ -650,7 +650,7 @@ export default function Ecosystem({
         <div>
           <div className="ecosystem-live-pill">
             <Radio size={14} />
-            Observacion del sistema
+            Observación del sistema
           </div>
 
           <h1>
@@ -668,7 +668,7 @@ export default function Ecosystem({
         <div className="ecosystem-hero-actions">
           <div className="ecosystem-auto-refresh">
             <span className="ecosystem-live-dot" />
-            Actualizacion automatica
+            Actualización automática
           </div>
 
           <button

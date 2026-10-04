@@ -233,6 +233,101 @@ function nodeStatusLabel(
 }
 
 
+function visibleStatus(
+  value: string,
+) {
+  const labels:
+    Record<string, string> = {
+      draft:
+        'Borrador',
+
+      planned:
+        'Planificado',
+
+      planning:
+        'Planificando',
+
+      open:
+        'Abierto',
+
+      market:
+        'En mercado',
+
+      contracted:
+        'Contratado',
+
+      executing:
+        'En ejecución',
+
+      running:
+        'En ejecución',
+
+      qa:
+        'En pruebas',
+
+      awaiting_final_review:
+        'En revisión final',
+
+      correcting:
+        'En corrección',
+
+      completed:
+        'Completado',
+
+      failed:
+        'Fallido',
+
+      pending:
+        'Pendiente',
+
+      active:
+        'Activo',
+
+      funded:
+        'Financiado',
+
+      reserved:
+        'Reservado',
+
+      paid:
+        'Pagado',
+
+      settled:
+        'Liquidado',
+
+      unpaid:
+        'Sin pagar',
+
+      blocked:
+        'Bloqueado',
+
+      waiting:
+        'En espera',
+
+      accepted:
+        'Aceptado',
+
+      assigned:
+        'Asignado',
+
+      cancelled:
+        'Cancelado',
+
+      canceled:
+        'Cancelado',
+    }
+
+  return (
+    labels[
+      value
+        .trim()
+        .toLowerCase()
+    ]
+    ?? 'En proceso'
+  )
+}
+
+
 function dateTimeLabel(
   value: string,
 ) {
@@ -847,11 +942,11 @@ export default function AgenticControlCenter({
               className="agentic-project-tags"
             >
               <span>
-                {snapshot.project_status}
+                {visibleStatus(snapshot.project_status)}
               </span>
 
               <span>
-                {snapshot.payment_status}
+                {visibleStatus(snapshot.payment_status)}
               </span>
 
               {snapshot.has_delegations && (
@@ -891,7 +986,7 @@ export default function AgenticControlCenter({
                         node.name
                         === snapshot.current_node,
                     )?.label
-                    ?? snapshot.current_node
+                    ?? 'Etapa en proceso'
                   }
                 </strong>
               </div>
@@ -1243,7 +1338,7 @@ export default function AgenticControlCenter({
               </div>
 
               <span>
-                Observabilidad del sistema
+                Supervisión del sistema
               </span>
             </div>
 
