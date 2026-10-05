@@ -34,6 +34,10 @@ from app.services.collaboration_service import (
 from app.services.message_service import (
     record_message,
 )
+from app.services.repliker_matching_service import (
+    normalize_market_text,
+    resolve_skill_level,
+)
 from app.services.specialist_coverage_service import (
     enforce_project_specialist_gate,
 )
@@ -124,7 +128,7 @@ def _skill_score(
         return 100
 
     repliker_skills = {
-        _normalize_skill(
+        normalize_market_text(
             skill.name
         ): skill.level
         for skill in repliker.skills
@@ -138,11 +142,11 @@ def _skill_score(
             1,
         )
 
-        actual_level = repliker_skills.get(
-            _normalize_skill(
-                requirement.skill_name
-            ),
-            0,
+        actual_level = resolve_skill_level(
+            required_name=
+                requirement.skill_name,
+            actual_skills=
+                repliker_skills,
         )
 
         ratio = min(

@@ -33,6 +33,10 @@ from app.schemas.delegation import (
     DelegationRequestPublic,
     SubcontractPublic,
 )
+from app.services.repliker_matching_service import (
+    normalize_market_text,
+    resolve_skill_level,
+)
 from app.services.activity_service import (
     record_activity,
 )
@@ -124,28 +128,25 @@ def _skill_level(
     repliker: Repliker,
     skill_name: str,
 ) -> int:
-    target = (
-        _normalize_skill(
-            skill_name
-        )
-    )
-
-    for skill in repliker.skills:
-        if (
-            _normalize_skill(
-                skill.name
-            )
-            == target
-        ):
-            return max(
-                0,
-                min(
-                    100,
-                    skill.level,
+    actual_skills = {
+        normalize_market_text(
+            skill.name
+        ): max(
+            0,
+            min(
+                100,
+                int(
+                    skill.level
                 ),
-            )
+            ),
+        )
+        for skill in repliker.skills
+    }
 
-    return 0
+    return resolve_skill_level(
+        required_name=skill_name,
+        actual_skills=actual_skills,
+    )
 
 
 def _find_capability_gap(

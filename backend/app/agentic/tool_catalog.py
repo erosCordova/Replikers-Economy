@@ -7,6 +7,12 @@ from langchain_core.tools import (
     StructuredTool,
 )
 
+from app.services.repliker_matching_service import (
+    normalize_market_text,
+    resolve_skill_level,
+)
+
+
 
 TOOL_DEFINITIONS = {
     "inspect_repliker_profile": {
@@ -162,7 +168,7 @@ def _skill_coverage(
     context: MarketToolContext,
 ) -> dict:
     available = {
-        _normalize(
+        normalize_market_text(
             str(
                 skill.get(
                     "name",
@@ -214,11 +220,11 @@ def _skill_coverage(
             or 0
         )
 
-        current = available.get(
-            _normalize(
-                skill_name
-            ),
-            0,
+        current = resolve_skill_level(
+            required_name=
+                skill_name,
+            actual_skills=
+                available,
         )
 
         meets = (

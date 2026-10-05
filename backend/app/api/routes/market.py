@@ -49,6 +49,7 @@ from app.services.repliker_behavior_service import (
     load_repliker_behavior_context,
 )
 from app.services.repliker_matching_service import (
+    market_candidate_is_relevant,
     normalize_market_text,
     rank_task_candidates,
 )
@@ -487,12 +488,17 @@ def run_autonomous_market(
                 .quoted_amount_cents,
         }
 
-        candidate_matches = (
-            rank_task_candidates(
+        candidate_matches = [
+            candidate
+            for candidate
+            in rank_task_candidates(
                 task=task,
                 replikers=replikers,
             )
-        )
+            if market_candidate_is_relevant(
+                candidate
+            )
+        ]
 
         active_bid = db.scalar(
             select(TaskBid)

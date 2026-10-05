@@ -23,6 +23,9 @@ AVAILABLE_STATUSES = {
 }
 
 
+MINIMUM_MARKET_SKILL_COVERAGE = 60.0
+
+
 @dataclass(
     frozen=True,
     slots=True,
@@ -36,6 +39,26 @@ class ReplikerCandidate:
     skills_total: int
 
     meets_all_skills: bool
+
+
+def market_candidate_is_relevant(
+    candidate: ReplikerCandidate,
+) -> bool:
+    """
+    Solo consulta IA para candidatos con
+    una cobertura técnica significativa.
+
+    Una tarea sin habilidades explícitas
+    conserva su comportamiento normal.
+    """
+
+    if candidate.skills_total == 0:
+        return True
+
+    return (
+        candidate.skill_coverage
+        >= MINIMUM_MARKET_SKILL_COVERAGE
+    )
 
 
 def normalize_market_text(
@@ -77,7 +100,7 @@ def _skill_map(
     return result
 
 
-def _resolved_skill_level(
+def resolve_skill_level(
     *,
     required_name: str,
     actual_skills: dict[str, int],
@@ -215,7 +238,7 @@ def _skill_metrics(
             ),
         )
 
-        actual = _resolved_skill_level(
+        actual = resolve_skill_level(
             required_name=name,
             actual_skills=actual_skills,
         )
