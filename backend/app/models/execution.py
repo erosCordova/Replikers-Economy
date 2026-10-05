@@ -255,7 +255,6 @@ class ProjectDeliverySnapshot(Base):
         ),
         nullable=False,
         unique=True,
-        index=True,
     )
 
     review_attempt: Mapped[int] = mapped_column(
