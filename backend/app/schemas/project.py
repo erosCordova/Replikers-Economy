@@ -251,10 +251,38 @@ class ProjectTrackingDeliveryFilePublic(
     sha256: str
 
 
+class ProjectTrackingDeliveryVersionPublic(
+    BaseModel
+):
+    version: str
+
+    review_id: int
+    review_attempt: int
+
+    score: int | None
+    summary: str
+
+    vera_completed_at: datetime | None
+
+    client_decision: str
+    client_comment: str
+    client_decided_at: datetime | None
+
+    status: str
+    is_current: bool
+
+
 class ProjectTrackingDeliveryPublic(
     BaseModel
 ):
     version: str
+    review_attempt: int | None
+
+    versions_total: int
+
+    history: list[
+        ProjectTrackingDeliveryVersionPublic
+    ]
 
     ready: bool
     technical_ready: bool

@@ -26,6 +26,13 @@ from app.schemas.project import (
     ProjectPublic,
     ProjectTrackingPublic,
 )
+from app.services.client_correction_cycle_service import (
+    run_client_correction_cycle,
+)
+from app.services.client_correction_service import (
+    ClientCorrectionPreparationError,
+    prepare_client_correction_review,
+)
 from app.services.project_delivery_service import (
     DeliveryDecisionError,
     submit_delivery_decision,
@@ -360,11 +367,48 @@ def project_delivery_decision(
             )
         )
 
+        if (
+            payload.decision
+            == "corrections_requested"
+        ):
+            prepare_client_correction_review(
+                db=db,
+                project=project,
+                client_request=
+                    payload.comment,
+                source_review_attempt=
+                    final_review[
+                        "attempt_number"
+                    ],
+            )
+
         db.commit()
+
+        if (
+            payload.decision
+            == "corrections_requested"
+        ):
+            cycle_result = (
+                run_client_correction_cycle(
+                    db=db,
+                    project_id=
+                        project.id,
+                    max_cycles=3,
+                )
+            )
+
+            result[
+                "cycle_status"
+            ] = cycle_result[
+                "status"
+            ]
 
         return result
 
-    except DeliveryDecisionError as exc:
+    except (
+        DeliveryDecisionError,
+        ClientCorrectionPreparationError,
+    ) as exc:
         db.rollback()
 
         raise HTTPException(

@@ -1272,3 +1272,195 @@
 
   color: inherit;
 }
+
+
+.tracking-version-history {
+  width: 100%;
+
+  margin-top: 28px;
+
+  text-align: left;
+}
+
+
+.tracking-version-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 14px;
+}
+
+
+.tracking-version-heading span {
+  color: #347e5c;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: .1em;
+}
+
+
+.tracking-version-heading h3 {
+  margin:
+    4px 0 0;
+
+  color: #234a35;
+}
+
+
+.tracking-version-heading > strong {
+  color: #527064;
+
+  font-size: 13px;
+}
+
+
+.tracking-version-list {
+  display: grid;
+
+  gap: 11px;
+}
+
+
+.tracking-version-list article {
+  padding: 17px;
+
+  border:
+    1px solid #dfe9e3;
+
+  border-radius: 17px;
+
+  background: #ffffff;
+}
+
+
+.tracking-version-list article.current {
+  border-color: #6bb18c;
+
+  box-shadow:
+    0 8px 25px
+    rgba(40, 115, 80, .09);
+}
+
+
+.tracking-version-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+
+.tracking-version-top > strong {
+  color: #22563a;
+
+  font-size: 18px;
+}
+
+
+.tracking-version-top > span {
+  padding:
+    5px 9px;
+
+  border-radius: 999px;
+
+  background: #e8f6ee;
+
+  color: #267653;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0;
+}
+
+
+.tracking-version-details {
+  display: flex;
+
+  gap: 7px;
+
+  margin-top: 8px;
+}
+
+
+.tracking-version-details span {
+  color: #788a80;
+
+  font-size: 12px;
+
+  letter-spacing: 0;
+}
+
+
+.tracking-version-details strong {
+  color: #315c43;
+
+  font-size: 12px;
+}
+
+
+.tracking-version-list p {
+  margin:
+    11px 0;
+
+  color: #65776d;
+
+  line-height: 1.5;
+}
+
+
+.tracking-version-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+
+.tracking-version-footer span,
+.tracking-version-footer small {
+  color: #71847a;
+
+  font-size: 12px;
+
+  letter-spacing: 0;
+}
+
+
+.tracking-version-list blockquote {
+  margin:
+    12px 0 0;
+
+  padding:
+    10px 12px;
+
+  border-left:
+    3px solid #85b99d;
+
+  border-radius:
+    0 10px 10px 0;
+
+  background: #f4f9f6;
+
+  color: #566d60;
+
+  font-size: 13px;
+}
+
+
+@media (
+  max-width: 620px
+) {
+  .tracking-version-heading,
+  .tracking-version-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

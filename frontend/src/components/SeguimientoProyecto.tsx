@@ -89,6 +89,29 @@ interface TrackingDeliveryFile {
 }
 
 
+interface TrackingDeliveryVersion {
+  version: string
+
+  review_id: number
+  review_attempt: number
+
+  score: number | null
+  summary: string
+
+  vera_completed_at:
+    string | null
+
+  client_decision: string
+  client_comment: string
+
+  client_decided_at:
+    string | null
+
+  status: string
+  is_current: boolean
+}
+
+
 interface ProjectTracking {
   project_id: number
   project_title: string
@@ -157,6 +180,11 @@ interface ProjectTracking {
 
   delivery: {
     version: string
+    review_attempt: number | null
+
+    versions_total: number
+    history: TrackingDeliveryVersion[]
+
     ready: boolean
     technical_ready: boolean
     status: string
@@ -1424,6 +1452,123 @@ export default function SeguimientoProyecto({
                         }
                       </strong>
                     </article>
+                  </div>
+
+                  <div className="tracking-version-history">
+                    <div className="tracking-version-heading">
+                      <div>
+                        <span>
+                          HISTORIAL DE VERSIONES
+                        </span>
+
+                        <h3>
+                          Evolución de la entrega
+                        </h3>
+                      </div>
+
+                      <strong>
+                        {
+                          tracking.delivery
+                            .versions_total
+                        }{' '}
+                        versión(es)
+                      </strong>
+                    </div>
+
+                    {tracking.delivery.history.length ===
+                    0 ? (
+                      <div className="tracking-empty compact">
+                        La primera versión aparecerá
+                        cuando Vera apruebe una
+                        entrega.
+                      </div>
+                    ) : (
+                      <div className="tracking-version-list">
+                        {tracking.delivery.history
+                          .slice()
+                          .reverse()
+                          .map(
+                            (version) => (
+                              <article
+                                key={
+                                  version
+                                    .review_id
+                                }
+                                className={
+                                  version.is_current
+                                    ? 'current'
+                                    : ''
+                                }
+                              >
+                                <div className="tracking-version-top">
+                                  <strong>
+                                    {
+                                      version
+                                        .version
+                                    }
+                                  </strong>
+
+                                  {version.is_current && (
+                                    <span>
+                                      Versión actual
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="tracking-version-details">
+                                  <span>
+                                    Vera
+                                  </span>
+
+                                  <strong>
+                                    {version.score ??
+                                      'Sin puntuación'}
+                                  </strong>
+                                </div>
+
+                                {version.summary && (
+                                  <p>
+                                    {
+                                      version
+                                        .summary
+                                    }
+                                  </p>
+                                )}
+
+                                <div className="tracking-version-footer">
+                                  <span>
+                                    {version.client_decision ===
+                                    'accepted'
+                                      ? 'Aceptada por el cliente'
+                                      : version.client_decision ===
+                                        'corrections_requested'
+                                        ? 'El cliente solicitó correcciones'
+                                        : 'Esperando decisión del cliente'}
+                                  </span>
+
+                                  {version.vera_completed_at && (
+                                    <small>
+                                      {dateLabel(
+                                        version
+                                          .vera_completed_at,
+                                      )}
+                                    </small>
+                                  )}
+                                </div>
+
+                                {version.client_comment && (
+                                  <blockquote>
+                                    {
+                                      version
+                                        .client_comment
+                                    }
+                                  </blockquote>
+                                )}
+                              </article>
+                            ),
+                          )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="tracking-delivery-files">

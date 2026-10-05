@@ -20,6 +20,9 @@ from app.services.project_delivery_service import (
     latest_delivery_decision,
     parse_delivery_message,
 )
+from app.services.project_version_service import (
+    build_delivery_version_history,
+)
 
 
 def _normalize(
@@ -335,6 +338,13 @@ def build_project_report_delivery(
         else 1
     )
 
+    version_history = (
+        build_delivery_version_history(
+            db=db,
+            project_id=project.id,
+        )
+    )
+
     client_message = (
         latest_delivery_decision(
             db=db,
@@ -531,7 +541,28 @@ def build_project_report_delivery(
 
         "delivery": {
             "version":
-                f"v{version_number}",
+                version_history[
+                    "current_version"
+                ],
+
+            "review_attempt":
+                (
+                    final_review
+                    .attempt_number
+                    if final_review
+                    is not None
+                    else None
+                ),
+
+            "versions_total":
+                version_history[
+                    "versions_total"
+                ],
+
+            "history":
+                version_history[
+                    "items"
+                ],
 
             "ready":
                 delivery_ready,
