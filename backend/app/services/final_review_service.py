@@ -38,6 +38,10 @@ from app.models.task import (
 from app.schemas.final_review import (
     FinalReviewDecisionAI,
 )
+from app.services.project_delivery_snapshot_service import (
+    DeliverySnapshotError,
+    ensure_delivery_snapshot,
+)
 from app.services.activity_service import (
     record_activity,
 )
@@ -715,6 +719,34 @@ def run_project_final_review(
             == "approve"
         ):
             review.status = "approved"
+
+            db.flush()
+
+            try:
+                ensure_delivery_snapshot(
+                    db=db,
+                    project_id=project.id,
+                    final_review_id=review.id,
+                )
+
+            except DeliverySnapshotError as exc:
+                record_activity(
+                    db=db,
+                    actor_type="system",
+                    event_type=(
+                        "delivery_snapshot_pending"
+                    ),
+                    project_id=project.id,
+                    title=(
+                        "Paquete de entrega pendiente"
+                    ),
+                    description=(
+                        "Vera aprobó la versión, "
+                        "pero todavía no se pudo "
+                        "crear su paquete de archivos. "
+                        f"Detalle: {str(exc)[:500]}"
+                    ),
+                )
 
             record_activity(
                 db=db,

@@ -4,6 +4,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -171,6 +172,207 @@ class ExecutionArtifact(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+
+class ExecutionArtifactBlob(Base):
+    __tablename__ = (
+        "execution_artifact_blobs"
+    )
+
+    artifact_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "execution_artifacts.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    content: Mapped[bytes] = mapped_column(
+        LargeBinary,
+        nullable=False,
+    )
+
+    size_bytes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        index=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class ProjectDeliverySnapshot(Base):
+    __tablename__ = (
+        "project_delivery_snapshots"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "project_id",
+            "version_label",
+            name=(
+                "uq_project_delivery_"
+                "snapshot_version"
+            ),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
+
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "projects.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    final_review_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "project_final_reviews.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    review_attempt: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    version_label: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+    )
+
+    files_count: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    total_size_bytes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    package_sha256: Mapped[str | None] = (
+        mapped_column(
+            String(64),
+            nullable=True,
+        )
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+class ProjectDeliverySnapshotFile(Base):
+    __tablename__ = (
+        "project_delivery_snapshot_files"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "snapshot_id",
+            "archive_path",
+            name=(
+                "uq_project_delivery_"
+                "snapshot_file_path"
+            ),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
+
+    snapshot_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "project_delivery_snapshots.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    artifact_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    workspace_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    task_id: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    relative_path: Mapped[str] = mapped_column(
+        String(1000),
+        nullable=False,
+    )
+
+    archive_path: Mapped[str] = mapped_column(
+        String(1200),
+        nullable=False,
+    )
+
+    media_type: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False,
+    )
+
+    size_bytes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    sha256: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    content: Mapped[bytes] = mapped_column(
+        LargeBinary,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
 

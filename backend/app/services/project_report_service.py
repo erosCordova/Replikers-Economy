@@ -446,6 +446,15 @@ def build_project_report_delivery(
 
                 "sha256":
                     artifact.sha256,
+
+                "download_url":
+                    (
+                        f"/projects/"
+                        f"{project.id}/"
+                        f"artifacts/"
+                        f"{artifact.id}/"
+                        f"download"
+                    ),
             }
         )
 

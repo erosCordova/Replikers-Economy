@@ -1464,3 +1464,196 @@
     flex-direction: column;
   }
 }
+
+
+/* =========================================================
+   DESCARGAS DE ENTREGA
+   ========================================================= */
+
+.tracking-download-alert {
+  width: 100%;
+
+  margin-top: 18px;
+
+  padding:
+    11px 14px;
+
+  border:
+    1px solid #efcaca;
+
+  border-radius: 12px;
+
+  background: #fff5f5;
+
+  color: #9b4545;
+
+  font-size: 13px;
+
+  text-align: left;
+}
+
+
+.tracking-download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  min-height: 39px;
+
+  padding:
+    0 14px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background:
+    #256f4d;
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 7px 18px
+    rgba(37, 111, 77, .16);
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    opacity .18s ease;
+}
+
+
+.tracking-download-button:hover:not(
+  :disabled
+) {
+  transform:
+    translateY(-1px);
+
+  box-shadow:
+    0 10px 23px
+    rgba(37, 111, 77, .22);
+}
+
+
+.tracking-download-button:disabled {
+  cursor: not-allowed;
+
+  opacity: .58;
+}
+
+
+.tracking-download-button svg {
+  flex: 0 0 auto;
+
+  margin: 0;
+
+  color: currentColor;
+}
+
+
+.tracking-download-button.compact {
+  min-height: 34px;
+
+  padding:
+    0 11px;
+
+  font-size: 11px;
+}
+
+
+.tracking-delivery-file-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  flex: 0 0 auto;
+}
+
+
+.tracking-version-download {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: 14px;
+
+  padding-top: 13px;
+
+  border-top:
+    1px solid #e6eee9;
+}
+
+
+.tracking-version-download > small {
+  color: #76887e;
+
+  font-size: 11px;
+}
+
+
+.tracking-package-pending {
+  padding:
+    7px 10px;
+
+  border-radius: 10px;
+
+  background: #f0f3f1;
+
+  color: #7b8981 !important;
+
+  font-size: 11px !important;
+
+  font-weight: 700;
+
+  letter-spacing: 0 !important;
+}
+
+
+@media (
+  max-width: 620px
+) {
+  .tracking-delivery-files article {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tracking-delivery-file-actions {
+    width: 100%;
+
+    justify-content:
+      space-between;
+  }
+
+  .tracking-version-download {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tracking-download-button {
+    width: 100%;
+  }
+
+  .tracking-download-button.compact {
+    width: auto;
+  }
+}
+
+
+@media (
+  prefers-reduced-motion:
+  reduce
+) {
+  .tracking-download-button {
+    transition: none;
+  }
+}

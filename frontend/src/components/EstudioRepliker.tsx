@@ -27,6 +27,8 @@ import {
 
 import { api } from '../api'
 
+import ReplikerPhotoEditor from './ReplikerPhotoEditor'
+
 import '../styles/EstudioRepliker.css'
 
 
@@ -92,6 +94,8 @@ interface ReplikerStudio {
 
   base_price_credits: number
 
+  avatar_url: string | null
+
   purpose: string
   personality: string
   communication_style: string
@@ -134,6 +138,8 @@ interface StudioDraft {
   description: string
 
   base_price_credits: number
+
+  avatar_url: string | null
 
   purpose: string
   personality: string
@@ -262,6 +268,9 @@ function studioToDraft(
 
     base_price_credits:
       value.base_price_credits,
+
+    avatar_url:
+      value.avatar_url,
 
     purpose:
       value.purpose,
@@ -1408,6 +1417,27 @@ export default function EstudioRepliker() {
                     </span>
                   </div>
                 </div>
+
+                <ReplikerPhotoEditor
+                  replikerId={
+                    selectedId
+                  }
+                  name={
+                    draft.name
+                  }
+                  avatarUrl={
+                    draft.avatar_url
+                  }
+                  onChange={
+                    (avatarUrl) =>
+                      setDraft({
+                        ...draft,
+                        avatar_url:
+                          avatarUrl,
+                      })
+                  }
+                />
+
 
                 <div
                   className="studio-form-grid"

@@ -10,7 +10,9 @@ import {
   CircleDollarSign,
   ClipboardCheck,
   Clock3,
+  Download,
   ListChecks,
+  LoaderCircle,
   PackageCheck,
   RefreshCw,
   Users,
@@ -86,6 +88,7 @@ interface TrackingDeliveryFile {
   media_type: string
   size_bytes: number
   sha256: string
+  download_url: string
 }
 
 
@@ -109,6 +112,13 @@ interface TrackingDeliveryVersion {
 
   status: string
   is_current: boolean
+
+  snapshot_ready: boolean
+  files_count: number
+  total_size_bytes: number
+
+  package_sha256: string | null
+  package_url: string | null
 }
 
 
@@ -458,6 +468,39 @@ function dateLabel(
 }
 
 
+function fileSizeLabel(
+  bytes: number,
+) {
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+
+  const kilobytes =
+    bytes / 1024
+
+  if (kilobytes < 1024) {
+    return (
+      `${kilobytes.toFixed(
+        kilobytes >= 10
+          ? 0
+          : 1,
+      )} KB`
+    )
+  }
+
+  const megabytes =
+    kilobytes / 1024
+
+  return (
+    `${megabytes.toFixed(
+      megabytes >= 10
+        ? 0
+        : 1,
+    )} MB`
+  )
+}
+
+
 function errorMessage(
   error: unknown,
 ) {
@@ -528,6 +571,16 @@ export default function SeguimientoProyecto({
     setDecisionSuccess,
   ] = useState('')
 
+  const [
+    downloadingKey,
+    setDownloadingKey,
+  ] = useState('')
+
+  const [
+    downloadError,
+    setDownloadError,
+  ] = useState('')
+
 
   const loadTracking =
     useCallback(
@@ -589,6 +642,125 @@ export default function SeguimientoProyecto({
       loadTracking,
     ],
   )
+
+
+  async function downloadProtectedFile(
+    url: string,
+    fallbackName: string,
+    key: string,
+  ) {
+    if (!url) {
+      return
+    }
+
+    setDownloadingKey(
+      key,
+    )
+
+    setDownloadError('')
+
+    try {
+      const response =
+        await api.get<Blob>(
+          url,
+          {
+            responseType: 'blob',
+          },
+        )
+
+      let filename =
+        fallbackName
+
+      const disposition =
+        response.headers[
+          'content-disposition'
+        ]
+
+      if (
+        typeof disposition
+        === 'string'
+      ) {
+        const encodedMatch =
+          disposition.match(
+            /filename\*=UTF-8''([^;]+)/i,
+          )
+
+        const regularMatch =
+          disposition.match(
+            /filename="?([^";]+)"?/i,
+          )
+
+        if (
+          encodedMatch?.[1]
+        ) {
+          try {
+            filename =
+              decodeURIComponent(
+                encodedMatch[1],
+              )
+          } catch {
+            filename =
+              encodedMatch[1]
+          }
+
+        } else if (
+          regularMatch?.[1]
+        ) {
+          filename =
+            regularMatch[1].trim()
+        }
+      }
+
+      const blob =
+        response.data instanceof Blob
+          ? response.data
+          : new Blob([
+              response.data,
+            ])
+
+      const objectUrl =
+        URL.createObjectURL(
+          blob,
+        )
+
+      const link =
+        document.createElement(
+          'a',
+        )
+
+      link.href =
+        objectUrl
+
+      link.download =
+        filename
+
+      document.body.appendChild(
+        link,
+      )
+
+      link.click()
+      link.remove()
+
+      window.setTimeout(
+        () => {
+          URL.revokeObjectURL(
+            objectUrl,
+          )
+        },
+        1000,
+      )
+
+    } catch {
+      setDownloadError(
+        'No se pudo descargar el archivo. '
+        + 'Actualiza el seguimiento '
+        + 'e inténtalo nuevamente.',
+      )
+
+    } finally {
+      setDownloadingKey('')
+    }
+  }
 
 
   async function submitDecision(
@@ -1408,6 +1580,14 @@ export default function SeguimientoProyecto({
                     }
                   </p>
 
+                  {downloadError && (
+                    <div
+                      className="tracking-download-alert"
+                    >
+                      {downloadError}
+                    </div>
+                  )}
+
                   <div className="tracking-delivery-metrics">
                     <article>
                       <span>
@@ -1556,6 +1736,66 @@ export default function SeguimientoProyecto({
                                   )}
                                 </div>
 
+                                <div
+                                  className="tracking-version-download"
+                                >
+                                  {version.snapshot_ready
+                                  && version.package_url ? (
+                                    <button
+                                      type="button"
+                                      className="tracking-download-button"
+                                      disabled={
+                                        downloadingKey
+                                        === `version-${version.review_id}`
+                                      }
+                                      onClick={() =>
+                                        void downloadProtectedFile(
+                                          version.package_url
+                                          ?? '',
+                                          (
+                                            `replikers-proyecto-${projectId}-`
+                                            + `${version.version}.zip`
+                                          ),
+                                          `version-${version.review_id}`,
+                                        )
+                                      }
+                                    >
+                                      {downloadingKey
+                                      === `version-${version.review_id}` ? (
+                                        <LoaderCircle
+                                          size={16}
+                                          className="tracking-spin"
+                                        />
+                                      ) : (
+                                        <Download
+                                          size={16}
+                                        />
+                                      )}
+
+                                      {downloadingKey
+                                      === `version-${version.review_id}`
+                                        ? 'Descargando...'
+                                        : 'Descargar versión (.zip)'}
+                                    </button>
+                                  ) : (
+                                    <span
+                                      className="tracking-package-pending"
+                                    >
+                                      Paquete aún no disponible
+                                    </span>
+                                  )}
+
+                                  {version.snapshot_ready && (
+                                    <small>
+                                      {version.files_count}{' '}
+                                      archivo(s) ·{' '}
+                                      {fileSizeLabel(
+                                        version.total_size_bytes,
+                                      )}
+                                    </small>
+                                  )}
+                                </div>
+
                                 {version.client_comment && (
                                   <blockquote>
                                     {
@@ -1603,11 +1843,53 @@ export default function SeguimientoProyecto({
                               </span>
                             </div>
 
-                            <small>
-                              {
-                                file.size_bytes
-                              } bytes
-                            </small>
+                            <div
+                              className="tracking-delivery-file-actions"
+                            >
+                              <small>
+                                {fileSizeLabel(
+                                  file.size_bytes,
+                                )}
+                              </small>
+
+                              <button
+                                type="button"
+                                className="tracking-download-button compact"
+                                disabled={
+                                  downloadingKey
+                                  === `file-${file.artifact_id}`
+                                }
+                                onClick={() =>
+                                  void downloadProtectedFile(
+                                    file.download_url,
+                                    (
+                                      file.relative_path
+                                        .split('/')
+                                        .pop()
+                                      || `archivo-${file.artifact_id}`
+                                    ),
+                                    `file-${file.artifact_id}`,
+                                  )
+                                }
+                              >
+                                {downloadingKey
+                                === `file-${file.artifact_id}` ? (
+                                  <LoaderCircle
+                                    size={15}
+                                    className="tracking-spin"
+                                  />
+                                ) : (
+                                  <Download
+                                    size={15}
+                                  />
+                                )}
+
+                                {downloadingKey
+                                === `file-${file.artifact_id}`
+                                  ? 'Descargando...'
+                                  : 'Descargar'}
+                              </button>
+                            </div>
                           </article>
                         ),
                       )

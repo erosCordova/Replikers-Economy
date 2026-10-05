@@ -25,8 +25,15 @@ from app.schemas.repliker import (
     ReplikerPublicationUpdate,
 )
 from app.schemas.repliker_studio import (
+    ReplikerPhotoPublic,
+    ReplikerPhotoUpdate,
     ReplikerStudioPublic,
     ReplikerStudioUpdate,
+)
+from app.services.repliker_photo_service import (
+    ReplikerPhotoError,
+    remove_repliker_photo,
+    save_repliker_photo,
 )
 from app.services.repliker_publication_service import (
     ReplikerPublicationError,
@@ -418,6 +425,78 @@ def save_repliker_studio(
             status_code=422,
             detail=str(exc),
         ) from exc
+
+
+@router.put(
+    "/{repliker_id}/photo",
+    response_model=ReplikerPhotoPublic,
+)
+def update_repliker_photo(
+    repliker_id: int,
+    payload: ReplikerPhotoUpdate,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    repliker = _editable_repliker(
+        db=db,
+        repliker_id=repliker_id,
+        current_user=current_user,
+        lock=True,
+    )
+
+    try:
+        result = save_repliker_photo(
+            db=db,
+            repliker=repliker,
+            image_data_url=
+                payload.image_data_url,
+        )
+
+        db.commit()
+
+        return result
+
+    except ReplikerPhotoError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
+
+
+@router.delete(
+    "/{repliker_id}/photo",
+    response_model=ReplikerPhotoPublic,
+)
+def delete_repliker_photo(
+    repliker_id: int,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    repliker = _editable_repliker(
+        db=db,
+        repliker_id=repliker_id,
+        current_user=current_user,
+        lock=True,
+    )
+
+    result = remove_repliker_photo(
+        db=db,
+        repliker=repliker,
+    )
+
+    db.commit()
+
+    return result
 
 
 @router.get(

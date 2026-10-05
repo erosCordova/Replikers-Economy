@@ -4,6 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.ecosystem import AgentMessage
+from app.models.execution import (
+    ProjectDeliverySnapshot,
+)
 from app.models.project_specialist import (
     ProjectFinalReview,
 )
@@ -91,6 +94,24 @@ def build_delivery_version_history(
             message,
         )
 
+    snapshots = list(
+        db.scalars(
+            select(
+                ProjectDeliverySnapshot
+            )
+            .where(
+                ProjectDeliverySnapshot.project_id
+                == project_id
+            )
+        ).all()
+    )
+
+    snapshot_by_review = {
+        item.final_review_id:
+            item
+        for item in snapshots
+    }
+
     history: list[dict] = []
 
     total = len(
@@ -145,6 +166,12 @@ def build_delivery_version_history(
         else:
             delivery_status = "ready"
 
+        snapshot = (
+            snapshot_by_review.get(
+                review.id
+            )
+        )
+
         history.append(
             {
                 "version":
@@ -193,6 +220,48 @@ def build_delivery_version_history(
                 "is_current":
                     index
                     == total - 1,
+
+                "snapshot_ready":
+                    snapshot
+                    is not None,
+
+                "files_count":
+                    (
+                        snapshot.files_count
+                        if snapshot
+                        is not None
+                        else 0
+                    ),
+
+                "total_size_bytes":
+                    (
+                        snapshot.total_size_bytes
+                        if snapshot
+                        is not None
+                        else 0
+                    ),
+
+                "package_sha256":
+                    (
+                        snapshot.package_sha256
+                        if snapshot
+                        is not None
+                        else None
+                    ),
+
+                "package_url":
+                    (
+                        (
+                            f"/projects/"
+                            f"{project_id}/"
+                            f"versions/"
+                            f"{review.id}/"
+                            f"package"
+                        )
+                        if snapshot
+                        is not None
+                        else None
+                    ),
             }
         )
 

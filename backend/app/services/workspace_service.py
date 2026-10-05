@@ -24,6 +24,7 @@ from app.models.contract import (
 )
 from app.models.execution import (
     ExecutionArtifact,
+    ExecutionArtifactBlob,
     ExecutionWorkspace,
     ToolExecutionLog,
 )
@@ -397,7 +398,137 @@ def write_text_file(
 
     db.flush()
 
+    blob = db.get(
+        ExecutionArtifactBlob,
+        artifact.id,
+    )
+
+    if blob is None:
+        blob = ExecutionArtifactBlob(
+            artifact_id=
+                artifact.id,
+            content=
+                payload,
+            size_bytes=
+                len(payload),
+            sha256=
+                digest,
+        )
+
+        db.add(
+            blob
+        )
+
+    else:
+        blob.content = payload
+        blob.size_bytes = len(
+            payload
+        )
+        blob.sha256 = digest
+
+    workspace.storage_driver = (
+        "hybrid-db"
+    )
+
+    db.flush()
+
     return artifact
+
+
+def read_durable_artifact_bytes(
+    *,
+    db: Session,
+    workspace: ExecutionWorkspace,
+    artifact: ExecutionArtifact,
+) -> bytes:
+    if (
+        artifact.workspace_id
+        != workspace.id
+    ):
+        raise ExecutionPolicyError(
+            "El artefacto no pertenece "
+            "a este workspace."
+        )
+
+    blob = db.get(
+        ExecutionArtifactBlob,
+        artifact.id,
+    )
+
+    if blob is not None:
+        payload = bytes(
+            blob.content
+        )
+
+    else:
+        payload = (
+            read_workspace_file_bytes(
+                workspace=workspace,
+                relative_path=
+                    artifact.relative_path,
+            )
+        )
+
+        digest = (
+            hashlib.sha256(
+                payload
+            )
+            .hexdigest()
+        )
+
+        if (
+            digest
+            != artifact.sha256
+        ):
+            raise ExecutionPolicyError(
+                "La integridad del archivo "
+                "no coincide con SHA-256."
+            )
+
+        blob = ExecutionArtifactBlob(
+            artifact_id=
+                artifact.id,
+            content=
+                payload,
+            size_bytes=
+                len(payload),
+            sha256=
+                digest,
+        )
+
+        db.add(
+            blob
+        )
+
+        workspace.storage_driver = (
+            "hybrid-db"
+        )
+
+        db.flush()
+
+    if (
+        len(payload)
+        != artifact.size_bytes
+    ):
+        raise ExecutionPolicyError(
+            "El tamaño durable del archivo "
+            "no coincide con sus metadatos."
+        )
+
+    digest = (
+        hashlib.sha256(
+            payload
+        )
+        .hexdigest()
+    )
+
+    if digest != artifact.sha256:
+        raise ExecutionPolicyError(
+            "La integridad durable "
+            "del archivo es inválida."
+        )
+
+    return payload
 
 
 def read_workspace_file_bytes(

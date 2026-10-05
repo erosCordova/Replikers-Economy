@@ -66,6 +66,18 @@ class StudioRulePublic(
     id: int
 
 
+class ReplikerPhotoUpdate(BaseModel):
+    image_data_url: str = Field(
+        min_length=20,
+        max_length=1_000_000,
+    )
+
+
+class ReplikerPhotoPublic(BaseModel):
+    repliker_id: int
+    avatar_url: str | None
+
+
 class ReplikerStudioUpdate(BaseModel):
     name: str = Field(
         min_length=2,
@@ -149,6 +161,8 @@ class ReplikerStudioPublic(BaseModel):
     description: str
 
     base_price_credits: int
+
+    avatar_url: str | None
 
     purpose: str
     personality: str

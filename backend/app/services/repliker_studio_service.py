@@ -27,6 +27,9 @@ from app.services.agentic_service import (
 )
 
 
+from app.services.repliker_photo_service import (
+    get_repliker_photo,
+)
 from app.services.repliker_publication_service import (
     validate_repliker_for_publication,
 )
@@ -171,6 +174,12 @@ def studio_snapshot(
 
         "base_price_credits":
             repliker.base_price_credits,
+
+        "avatar_url":
+            get_repliker_photo(
+                db=db,
+                repliker_id=repliker.id,
+            ),
 
         "purpose":
             (

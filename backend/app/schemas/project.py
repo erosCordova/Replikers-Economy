@@ -250,6 +250,8 @@ class ProjectTrackingDeliveryFilePublic(
     size_bytes: int
     sha256: str
 
+    download_url: str
+
 
 class ProjectTrackingDeliveryVersionPublic(
     BaseModel
@@ -270,6 +272,14 @@ class ProjectTrackingDeliveryVersionPublic(
 
     status: str
     is_current: bool
+
+    snapshot_ready: bool
+
+    files_count: int
+    total_size_bytes: int
+
+    package_sha256: str | None
+    package_url: str | None
 
 
 class ProjectTrackingDeliveryPublic(

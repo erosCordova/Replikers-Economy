@@ -1,3 +1,9 @@
+import hashlib
+from pathlib import Path
+
+
+from fastapi.responses import Response
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -10,9 +16,17 @@ from sqlalchemy.orm import (
     selectinload,
 )
 
+from app.execution.policy import (
+    ExecutionPolicyError,
+)
 from app.auth.dependencies import (
     get_current_user,
     get_db,
+)
+from app.models.execution import (
+    ExecutionArtifact,
+    ExecutionWorkspace,
+    ProjectDeliverySnapshotFile,
 )
 from app.models.project import (
     Project,
@@ -32,6 +46,15 @@ from app.services.client_correction_cycle_service import (
 from app.services.client_correction_service import (
     ClientCorrectionPreparationError,
     prepare_client_correction_review,
+)
+from app.services.project_delivery_snapshot_service import (
+    DeliverySnapshotError,
+    build_snapshot_zip,
+    ensure_delivery_snapshot,
+    get_delivery_snapshot,
+)
+from app.services.workspace_service import (
+    read_durable_artifact_bytes,
 )
 from app.services.project_delivery_service import (
     DeliveryDecisionError,
@@ -416,6 +439,357 @@ def project_delivery_decision(
                 status.HTTP_409_CONFLICT,
             detail=str(exc),
         ) from exc
+
+
+@router.get(
+    "/{project_id}/artifacts/"
+    "{artifact_id}/download",
+)
+def download_project_artifact(
+    project_id: int,
+    artifact_id: int,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    project = _get_accessible_project(
+        project_id=project_id,
+        db=db,
+        current_user=current_user,
+    )
+
+    artifact = db.get(
+        ExecutionArtifact,
+        artifact_id,
+    )
+
+    if artifact is None:
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Archivo no encontrado."
+            ),
+        )
+
+    workspace = db.get(
+        ExecutionWorkspace,
+        artifact.workspace_id,
+    )
+
+    if (
+        workspace is None
+        or workspace.project_id
+        != project.id
+    ):
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Archivo no encontrado "
+                "en este proyecto."
+            ),
+        )
+
+    try:
+        payload = (
+            read_durable_artifact_bytes(
+                db=db,
+                workspace=workspace,
+                artifact=artifact,
+            )
+        )
+
+        db.commit()
+
+    except FileNotFoundError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail=(
+                "El archivo original "
+                "ya no está disponible."
+            ),
+        ) from exc
+
+    except ExecutionPolicyError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=
+                status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    filename = (
+        Path(
+            artifact.relative_path
+        )
+        .name
+        .replace('"', "")
+        .replace("\\", "_")
+    )
+
+    if not filename:
+        filename = (
+            f"archivo-{artifact.id}"
+        )
+
+    return Response(
+        content=payload,
+        media_type=
+            artifact.media_type,
+        headers={
+            "Content-Disposition":
+                (
+                    'attachment; '
+                    f'filename="{filename}"'
+                ),
+
+            "X-Content-SHA256":
+                artifact.sha256,
+
+            "Cache-Control":
+                "private, no-store",
+        },
+    )
+
+
+@router.get(
+    "/{project_id}/versions/"
+    "{final_review_id}/package",
+)
+def download_project_version_package(
+    project_id: int,
+    final_review_id: int,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    project = _get_accessible_project(
+        project_id=project_id,
+        db=db,
+        current_user=current_user,
+    )
+
+    snapshot = (
+        get_delivery_snapshot(
+            db=db,
+            final_review_id=
+                final_review_id,
+        )
+    )
+
+    try:
+        if snapshot is None:
+            snapshot = (
+                ensure_delivery_snapshot(
+                    db=db,
+                    project_id=
+                        project.id,
+                    final_review_id=
+                        final_review_id,
+                )
+            )
+
+        if (
+            snapshot.project_id
+            != project.id
+        ):
+            raise HTTPException(
+                status_code=
+                    status.HTTP_404_NOT_FOUND,
+                detail=(
+                    "Versión no encontrada."
+                ),
+            )
+
+        payload = build_snapshot_zip(
+            db=db,
+            snapshot=snapshot,
+        )
+
+        digest = (
+            hashlib.sha256(
+                payload
+            )
+            .hexdigest()
+        )
+
+        if (
+            snapshot.package_sha256
+            and digest
+            != snapshot.package_sha256
+        ):
+            raise DeliverySnapshotError(
+                "La integridad del paquete "
+                "de entrega es inválida."
+            )
+
+        if not snapshot.package_sha256:
+            snapshot.package_sha256 = (
+                digest
+            )
+
+        db.commit()
+
+    except DeliverySnapshotError as exc:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=
+                status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    safe_version = (
+        snapshot.version_label
+        .replace("/", "-")
+    )
+
+    filename = (
+        f"replikers-proyecto-"
+        f"{project.id}-"
+        f"{safe_version}.zip"
+    )
+
+    return Response(
+        content=payload,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition":
+                (
+                    'attachment; '
+                    f'filename="{filename}"'
+                ),
+
+            "X-Content-SHA256":
+                digest,
+
+            "Cache-Control":
+                "private, no-store",
+        },
+    )
+
+
+@router.get(
+    "/{project_id}/versions/"
+    "{final_review_id}/files/"
+    "{snapshot_file_id}/download",
+)
+def download_project_version_file(
+    project_id: int,
+    final_review_id: int,
+    snapshot_file_id: int,
+    db: Session = Depends(
+        get_db
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    project = _get_accessible_project(
+        project_id=project_id,
+        db=db,
+        current_user=current_user,
+    )
+
+    snapshot = (
+        get_delivery_snapshot(
+            db=db,
+            final_review_id=
+                final_review_id,
+        )
+    )
+
+    if (
+        snapshot is None
+        or snapshot.project_id
+        != project.id
+    ):
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Versión no encontrada."
+            ),
+        )
+
+    item = db.get(
+        ProjectDeliverySnapshotFile,
+        snapshot_file_id,
+    )
+
+    if (
+        item is None
+        or item.snapshot_id
+        != snapshot.id
+    ):
+        raise HTTPException(
+            status_code=
+                status.HTTP_404_NOT_FOUND,
+            detail=(
+                "Archivo histórico "
+                "no encontrado."
+            ),
+        )
+
+    payload = bytes(
+        item.content
+    )
+
+    digest = (
+        hashlib.sha256(
+            payload
+        )
+        .hexdigest()
+    )
+
+    if digest != item.sha256:
+        raise HTTPException(
+            status_code=
+                status.HTTP_409_CONFLICT,
+            detail=(
+                "La integridad del archivo "
+                "histórico es inválida."
+            ),
+        )
+
+    filename = (
+        Path(
+            item.relative_path
+        )
+        .name
+        .replace('"', "")
+        .replace("\\", "_")
+    )
+
+    return Response(
+        content=payload,
+        media_type=
+            item.media_type,
+        headers={
+            "Content-Disposition":
+                (
+                    'attachment; '
+                    f'filename="{filename}"'
+                ),
+
+            "X-Content-SHA256":
+                item.sha256,
+
+            "Cache-Control":
+                "private, no-store",
+        },
+    )
 
 
 @router.get(

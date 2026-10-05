@@ -1,0 +1,187 @@
+.repliker-photo-editor {
+  grid-column: 1 / -1;
+
+  display: flex;
+  align-items: center;
+
+  gap: 22px;
+
+  padding: 18px;
+
+  margin-bottom: 18px;
+
+  border:
+    1px solid #e0ebe4;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fbfdfc,
+      #f1f7f3
+    );
+}
+
+
+.repliker-photo-editor-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  gap: 6px;
+
+  min-width: 0;
+}
+
+
+.repliker-photo-editor-info > strong {
+  color: #234b37;
+
+  font-size: 15px;
+}
+
+
+.repliker-photo-editor-info > span {
+  color: #60756a;
+
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+
+.repliker-photo-editor-info > small {
+  color: #85968d;
+
+  font-size: 11px;
+}
+
+
+.repliker-photo-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 9px;
+
+  margin-top: 8px;
+}
+
+
+.repliker-photo-editor-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  min-height: 38px;
+
+  padding: 0 13px;
+
+  border: 0;
+  border-radius: 11px;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    opacity .18s ease;
+}
+
+
+.repliker-photo-editor-button:hover:not(
+  :disabled
+) {
+  transform: translateY(-1px);
+}
+
+
+.repliker-photo-editor-button.primary {
+  background: #276749;
+
+  color: #ffffff;
+
+  box-shadow:
+    0 7px 16px
+      rgba(39, 103, 73, .16);
+}
+
+
+.repliker-photo-editor-button.danger {
+  background: #fff2f2;
+
+  color: #a53c3c;
+}
+
+
+.repliker-photo-editor-button.disabled,
+.repliker-photo-editor-button:disabled {
+  cursor: not-allowed;
+
+  opacity: .55;
+}
+
+
+.repliker-photo-editor-button input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  overflow: hidden;
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+
+.repliker-photo-editor-message {
+  margin: 5px 0 0;
+
+  color: #547265;
+
+  font-size: 12px;
+}
+
+
+.photo-spin {
+  animation:
+    replikerPhotoSpin
+    .8s linear infinite;
+}
+
+
+@keyframes replikerPhotoSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+@media (
+  max-width: 640px
+) {
+  .repliker-photo-editor {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+
+@media (
+  prefers-reduced-motion:
+  reduce
+) {
+  .photo-spin {
+    animation: none;
+  }
+
+  .repliker-photo-editor-button {
+    transition: none;
+  }
+}
