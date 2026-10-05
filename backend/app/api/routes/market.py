@@ -496,15 +496,33 @@ def run_autonomous_market(
 
         active_bid = db.scalar(
             select(TaskBid)
+            .join(
+                Repliker,
+                Repliker.id
+                == TaskBid.repliker_id,
+            )
             .where(
                 TaskBid.task_id
                 == task.id,
+
                 TaskBid.status.in_(
                     (
                         "pending",
                         "accepted",
                     )
                 ),
+
+                Repliker.is_active
+                .is_(True),
+
+                Repliker.is_published
+                .is_(True),
+
+                Repliker.status
+                == "available",
+
+                Repliker.owner_id
+                != project.client_id,
             )
             .order_by(
                 TaskBid.id
