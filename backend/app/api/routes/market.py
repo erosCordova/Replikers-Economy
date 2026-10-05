@@ -49,6 +49,7 @@ from app.services.repliker_behavior_service import (
     load_repliker_behavior_context,
 )
 from app.services.repliker_matching_service import (
+    MINIMUM_MARKET_SKILL_COVERAGE,
     market_candidate_is_relevant,
     normalize_market_text,
     rank_task_candidates,
@@ -452,6 +453,13 @@ def run_autonomous_market(
                 task.complexity,
             "max_budget_cents": (
                 task.max_budget_cents
+            ),
+            "delegation_available":
+                True,
+            "minimum_lead_coverage":
+                MINIMUM_MARKET_SKILL_COVERAGE,
+            "delegation_policy": (
+                "specialist_for_missing_skills"
             ),
             "required_skills": [
                 {
