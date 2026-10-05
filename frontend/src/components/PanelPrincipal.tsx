@@ -11,7 +11,6 @@ import {
   CircleDollarSign,
   Cpu,
   Network,
-  Plus,
   Rocket,
   ShieldCheck,
   Sparkles,
@@ -112,7 +111,6 @@ interface PanelPrincipalProps {
   plannedValue: string
   backendOnline: boolean | null
 
-  onCreateProject: () => void
   onOpenMarketplace: () => void
 }
 
@@ -391,7 +389,6 @@ function PanelPrincipal({
   ecosystem,
   plannedValue,
   backendOnline,
-  onCreateProject,
   onOpenMarketplace,
 }: PanelPrincipalProps) {
   const firstName =
@@ -548,15 +545,6 @@ function PanelPrincipal({
             </p>
 
             <div className="showcase-hero-actions">
-              <button
-                type="button"
-                className="showcase-primary"
-                onClick={onCreateProject}
-              >
-                <Plus size={18} />
-                Crear proyecto
-              </button>
-
               <button
                 type="button"
                 className="showcase-secondary"
@@ -788,13 +776,6 @@ function PanelPrincipal({
               <h3>Mis proyectos</h3>
             </div>
 
-            <button
-              type="button"
-              onClick={onCreateProject}
-            >
-              Crear nuevo
-              <ChevronRight size={15} />
-            </button>
           </div>
 
           <div className="showcase-project-list">

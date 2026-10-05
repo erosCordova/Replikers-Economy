@@ -36,33 +36,63 @@ const PALETAS = [
 
 
 const TONOS_PIEL = [
-  ['#f4c7a1', '#d89b72'],
-  ['#e8b58c', '#c9825c'],
-  ['#d79a70', '#b56f4e'],
-  ['#bd7b55', '#95583f'],
-  ['#996044', '#75412f'],
-  ['#75452f', '#563022'],
+  {
+    base: '#f1c7a8',
+    sombra: '#cf9872',
+    luz: '#ffe2cc',
+    labios: '#ad6d68',
+  },
+  {
+    base: '#e7b38b',
+    sombra: '#bd7d59',
+    luz: '#f9d1b1',
+    labios: '#a76260',
+  },
+  {
+    base: '#d69a70',
+    sombra: '#aa6748',
+    luz: '#eeb993',
+    labios: '#965553',
+  },
+  {
+    base: '#bb7b57',
+    sombra: '#8f5139',
+    luz: '#d59974',
+    labios: '#824c4a',
+  },
+  {
+    base: '#976044',
+    sombra: '#6f3d2c',
+    luz: '#b67a59',
+    labios: '#704344',
+  },
+  {
+    base: '#74462f',
+    sombra: '#4f2c20',
+    luz: '#926044',
+    labios: '#643d3d',
+  },
 ]
 
 
 const COLORES_CABELLO = [
-  '#241a17',
-  '#3f2a20',
-  '#6b442d',
-  '#8a5a3b',
-  '#c28b55',
-  '#161b2a',
-  '#523b59',
+  '#171311',
+  '#2b211c',
+  '#4a3025',
+  '#6b432d',
+  '#8a5d3d',
+  '#b17a48',
+  '#1c2230',
 ]
 
 
 const COLORES_IRIS = [
-  '#315c76',
-  '#4c6f3f',
-  '#654631',
-  '#3b445e',
-  '#755538',
-  '#2f5f5d',
+  '#355f78',
+  '#4c7041',
+  '#674936',
+  '#3e495f',
+  '#76573b',
+  '#305f5c',
 ]
 
 
@@ -209,6 +239,105 @@ function tamanoVisible(
 }
 
 
+function rostroPath(
+  rostro: string,
+) {
+  if (rostro === 'definido') {
+    return (
+      'M38 28 ' +
+      'C48 18 72 18 82 28 ' +
+      'C91 38 89 60 82 75 ' +
+      'C76 88 68 96 60 98 ' +
+      'C52 96 44 88 38 75 ' +
+      'C31 60 29 38 38 28Z'
+    )
+  }
+
+  if (rostro === 'redondeado') {
+    return (
+      'M37 31 ' +
+      'C44 19 76 19 83 31 ' +
+      'C91 43 88 67 80 81 ' +
+      'C74 91 67 96 60 96 ' +
+      'C53 96 46 91 40 81 ' +
+      'C32 67 29 43 37 31Z'
+    )
+  }
+
+  return (
+    'M38 28 ' +
+    'C46 17 74 17 82 28 ' +
+    'C90 41 87 66 79 82 ' +
+    'C73 92 66 98 60 98 ' +
+    'C54 98 47 92 41 82 ' +
+    'C33 66 30 41 38 28Z'
+  )
+}
+
+
+function cabelloPath(
+  variante: number,
+) {
+  switch (variante) {
+    case 0:
+      return (
+        'M34 42 ' +
+        'C33 25 43 14 60 13 ' +
+        'C76 12 88 23 87 40 ' +
+        'C78 31 72 29 61 29 ' +
+        'C49 29 42 33 34 42Z'
+      )
+
+    case 1:
+      return (
+        'M33 45 ' +
+        'C29 27 42 14 59 13 ' +
+        'C75 12 87 22 89 37 ' +
+        'C82 31 75 29 68 29 ' +
+        'C56 29 48 34 43 43 ' +
+        'C39 44 36 45 33 45Z'
+      )
+
+    case 2:
+      return (
+        'M32 43 ' +
+        'C34 22 45 14 62 14 ' +
+        'C77 14 88 25 87 43 ' +
+        'C82 34 75 31 66 30 ' +
+        'C54 30 46 34 39 42 ' +
+        'C37 42 35 42 32 43Z'
+      )
+
+    case 3:
+      return (
+        'M32 45 ' +
+        'C29 27 40 14 58 13 ' +
+        'C78 12 90 25 88 45 ' +
+        'C82 36 75 32 66 31 ' +
+        'C54 30 45 35 39 45Z'
+      )
+
+    case 4:
+      return (
+        'M35 39 ' +
+        'C38 21 48 15 62 15 ' +
+        'C76 15 85 24 86 38 ' +
+        'C78 31 71 29 62 29 ' +
+        'C51 29 43 32 35 39Z'
+      )
+
+    default:
+      return (
+        'M33 44 ' +
+        'C31 26 43 14 60 14 ' +
+        'C79 14 89 27 87 44 ' +
+        'C80 34 73 30 63 29 ' +
+        'C52 29 43 34 37 43Z'
+      )
+  }
+}
+
+
 export default function ReplikerHumano({
   appearance,
   name,
@@ -281,24 +410,15 @@ export default function ReplikerHumano({
   const tamano =
     tamanoVisible(size)
 
+  const idSeguro =
+    `repliker-${hash}`
+
   const estilo = {
     '--repliker-principal':
       principal,
 
     '--repliker-secundario':
       secundario,
-
-    '--repliker-piel':
-      piel[0],
-
-    '--repliker-piel-sombra':
-      piel[1],
-
-    '--repliker-cabello':
-      cabello,
-
-    '--repliker-iris':
-      iris,
 
     '--repliker-retardo':
       `${(hash % 8) * -0.16}s`,
@@ -310,10 +430,8 @@ export default function ReplikerHumano({
       <div
         className={[
           'repliker-ai-avatar',
-          `avatar-${size}`,
           'repliker-humano',
           `repliker-humano-${tamano}`,
-          `repliker-fondo-${fondo}`,
           active
             ? 'repliker-humano-activo'
             : '',
@@ -341,11 +459,26 @@ export default function ReplikerHumano({
   }
 
 
+  const ojoY =
+    mirada === 'serena'
+      ? 49
+      : 47
+
+  const cejaY =
+    mirada === 'enfocada'
+      ? 39
+      : 40
+
+  const ojoRy =
+    mirada === 'serena'
+      ? 2.5
+      : 3.4
+
+
   return (
     <div
       className={[
         'repliker-ai-avatar',
-        `avatar-${size}`,
         'repliker-humano',
         `repliker-humano-${tamano}`,
         `repliker-fondo-${fondo}`,
@@ -357,105 +490,466 @@ export default function ReplikerHumano({
       style={estilo}
       title={name}
       role="img"
-      aria-label={`Representacion de ${name}`}
+      aria-label={`Representación de ${name}`}
     >
-      <div
-        className="repliker-humano-fondo"
-        aria-hidden="true"
-      />
-
-      <div
-        className="repliker-humano-aura"
-        aria-hidden="true"
-      />
-
-      <div
-        className="repliker-humano-busto"
+      <svg
+        className="repliker-retrato"
+        viewBox="0 0 120 120"
         aria-hidden="true"
       >
-        <div className="repliker-humano-torso">
-          <span className="repliker-humano-camisa" />
-
-          <span className="repliker-humano-solapa izquierda" />
-
-          <span className="repliker-humano-solapa derecha" />
-        </div>
-
-        <div className="repliker-humano-cuello" />
-
-        <span className="repliker-humano-oreja izquierda" />
-
-        <span className="repliker-humano-oreja derecha" />
-
-        <div
-          className={[
-            'repliker-humano-cara',
-            `repliker-rostro-${rostro}`,
-          ].join(' ')}
-        >
-          <div
-            className={[
-              'repliker-humano-cabello',
-              `repliker-cabello-${varianteCabello}`,
-            ].join(' ')}
+        <defs>
+          <linearGradient
+            id={`${idSeguro}-fondo`}
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="1"
           >
-            <span />
-            <span />
-            <span />
-          </div>
+            <stop
+              offset="0%"
+              stopColor={principal}
+              stopOpacity="0.16"
+            />
 
-          <div className="repliker-humano-cejas">
-            <span />
-            <span />
-          </div>
+            <stop
+              offset="100%"
+              stopColor={secundario}
+              stopOpacity="0.06"
+            />
+          </linearGradient>
 
-          <div
-            className={[
-              'repliker-humano-ojos',
-              `repliker-mirada-${mirada}`,
-            ].join(' ')}
+          <linearGradient
+            id={`${idSeguro}-piel`}
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="1"
           >
-            <span>
-              <i />
-            </span>
+            <stop
+              offset="0%"
+              stopColor={piel.luz}
+            />
 
-            <span>
-              <i />
-            </span>
-          </div>
+            <stop
+              offset="48%"
+              stopColor={piel.base}
+            />
 
-          <span className="repliker-humano-nariz" />
+            <stop
+              offset="100%"
+              stopColor={piel.sombra}
+            />
+          </linearGradient>
 
-          <span className="repliker-humano-boca" />
+          <linearGradient
+            id={`${idSeguro}-ropa`}
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="1"
+          >
+            <stop
+              offset="0%"
+              stopColor={principal}
+            />
 
-          {appearance.accessory ===
-            'visor' && (
-            <div className="repliker-humano-gafas">
-              <span />
-              <i />
-              <span />
-            </div>
-          )}
+            <stop
+              offset="100%"
+              stopColor={secundario}
+            />
+          </linearGradient>
 
-          {appearance.accessory ===
-            'antenna' && (
-            <span className="repliker-humano-broche" />
-          )}
+          <radialGradient
+            id={`${idSeguro}-iris`}
+            cx="45%"
+            cy="42%"
+            r="60%"
+          >
+            <stop
+              offset="0%"
+              stopColor="#111827"
+            />
 
-          {appearance.accessory ===
-            'halo' && (
-            <span className="repliker-humano-diadema" />
-          )}
-        </div>
+            <stop
+              offset="38%"
+              stopColor={iris}
+            />
+
+            <stop
+              offset="100%"
+              stopColor="#111827"
+            />
+          </radialGradient>
+
+          <filter
+            id={`${idSeguro}-sombra`}
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="150%"
+          >
+            <feDropShadow
+              dx="0"
+              dy="3"
+              stdDeviation="3"
+              floodColor="#14261d"
+              floodOpacity="0.18"
+            />
+          </filter>
+
+          <filter
+            id={`${idSeguro}-suave`}
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
+            <feGaussianBlur
+              stdDeviation="1.4"
+            />
+          </filter>
+        </defs>
+
+        <rect
+          width="120"
+          height="120"
+          rx="24"
+          fill={`url(#${idSeguro}-fondo)`}
+        />
+
+        <circle
+          cx="93"
+          cy="23"
+          r="28"
+          fill={secundario}
+          opacity="0.06"
+        />
+
+        <circle
+          cx="21"
+          cy="92"
+          r="35"
+          fill={principal}
+          opacity="0.05"
+        />
+
+        <ellipse
+          cx="60"
+          cy="108"
+          rx="41"
+          ry="14"
+          fill="#173426"
+          opacity="0.08"
+          filter={`url(#${idSeguro}-suave)`}
+        />
+
+        <path
+          d="M24 120 C27 94 40 83 60 83 C80 83 93 94 96 120Z"
+          fill={`url(#${idSeguro}-ropa)`}
+          filter={`url(#${idSeguro}-sombra)`}
+        />
+
+        <path
+          d="M45 85 L60 101 L75 85 L70 120 L50 120Z"
+          fill="#ffffff"
+          opacity="0.92"
+        />
+
+        <path
+          d="M40 88 L54 101 L47 108 L34 95Z"
+          fill="#ffffff"
+          opacity="0.18"
+        />
+
+        <path
+          d="M80 88 L66 101 L73 108 L86 95Z"
+          fill="#ffffff"
+          opacity="0.18"
+        />
+
+        <path
+          d="M52 74 C53 83 54 87 60 90 C66 87 67 83 68 74Z"
+          fill={`url(#${idSeguro}-piel)`}
+        />
+
+        <ellipse
+          cx="35"
+          cy="53"
+          rx="5"
+          ry="9"
+          fill={piel.base}
+        />
+
+        <ellipse
+          cx="85"
+          cy="53"
+          rx="5"
+          ry="9"
+          fill={piel.base}
+        />
+
+        <ellipse
+          cx="35"
+          cy="53"
+          rx="2"
+          ry="5"
+          fill={piel.sombra}
+          opacity="0.28"
+        />
+
+        <ellipse
+          cx="85"
+          cy="53"
+          rx="2"
+          ry="5"
+          fill={piel.sombra}
+          opacity="0.28"
+        />
+
+        <path
+          d={rostroPath(rostro)}
+          fill={`url(#${idSeguro}-piel)`}
+          filter={`url(#${idSeguro}-sombra)`}
+        />
+
+        <path
+          d="M42 60 C48 64 52 65 60 65 C68 65 72 64 78 60"
+          fill="none"
+          stroke={piel.sombra}
+          strokeWidth="1"
+          opacity="0.16"
+          strokeLinecap="round"
+        />
+
+        <path
+          d={cabelloPath(varianteCabello)}
+          fill={cabello}
+        />
+
+        <path
+          d="M39 33 C48 24 72 22 83 34"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="2"
+          opacity="0.06"
+          strokeLinecap="round"
+        />
+
+        <path
+          d={
+            mirada === 'enfocada'
+              ? 'M43 40 Q49 37 54 39'
+              : 'M43 40 Q49 39 54 40'
+          }
+          fill="none"
+          stroke={cabello}
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          opacity="0.82"
+        />
+
+        <path
+          d={
+            mirada === 'enfocada'
+              ? 'M66 39 Q72 37 78 40'
+              : 'M66 40 Q72 39 78 40'
+          }
+          fill="none"
+          stroke={cabello}
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          opacity="0.82"
+        />
+
+        <ellipse
+          cx="49"
+          cy={ojoY}
+          rx="7"
+          ry={ojoRy}
+          fill="#fffdfb"
+        />
+
+        <ellipse
+          cx="71"
+          cy={ojoY}
+          rx="7"
+          ry={ojoRy}
+          fill="#fffdfb"
+        />
+
+        <circle
+          cx="49"
+          cy={ojoY}
+          r="2.7"
+          fill={`url(#${idSeguro}-iris)`}
+        />
+
+        <circle
+          cx="71"
+          cy={ojoY}
+          r="2.7"
+          fill={`url(#${idSeguro}-iris)`}
+        />
+
+        <circle
+          cx="49.8"
+          cy={ojoY - 0.8}
+          r="0.7"
+          fill="#ffffff"
+          opacity="0.9"
+        />
+
+        <circle
+          cx="71.8"
+          cy={ojoY - 0.8}
+          r="0.7"
+          fill="#ffffff"
+          opacity="0.9"
+        />
+
+        <path
+          d="M60 49 C58 56 57 60 59 62 C60 63 62 63 64 62"
+          fill="none"
+          stroke={piel.sombra}
+          strokeWidth="1.3"
+          strokeLinecap="round"
+          opacity="0.58"
+        />
+
+        <path
+          d="M53 70 Q60 74 67 70"
+          fill="none"
+          stroke={piel.labios}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+
+        <path
+          d="M55 72 Q60 74 65 72"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="0.65"
+          strokeLinecap="round"
+          opacity="0.35"
+        />
+
+        <ellipse
+          cx="43"
+          cy="60"
+          rx="6"
+          ry="3"
+          fill="#d86f78"
+          opacity="0.08"
+        />
+
+        <ellipse
+          cx="77"
+          cy="60"
+          rx="6"
+          ry="3"
+          fill="#d86f78"
+          opacity="0.08"
+        />
+
+        {appearance.accessory ===
+          'visor' && (
+          <g>
+            <rect
+              x="39"
+              y={cejaY + 4}
+              width="18"
+              height="10"
+              rx="4"
+              fill="none"
+              stroke={principal}
+              strokeWidth="1.8"
+              opacity="0.82"
+            />
+
+            <rect
+              x="63"
+              y={cejaY + 4}
+              width="18"
+              height="10"
+              rx="4"
+              fill="none"
+              stroke={principal}
+              strokeWidth="1.8"
+              opacity="0.82"
+            />
+
+            <path
+              d={`M57 ${cejaY + 9} H63`}
+              stroke={principal}
+              strokeWidth="1.6"
+            />
+          </g>
+        )}
 
         {appearance.accessory ===
           'headphones' && (
-          <div className="repliker-humano-auriculares">
-            <span className="izquierda" />
-            <span className="derecha" />
-          </div>
+          <g>
+            <path
+              d="M35 47 C36 24 84 24 85 47"
+              fill="none"
+              stroke={principal}
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
+
+            <rect
+              x="31"
+              y="46"
+              width="7"
+              height="18"
+              rx="3"
+              fill={principal}
+            />
+
+            <rect
+              x="82"
+              y="46"
+              width="7"
+              height="18"
+              rx="3"
+              fill={principal}
+            />
+          </g>
         )}
-      </div>
+
+        {appearance.accessory ===
+          'halo' && (
+          <ellipse
+            cx="60"
+            cy="18"
+            rx="22"
+            ry="5"
+            fill="none"
+            stroke={secundario}
+            strokeWidth="2"
+            opacity="0.75"
+          />
+        )}
+
+        {appearance.accessory ===
+          'antenna' && (
+          <g>
+            <path
+              d="M79 24 L89 14"
+              stroke={principal}
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+
+            <circle
+              cx="91"
+              cy="12"
+              r="3"
+              fill={secundario}
+            />
+          </g>
+        )}
+      </svg>
 
       <span
         className={[

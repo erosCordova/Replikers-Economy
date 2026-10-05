@@ -46,6 +46,7 @@ import {
 } from './auth/sesion'
 import Ecosistema from './pages/Ecosistema'
 import PanelPrincipal from './components/PanelPrincipal'
+import SeguimientoProyecto from './components/SeguimientoProyecto'
 import type {
   DashboardEcosystemSnapshot,
 } from './components/PanelPrincipal'
@@ -412,6 +413,15 @@ function App() {
 
   const [replikers, setReplikers] =
     useState<Repliker[]>([])
+
+  const [
+    selectedTrackingProject,
+    setSelectedTrackingProject,
+  ] = useState<{
+    id: number
+    title: string
+  } | null>(null)
+
 
   const [
     dashboardEcosystem,
@@ -1191,20 +1201,6 @@ function App() {
 
           <button
             className={
-              section === 'new-project'
-                ? 'nav-item active'
-                : 'nav-item'
-            }
-            onClick={() =>
-              navigate('new-project')
-            }
-          >
-            <Plus size={19} />
-            Nuevo proyecto
-          </button>
-
-          <button
-            className={
               section === 'projects'
                 ? 'nav-item active'
                 : 'nav-item'
@@ -1371,7 +1367,7 @@ function App() {
               }
             >
               <Plus size={18} />
-              Nuevo proyecto
+              Crear proyecto
             </button>
           </div>
         </header>
@@ -1392,9 +1388,6 @@ function App() {
               ecosystem={dashboardEcosystem}
               plannedValue={money(plannedValue)}
               backendOnline={backendOnline}
-              onCreateProject={() =>
-                navigate('new-project')
-              }
               onOpenMarketplace={() =>
                 navigate('marketplace')
               }
@@ -1588,17 +1581,6 @@ function App() {
                   </h3>
                 </div>
 
-                <button
-                  className="primary-button"
-                  onClick={() =>
-                    navigate(
-                      'new-project',
-                    )
-                  }
-                >
-                  <Plus size={17} />
-                  Nuevo proyecto
-                </button>
               </div>
 
               {projects.length === 0 ? (
@@ -1615,16 +1597,6 @@ function App() {
                     estructurado.
                   </p>
 
-                  <button
-                    className="primary-button"
-                    onClick={() =>
-                      navigate(
-                        'new-project',
-                      )
-                    }
-                  >
-                    Crear primer proyecto
-                  </button>
                 </div>
               ) : (
                 <div className="project-grid">
@@ -1697,6 +1669,19 @@ function App() {
                             )}
                           </span>
 
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedTrackingProject({
+                                id: project.id,
+                                title: project.title,
+                              })
+                            }
+                          >
+                            Ver avance
+                            <Activity size={15} />
+                          </button>
+
                           {plan?.project_id ===
                             project.id && (
                             <button
@@ -1718,6 +1703,24 @@ function App() {
                 </div>
               )}
             </section>
+          )}
+
+
+
+          {selectedTrackingProject && (
+            <SeguimientoProyecto
+              projectId={
+                selectedTrackingProject.id
+              }
+              projectTitle={
+                selectedTrackingProject.title
+              }
+              onClose={() =>
+                setSelectedTrackingProject(
+                  null,
+                )
+              }
+            />
           )}
 
 
