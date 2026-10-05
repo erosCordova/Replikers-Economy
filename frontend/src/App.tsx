@@ -93,6 +93,7 @@ interface Project {
   budget_limit_cents: number
   quoted_amount_cents?: number | null
   payment_status?: string
+  is_admin_free?: boolean
   requirements?: Requirement[]
 }
 
@@ -890,7 +891,16 @@ function App() {
       await loadPrivateData()
 
       setNotice(
-        `R00 terminó de planificar el proyecto #${project.id}.`,
+        project.is_admin_free
+          ? (
+              `Proyecto #${project.id} creado `
+              + 'gratuitamente como administrador. '
+              + 'R00 terminó la planificación.'
+            )
+          : (
+              `R00 terminó de planificar `
+              + `el proyecto #${project.id}.`
+            ),
       )
 
       setSection('plan')
@@ -1447,8 +1457,35 @@ function App() {
                     />
                   </label>
 
+                  {user.role === 'admin' && (
+                    <div className="admin-free-project-note">
+                      <ShieldCheck size={20} />
+
+                      <div>
+                        <strong>
+                          Proyecto gratuito de administrador
+                        </strong>
+
+                        <span>
+                          No se realizará ningún cobro ni tendrás
+                          que financiar este proyecto. El presupuesto
+                          solo funciona como límite técnico para R00.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <label>
-                    Presupuesto máximo
+                    {user.role === 'admin'
+                      ? 'Presupuesto técnico máximo'
+                      : 'Presupuesto máximo'}
+
+                    {user.role === 'admin' && (
+                      <span className="field-help">
+                        Límite interno · sin cobro
+                      </span>
+                    )}
+
                     <div className="money-input">
                       <span>S/</span>
 

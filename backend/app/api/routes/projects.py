@@ -144,6 +144,18 @@ def create_project(
             .strip(),
         budget_limit_cents=
             payload.budget_limit_cents,
+
+        is_admin_free=(
+            current_user.role
+            == "admin"
+        ),
+
+        payment_status=(
+            "admin_free"
+            if current_user.role
+            == "admin"
+            else "unpaid"
+        ),
     )
 
     db.add(project)

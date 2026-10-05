@@ -77,6 +77,103 @@ def _skill_map(
     return result
 
 
+def _resolved_skill_level(
+    *,
+    required_name: str,
+    actual_skills: dict[str, int],
+) -> int:
+    """
+    Resuelve habilidades equivalentes o compuestas
+    sin relajar los niveles mínimos solicitados.
+
+    Ejemplos:
+    - HTML/CSS requiere HTML y CSS.
+    - Frontend Development requiere lenguaje
+      frontend + HTML + CSS.
+    """
+
+    normalized = normalize_market_text(
+        required_name
+    )
+
+    exact = actual_skills.get(
+        normalized
+    )
+
+    if exact is not None:
+        return exact
+
+    compact = (
+        normalized
+        .replace(" ", "")
+    )
+
+    if compact in {
+        "html/css",
+        "html+css",
+        "html&css",
+    }:
+        html = actual_skills.get(
+            "html",
+            0,
+        )
+
+        css = actual_skills.get(
+            "css",
+            0,
+        )
+
+        if html <= 0 or css <= 0:
+            return 0
+
+        return min(
+            html,
+            css,
+        )
+
+    if normalized in {
+        "frontend development",
+        "frontend developer",
+        "desarrollo frontend",
+        "desarrollo de frontend",
+    }:
+        javascript = max(
+            actual_skills.get(
+                "javascript",
+                0,
+            ),
+            actual_skills.get(
+                "typescript",
+                0,
+            ),
+        )
+
+        html = actual_skills.get(
+            "html",
+            0,
+        )
+
+        css = actual_skills.get(
+            "css",
+            0,
+        )
+
+        if (
+            javascript <= 0
+            or html <= 0
+            or css <= 0
+        ):
+            return 0
+
+        return min(
+            javascript,
+            html,
+            css,
+        )
+
+    return 0
+
+
 def _skill_metrics(
     *,
     task: Task,
@@ -118,9 +215,9 @@ def _skill_metrics(
             ),
         )
 
-        actual = actual_skills.get(
-            name,
-            0,
+        actual = _resolved_skill_level(
+            required_name=name,
+            actual_skills=actual_skills,
         )
 
         if actual >= minimum:

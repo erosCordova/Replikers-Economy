@@ -1081,6 +1081,15 @@ def ensure_simulation_mode():
 def required_project_funding_cents(
     project: Project,
 ) -> int:
+    if bool(
+        getattr(
+            project,
+            "is_admin_free",
+            False,
+        )
+    ):
+        return 0
+
     quoted = (
         project.quoted_amount_cents
         or 0
@@ -1121,6 +1130,15 @@ def project_has_sufficient_custody(
     db: Session,
     project: Project,
 ) -> bool:
+    if bool(
+        getattr(
+            project,
+            "is_admin_free",
+            False,
+        )
+    ):
+        return True
+
     required = (
         required_project_funding_cents(
             project
@@ -1145,6 +1163,21 @@ def sync_project_payment_status(
     db: Session,
     project: Project,
 ) -> str:
+    if bool(
+        getattr(
+            project,
+            "is_admin_free",
+            False,
+        )
+    ):
+        project.payment_status = (
+            "admin_free"
+        )
+
+        db.flush()
+
+        return "admin_free"
+
     required = (
         required_project_funding_cents(
             project
@@ -1214,6 +1247,19 @@ def simulate_project_funding(
     if project is None:
         raise EconomyError(
             "Proyecto no encontrado."
+        )
+
+    if bool(
+        getattr(
+            project,
+            "is_admin_free",
+            False,
+        )
+    ):
+        raise EconomyError(
+            "Los proyectos gratuitos "
+            "de administrador no requieren "
+            "financiación."
         )
 
     required = (

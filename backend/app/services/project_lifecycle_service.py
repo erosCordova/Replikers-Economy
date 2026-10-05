@@ -66,6 +66,7 @@ FUNDED_STATUSES = {
     "paid",
     "funded",
     "escrowed",
+    "admin_free",
 }
 
 

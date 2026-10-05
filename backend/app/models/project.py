@@ -1,11 +1,13 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Integer,
     String,
     Text,
+    false,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -63,6 +65,13 @@ class Project(Base):
         String(30),
         nullable=False,
         default="unpaid",
+    )
+
+    is_admin_free: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=false(),
     )
 
     created_at: Mapped[datetime] = mapped_column(

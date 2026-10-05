@@ -889,6 +889,15 @@ def build_project_tracking(
 
             "payment_status":
                 project.payment_status,
+
+            "is_admin_free":
+                bool(
+                    getattr(
+                        project,
+                        "is_admin_free",
+                        False,
+                    )
+                ),
         },
 
         "final_review": (

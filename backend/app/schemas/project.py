@@ -77,6 +77,8 @@ class ProjectPublic(BaseModel):
     quoted_amount_cents: int | None
     payment_status: str
 
+    is_admin_free: bool
+
     created_at: datetime
 
     requirements: list[RequirementPublic]
@@ -141,6 +143,8 @@ class ProjectTrackingBudgetPublic(BaseModel):
     remaining_budget_cents: int | None
 
     payment_status: str
+
+    is_admin_free: bool
 
 
 class ProjectTrackingFinalReviewPublic(BaseModel):
