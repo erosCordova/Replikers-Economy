@@ -163,36 +163,43 @@ def log_tool_execution(
     *,
     db: Session,
     workspace: ExecutionWorkspace,
+    actor_repliker_id: int | None = None,
     tool_name: str,
     status: str,
     target_path: str | None = None,
     input_summary: str = "",
     output_summary: str = "",
     error_summary: str = "",
-):
-    db.add(
-        ToolExecutionLog(
-            workspace_id=
-                workspace.id,
-            contract_id=
-                workspace.contract_id,
-            repliker_id=
-                workspace.repliker_id,
-            tool_name=
-                tool_name,
-            status=
-                status,
-            target_path=
-                target_path,
-            input_summary=
-                input_summary[:2000],
-            output_summary=
-                output_summary[:4000],
-            error_summary=
-                error_summary[:4000],
-        )
+) -> ToolExecutionLog:
+    log = ToolExecutionLog(
+        workspace_id=
+            workspace.id,
+        contract_id=
+            workspace.contract_id,
+        repliker_id=(
+            workspace.repliker_id
+            if actor_repliker_id is None
+            else int(actor_repliker_id)
+        ),
+        tool_name=
+            tool_name,
+        status=
+            status,
+        target_path=
+            target_path,
+        input_summary=
+            input_summary[:2000],
+        output_summary=
+            output_summary[:4000],
+        error_summary=
+            error_summary[:4000],
     )
 
+    db.add(
+        log
+    )
+
+    return log
 
 def _file_count(
     *,

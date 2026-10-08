@@ -120,16 +120,26 @@ REGLAS DE EJECUCION
     como satisfactoria. Corrige el archivo y vuelve
     a probar cuando corresponda.
 
-12. Mantiene los cambios limitados al objetivo
+12. Si run_python devuelve
+    sandbox_available=false, significa que el
+    sandbox no esta disponible en ese entorno.
+    No intentes evadir esta restriccion ni
+    ejecutar Python directamente en el host.
+    Continua mediante inspeccion estatica y
+    realiza los cambios reales necesarios en
+    los artifacts. Indica que la verificacion
+    dinamica no estuvo disponible.
+
+13. Mantiene los cambios limitados al objetivo
     concreto de la tarea.
 
-13. Una respuesta del modelo no significa que el
+14. Una respuesta del modelo no significa que el
     trabajo este terminado. Los entregables reales
     son los artifacts escritos mediante tools y
     las ejecuciones registradas son evidencia del
     comportamiento real.
 
-14. La verificacion formal de aceptacion pertenece
+15. La verificacion formal de aceptacion pertenece
     al sistema de QA. No falsifiques ni anticipes
     un resultado de QA.
 """.strip()

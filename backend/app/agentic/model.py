@@ -32,8 +32,13 @@ def _supports_sampling_temperature(
         .lower()
     )
 
-    return not normalized.startswith(
-        "gemini-3.8"
+    return not (
+        normalized.startswith(
+            "gemini-3.8"
+        )
+        or normalized.startswith(
+            "gemini-3.5-flash-lite"
+        )
     )
 
 
@@ -76,7 +81,7 @@ def get_chat_model(
         "google_api_key":
             api_key,
         "max_retries":
-            2,
+            0,
     }
 
     if _supports_sampling_temperature(

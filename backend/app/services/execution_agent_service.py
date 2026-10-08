@@ -19,12 +19,19 @@ from app.agentic.execution_runtime import (
 from app.agentic.execution_state import (
     ContractExecutionState,
 )
+from app.agentic.provider_retry import (
+    invoke_with_transient_retry,
+)
 from app.models.contract import (
     ACTIVE_CONTRACT_STATUSES,
     TaskContract,
 )
+from app.models.delegation import (
+    Subcontract,
+)
 from app.models.execution import (
     ExecutionArtifact,
+    ToolExecutionLog,
 )
 from app.models.repliker import (
     Repliker,
@@ -187,6 +194,165 @@ def _changed_artifacts(
     return changed
 
 
+
+def _delegated_integration_verified(
+    *,
+    db: Session,
+    contract_id: int,
+    workspace_id: int,
+    baseline_artifact_count: int,
+    principal_running_log_id: int,
+    principal_repliker_id: int,
+) -> bool:
+    """
+    Permite completar una integracion sin
+    reescritura solamente cuando:
+
+    1. existen artifacts reales;
+    2. existe un subcontrato completado;
+    3. existe una ejecucion delegada completada
+       anterior al intento principal actual;
+    4. el ID recibido corresponde exactamente
+       al intento principal actual;
+    5. el Repliker principal leyo artifacts
+       dentro de ese intento.
+
+    Si existe otro intento principal posterior,
+    sus lecturas no pueden validar este intento.
+    """
+    if baseline_artifact_count <= 0:
+        return False
+
+    if principal_running_log_id <= 0:
+        return False
+
+    completed_subcontract_id = db.scalar(
+        select(
+            Subcontract.id
+        )
+        .where(
+            Subcontract.root_contract_id
+            == contract_id,
+            Subcontract.status
+            == "completed",
+        )
+        .order_by(
+            Subcontract.id.desc()
+        )
+        .limit(1)
+    )
+
+    if completed_subcontract_id is None:
+        return False
+
+    delegated_completed_log_id = db.scalar(
+        select(
+            ToolExecutionLog.id
+        )
+        .where(
+            ToolExecutionLog.workspace_id
+            == workspace_id,
+            ToolExecutionLog.tool_name
+            == "subcontract_execution_agent_run",
+            ToolExecutionLog.status
+            == "completed",
+            ToolExecutionLog.id
+            < principal_running_log_id,
+        )
+        .order_by(
+            ToolExecutionLog.id.desc()
+        )
+        .limit(1)
+    )
+
+    if delegated_completed_log_id is None:
+        return False
+
+    principal_log_id = db.scalar(
+        select(
+            ToolExecutionLog.id
+        )
+        .where(
+            ToolExecutionLog.id
+            == principal_running_log_id,
+            ToolExecutionLog.workspace_id
+            == workspace_id,
+            ToolExecutionLog.repliker_id
+            == principal_repliker_id,
+            ToolExecutionLog.tool_name
+            == "execution_agent_run",
+            ToolExecutionLog.status
+            == "running",
+        )
+        .limit(1)
+    )
+
+    if principal_log_id is None:
+        return False
+
+    next_principal_running_log_id = db.scalar(
+        select(
+            ToolExecutionLog.id
+        )
+        .where(
+            ToolExecutionLog.workspace_id
+            == workspace_id,
+            ToolExecutionLog.repliker_id
+            == principal_repliker_id,
+            ToolExecutionLog.tool_name
+            == "execution_agent_run",
+            ToolExecutionLog.status
+            == "running",
+            ToolExecutionLog.id
+            > principal_running_log_id,
+        )
+        .order_by(
+            ToolExecutionLog.id
+        )
+        .limit(1)
+    )
+
+    read_filters = [
+        ToolExecutionLog.workspace_id
+        == workspace_id,
+
+        ToolExecutionLog.repliker_id
+        == principal_repliker_id,
+
+        ToolExecutionLog.tool_name
+        == "workspace_read_text",
+
+        ToolExecutionLog.status
+        == "success",
+
+        ToolExecutionLog.id
+        > principal_running_log_id,
+    ]
+
+    if next_principal_running_log_id is not None:
+        read_filters.append(
+            ToolExecutionLog.id
+            < next_principal_running_log_id
+        )
+
+    principal_read_log_id = db.scalar(
+        select(
+            ToolExecutionLog.id
+        )
+        .where(
+            *read_filters
+        )
+        .order_by(
+            ToolExecutionLog.id.desc()
+        )
+        .limit(1)
+    )
+
+    return (
+        principal_read_log_id
+        is not None
+    )
+
 def execute_contract_once(
     *,
     db: Session,
@@ -318,10 +484,12 @@ def execute_contract_once(
         ),
     ]
 
-    log_tool_execution(
+    principal_run_log = log_tool_execution(
         db=db,
         workspace=
             workspace,
+        actor_repliker_id=
+            repliker.id,
         tool_name=
             "execution_agent_run",
         status=
@@ -333,6 +501,18 @@ def execute_contract_once(
             "LangGraph entrego la tarea "
             "al Repliker contratado."
         ),
+    )
+
+    db.flush()
+
+    if principal_run_log.id is None:
+        raise ContractExecutionError(
+            "No se pudo identificar "
+            "el intento principal actual."
+        )
+
+    principal_running_log_id = int(
+        principal_run_log.id
     )
 
     db.commit()
@@ -361,15 +541,19 @@ def execute_contract_once(
             db.commit()
 
         result = (
-            runtime.agent.invoke(
-                {
-                    "messages": [
-                        HumanMessage(
-                            content=
-                                instruction
-                        )
-                    ]
-                }
+            invoke_with_transient_retry(
+                lambda: runtime.agent.invoke(
+                    {
+                        "messages": [
+                            HumanMessage(
+                                content=
+                                    instruction
+                            )
+                        ]
+                    }
+                ),
+                max_attempts=3,
+                base_delay_seconds=1.0,
             )
         )
 
@@ -440,9 +624,29 @@ def execute_contract_once(
         artifacts
     )
 
+    integration_verified = False
+
+    if artifact_count <= 0:
+        integration_verified = (
+            _delegated_integration_verified(
+                db=db,
+                contract_id=contract.id,
+                workspace_id=workspace.id,
+                baseline_artifact_count=
+                    len(baseline),
+                principal_running_log_id=
+                    principal_running_log_id,
+                principal_repliker_id=
+                    repliker.id,
+            )
+        )
+
     status = (
         "completed"
-        if artifact_count > 0
+        if (
+            artifact_count > 0
+            or integration_verified
+        )
         else "needs_artifact"
     )
 
@@ -488,6 +692,8 @@ def execute_contract_once(
             artifact_count,
         "artifacts":
             artifacts,
+        "integration_verified":
+            integration_verified,
         "trace": [
             *trace,
             (

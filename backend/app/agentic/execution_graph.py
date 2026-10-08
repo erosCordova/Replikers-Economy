@@ -87,6 +87,8 @@ def build_contract_execution_graph(
                 0,
             "artifacts":
                 [],
+            "integration_verified":
+                False,
             "trace": [
                 *state.get(
                     "trace",
@@ -137,9 +139,17 @@ def build_contract_execution_graph(
             )
         )
 
+        integration_verified = bool(
+            state.get(
+                "integration_verified",
+                False,
+            )
+        )
+
         if (
             status == "completed"
             and artifact_count == 0
+            and not integration_verified
         ):
             status = (
                 "needs_artifact"
@@ -150,6 +160,21 @@ def build_contract_execution_graph(
                     "La ejecucion termino "
                     "sin producir ni modificar "
                     "artifacts verificables."
+                )
+            )
+
+        elif (
+            status == "completed"
+            and integration_verified
+            and artifact_count == 0
+        ):
+            trace.append(
+                (
+                    "LangGraph confirmo que el "
+                    "Repliker principal reviso "
+                    "e integro artifacts reales "
+                    "producidos por especialistas "
+                    "delegados."
                 )
             )
 
@@ -243,6 +268,8 @@ def run_execution_graph(
             0,
         "artifacts":
             [],
+        "integration_verified":
+            False,
         "trace":
             [],
     }

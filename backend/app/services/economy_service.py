@@ -1745,13 +1745,31 @@ def settle_contract_earnings(
             "Proyecto no encontrado."
         )
 
-    custody = (
-        ensure_project_custody_account(
-            db=db,
-            project_id=
-                project.id,
+    is_admin_free = bool(
+        getattr(
+            project,
+            "is_admin_free",
+            False,
         )
     )
+
+    if is_admin_free:
+        settlement_source = (
+            ensure_system_clearing_account(
+                db=db,
+                currency=
+                    contract.currency,
+            )
+        )
+
+    else:
+        settlement_source = (
+            ensure_project_custody_account(
+                db=db,
+                project_id=
+                    project.id,
+            )
+        )
 
     allocations = (
         _contract_net_allocations(
@@ -1781,7 +1799,7 @@ def settle_contract_earnings(
                 == contract.id,
                 LedgerTransaction
                 .from_account_id
-                == custody.id,
+                == settlement_source.id,
                 LedgerTransaction
                 .transaction_type.in_(
                     (
@@ -1807,9 +1825,11 @@ def settle_contract_earnings(
     )
 
     if (
-        account_balance(
+        not is_admin_free
+        and account_balance(
             db=db,
-            account_id=custody.id,
+            account_id=
+                settlement_source.id,
         )
         < missing_to_settle
     ):
@@ -1902,7 +1922,7 @@ def settle_contract_earnings(
                 amount_cents=
                     owner_net,
                 from_account_id=
-                    custody.id,
+                    settlement_source.id,
                 to_account_id=
                     pending.id,
                 project_id=
@@ -1931,7 +1951,7 @@ def settle_contract_earnings(
                 amount_cents=
                     commission,
                 from_account_id=
-                    custody.id,
+                    settlement_source.id,
                 to_account_id=
                     platform.id,
                 project_id=

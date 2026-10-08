@@ -38,9 +38,13 @@ class ToolGateway:
         *,
         db: Session,
         workspace: ExecutionWorkspace,
+        actor_repliker_id: int | None = None,
     ):
         self.db = db
         self.workspace = workspace
+        self.actor_repliker_id = (
+            actor_repliker_id
+        )
 
     @staticmethod
     def _normalize_path(
@@ -65,6 +69,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="success",
                 output_summary=(
@@ -80,6 +86,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="denied",
                 error_summary=str(exc),
@@ -114,6 +122,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="success",
                 target_path=
@@ -131,6 +141,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="denied",
                 target_path=
@@ -170,6 +182,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="success",
                 target_path=
@@ -194,6 +208,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="denied",
                 target_path=
@@ -282,6 +298,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status=log_status,
                 target_path=
@@ -307,6 +325,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="denied",
                 target_path=
@@ -322,6 +342,8 @@ class ToolGateway:
             log_tool_execution(
                 db=self.db,
                 workspace=self.workspace,
+                actor_repliker_id=
+                    self.actor_repliker_id,
                 tool_name=tool_name,
                 status="failed",
                 target_path=

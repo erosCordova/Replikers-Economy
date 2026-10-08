@@ -10,6 +10,9 @@ from pydantic import (
 )
 from sqlalchemy.orm import Session
 
+from app.execution.docker_sandbox import (
+    SandboxError,
+)
 from app.execution.tool_gateway import (
     ToolGateway,
 )
@@ -63,6 +66,7 @@ def build_execution_workspace_tools(
     *,
     db: Session,
     workspace: ExecutionWorkspace,
+    actor_repliker_id: int | None = None,
 ) -> list[BaseTool]:
     """
     Construye las tools LangChain que un
@@ -77,6 +81,8 @@ def build_execution_workspace_tools(
     gateway = ToolGateway(
         db=db,
         workspace=workspace,
+        actor_repliker_id=
+            actor_repliker_id,
     )
 
     def workspace_list_files() -> dict:
@@ -166,15 +172,52 @@ def build_execution_workspace_tools(
         path: str,
     ) -> dict:
         """
-        Ejecuta un archivo Python del workspace
-        dentro del sandbox Docker rootless.
-        """
+        Ejecuta Python exclusivamente dentro
+        del sandbox Docker autorizado.
 
-        result = (
-            gateway.run_python(
+        Si el sandbox no esta disponible,
+        informa al agente mediante un resultado
+        estructurado y nunca ejecuta Python
+        directamente en el host.
+        """
+        try:
+            result = gateway.run_python(
                 path=path
             )
-        )
+
+        except SandboxError as exc:
+            # ToolGateway ya registra el fallo
+            # en ToolExecutionLog. Confirmamos
+            # esa auditoria antes de devolver
+            # control al agente.
+            db.commit()
+
+            return {
+                "workspace_id":
+                    workspace.id,
+                "path":
+                    path,
+                "operation":
+                    "run_python",
+                "image":
+                    "",
+                "exit_code":
+                    None,
+                "stdout":
+                    "",
+                "stderr":
+                    str(exc),
+                "timed_out":
+                    False,
+                "duration_ms":
+                    0,
+                "ok":
+                    False,
+                "sandbox_available":
+                    False,
+                "error":
+                    str(exc),
+            }
 
         db.commit()
 
@@ -184,7 +227,12 @@ def build_execution_workspace_tools(
             "path":
                 path,
             **result.as_dict(),
+            "sandbox_available":
+                True,
+            "error":
+                "",
         }
+
 
     return [
         StructuredTool.from_function(

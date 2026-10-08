@@ -774,6 +774,16 @@ def _principal_execution_completed(
     db: Session,
     contract_id: int,
 ) -> bool:
+    """
+    La ejecución principal solamente cuenta
+    como válida si ocurrió después de la
+    última ejecución delegada completada.
+
+    Esto impide reutilizar una ejecución
+    antigua del líder cuando un especialista
+    acaba de modificar el workspace.
+    """
+
     workspace_id = db.scalar(
         select(
             ExecutionWorkspace.id
@@ -791,7 +801,7 @@ def _principal_execution_completed(
     if workspace_id is None:
         return False
 
-    log_id = db.scalar(
+    principal_log_id = db.scalar(
         select(
             ToolExecutionLog.id
         )
@@ -809,7 +819,34 @@ def _principal_execution_completed(
         .limit(1)
     )
 
-    return log_id is not None
+    if principal_log_id is None:
+        return False
+
+    subcontract_log_id = db.scalar(
+        select(
+            ToolExecutionLog.id
+        )
+        .where(
+            ToolExecutionLog.workspace_id
+            == workspace_id,
+            ToolExecutionLog.tool_name
+            == "subcontract_execution_agent_run",
+            ToolExecutionLog.status
+            == "completed",
+        )
+        .order_by(
+            ToolExecutionLog.id.desc()
+        )
+        .limit(1)
+    )
+
+    if subcontract_log_id is None:
+        return True
+
+    return (
+        int(principal_log_id)
+        > int(subcontract_log_id)
+    )
 
 
 def run_execution_stage(
@@ -939,9 +976,19 @@ def run_execution_stage(
                 )
             )
 
+            integration_verified = bool(
+                state.get(
+                    "integration_verified",
+                    False,
+                )
+            )
+
             if (
                 status != "completed"
-                or produced <= 0
+                or (
+                    produced <= 0
+                    and not integration_verified
+                )
             ):
                 failed_contract_ids.append(
                     contract_id

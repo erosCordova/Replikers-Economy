@@ -25,4 +25,6 @@ class ContractExecutionState(
     artifact_count: int
     artifacts: list[dict]
 
+    integration_verified: bool
+
     trace: list[str]

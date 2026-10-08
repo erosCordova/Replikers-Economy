@@ -66,6 +66,66 @@ class Phase24SubcontractExecutionTests(
             source,
         )
 
+        self.assertIn(
+            "subcontract_execution_agent_run",
+            source,
+        )
+
+        self.assertIn(
+            "principal_log_id",
+            source,
+        )
+
+        self.assertIn(
+            "subcontract_log_id",
+            source,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+class Phase24SandboxUnavailableTests(
+    unittest.TestCase
+):
+    def test_docker_unavailable_does_not_abort_agent(
+        self,
+    ):
+        tools_source = Path(
+            "app/agentic/execution_tools.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        runtime_source = Path(
+            "app/agentic/execution_runtime.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "except SandboxError as exc:",
+            tools_source,
+        )
+
+        self.assertIn(
+            '"sandbox_available":',
+            tools_source,
+        )
+
+        self.assertIn(
+            "False,",
+            tools_source,
+        )
+
+        self.assertIn(
+            "sandbox_available=false",
+            runtime_source,
+        )
+
+        self.assertIn(
+            "No intentes evadir",
+            runtime_source,
+        )
