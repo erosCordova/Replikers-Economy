@@ -12,9 +12,14 @@ from app.models.contract import (
     ACTIVE_CONTRACT_STATUSES,
     TaskContract,
 )
+from app.models.delegation import (
+    ACTIVE_SUBCONTRACT_STATUSES,
+    Subcontract,
+)
 from app.models.execution import (
     ExecutionArtifact,
     ExecutionWorkspace,
+    ToolExecutionLog,
 )
 from app.models.project import Project
 from app.models.project_specialist import (
@@ -43,6 +48,9 @@ from app.services.delegation_service import (
 )
 from app.services.execution_agent_service import (
     run_contract_execution,
+)
+from app.services.subcontract_execution_service import (
+    run_subcontract_execution,
 )
 from app.services.message_service import (
     record_message,
@@ -682,6 +690,128 @@ def _workspace_artifact_count(
     )
 
 
+def _contract_has_subcontracts(
+    *,
+    db: Session,
+    contract_id: int,
+) -> bool:
+    ids = list(
+        db.scalars(
+            select(
+                Subcontract.id
+            )
+            .where(
+                Subcontract.root_contract_id
+                == contract_id
+            )
+            .limit(1)
+        ).all()
+    )
+
+    return bool(ids)
+
+
+def _run_active_subcontracts(
+    *,
+    db: Session,
+    contract_id: int,
+) -> tuple[int, list[int]]:
+    subcontract_ids = list(
+        db.scalars(
+            select(
+                Subcontract.id
+            )
+            .where(
+                Subcontract.root_contract_id
+                == contract_id,
+                Subcontract.status.in_(
+                    ACTIVE_SUBCONTRACT_STATUSES
+                ),
+            )
+            .order_by(
+                Subcontract.depth.desc(),
+                Subcontract.id,
+            )
+        ).all()
+    )
+
+    delegated_executed = 0
+
+    failed_subcontract_ids: list[int] = []
+
+    for subcontract_id in subcontract_ids:
+        state = run_subcontract_execution(
+            db=db,
+            subcontract_id=int(
+                subcontract_id
+            ),
+        )
+
+        delegated_executed += 1
+
+        status = str(
+            state.get(
+                "status",
+                "unknown",
+            )
+        )
+
+        if status != "completed":
+            failed_subcontract_ids.append(
+                int(
+                    subcontract_id
+                )
+            )
+
+    return (
+        delegated_executed,
+        failed_subcontract_ids,
+    )
+
+
+def _principal_execution_completed(
+    *,
+    db: Session,
+    contract_id: int,
+) -> bool:
+    workspace_id = db.scalar(
+        select(
+            ExecutionWorkspace.id
+        )
+        .where(
+            ExecutionWorkspace.contract_id
+            == contract_id
+        )
+        .order_by(
+            ExecutionWorkspace.id.desc()
+        )
+        .limit(1)
+    )
+
+    if workspace_id is None:
+        return False
+
+    log_id = db.scalar(
+        select(
+            ToolExecutionLog.id
+        )
+        .where(
+            ToolExecutionLog.workspace_id
+            == workspace_id,
+            ToolExecutionLog.tool_name
+            == "execution_agent_run",
+            ToolExecutionLog.status
+            == "completed",
+        )
+        .order_by(
+            ToolExecutionLog.id.desc()
+        )
+        .limit(1)
+    )
+
+    return log_id is not None
+
+
 def run_execution_stage(
     *,
     db: Session,
@@ -694,6 +824,42 @@ def run_execution_stage(
     execution_attempts = 0
 
     for contract_id in contract_ids:
+
+        # ----------------------------------------------------
+        # 1. EJECUTAR PRIMERO LOS ESPECIALISTAS DELEGADOS
+        # ----------------------------------------------------
+
+        has_subcontracts = (
+            _contract_has_subcontracts(
+                db=db,
+                contract_id=contract_id,
+            )
+        )
+
+        (
+            delegated_executed,
+            delegated_failed_ids,
+        ) = _run_active_subcontracts(
+            db=db,
+            contract_id=contract_id,
+        )
+
+        execution_attempts += (
+            delegated_executed
+        )
+
+        if delegated_failed_ids:
+            failed_contract_ids.append(
+                contract_id
+            )
+
+            continue
+
+
+        # ----------------------------------------------------
+        # 2. SI YA EXISTE QA, NO REPETIR EJECUCION
+        # ----------------------------------------------------
+
         review = get_latest_qa_review(
             db=db,
             contract_id=contract_id,
@@ -706,6 +872,11 @@ def run_execution_stage(
 
             continue
 
+
+        # ----------------------------------------------------
+        # 3. COMPROBAR ARTEFACTOS DEL WORKSPACE
+        # ----------------------------------------------------
+
         artifact_count = (
             _workspace_artifact_count(
                 db=db,
@@ -713,7 +884,38 @@ def run_execution_stage(
             )
         )
 
-        if artifact_count <= 0:
+
+        # ----------------------------------------------------
+        # 4. COMPATIBILIDAD CON PROYECTOS ANTIGUOS
+        #
+        # Sin subcontratos:
+        #   mantenemos el comportamiento histórico.
+        #
+        # Con subcontratos:
+        #   los artefactos del especialista NO sustituyen
+        #   la ejecución del Repliker principal.
+        # ----------------------------------------------------
+
+        principal_completed = (
+            artifact_count > 0
+        )
+
+        if has_subcontracts:
+            principal_completed = (
+                artifact_count > 0
+                and
+                _principal_execution_completed(
+                    db=db,
+                    contract_id=contract_id,
+                )
+            )
+
+
+        # ----------------------------------------------------
+        # 5. EJECUCION DEL REPLIKER PRINCIPAL
+        # ----------------------------------------------------
+
+        if not principal_completed:
             state = (
                 run_contract_execution(
                     db=db,
@@ -747,6 +949,11 @@ def run_execution_stage(
 
                 continue
 
+
+        # ----------------------------------------------------
+        # 6. QA SOLO DESPUES DE SUBCONTRATOS + PRINCIPAL
+        # ----------------------------------------------------
+
         review = prepare_qa_review(
             db=db,
             contract_id=contract_id,
@@ -757,6 +964,7 @@ def run_execution_stage(
         review_ids.append(
             review.id
         )
+
 
     return ExecutionStageResult(
         review_ids=
