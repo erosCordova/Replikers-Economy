@@ -554,6 +554,34 @@ def _score_candidate(
     )
 
 
+def _same_owner_blocks_delegation(
+    *,
+    delegator: Repliker,
+    candidate: Repliker,
+) -> bool:
+    """
+    Evita auto-contratacion entre Replikers
+    normales del mismo propietario.
+
+    Los Replikers oficiales pertenecen a una
+    misma cuenta interna del ecosistema y
+    deben poder colaborar entre ellos.
+    """
+    if (
+        delegator.owner_id
+        != candidate.owner_id
+    ):
+        return False
+
+    if (
+        delegator.is_system
+        and candidate.is_system
+    ):
+        return False
+
+    return True
+
+
 def _eligible_candidates(
     *,
     db: Session,
@@ -610,8 +638,10 @@ def _eligible_candidates(
             continue
 
         if (
-            repliker.owner_id
-            == delegator.owner_id
+            _same_owner_blocks_delegation(
+                delegator=delegator,
+                candidate=repliker,
+            )
         ):
             continue
 
@@ -762,11 +792,52 @@ def _run_source(
         )
     )
 
+    retry_existing = False
+    delegated_task = None
+
     if existing is not None:
-        return _existing_outcome(
-            db=db,
-            request=existing,
+        existing_subcontract = db.scalar(
+            select(Subcontract)
+            .where(
+                Subcontract
+                .delegation_request_id
+                == existing.id
+            )
         )
+
+        if existing_subcontract is not None:
+            return _existing_outcome(
+                db=db,
+                request=existing,
+            )
+
+        if (
+            existing.status
+            != "rejected"
+            or existing.decision
+            != "delegate"
+        ):
+            return _existing_outcome(
+                db=db,
+                request=existing,
+            )
+
+        delegated_task = db.scalar(
+            select(DelegatedTask)
+            .where(
+                DelegatedTask
+                .delegation_request_id
+                == existing.id
+            )
+        )
+
+        if delegated_task is None:
+            return _existing_outcome(
+                db=db,
+                request=existing,
+            )
+
+        retry_existing = True
 
     available_budget = (
         _available_delegation_budget(
@@ -802,74 +873,131 @@ def _run_source(
         "Se solicita apoyo especializado."
     )
 
-    request = DelegationRequest(
-        dedup_key=dedup_key,
-        project_id=project.id,
-        root_contract_id=
-            root_contract.id,
-        parent_task_id=
-            parent_task.id,
-        parent_request_id=(
-            parent_request.id
-            if parent_request
-            else None
-        ),
-        delegator_repliker_id=
-            delegator.id,
-        depth=next_depth,
-        status="requested",
-        decision="delegate",
-        reason=reason,
-        required_skill_name=
-            skill_name,
-        minimum_skill_level=
-            minimum_level,
-        max_budget_cents=
-            available_budget,
-    )
+    if retry_existing:
+        request = existing
 
-    db.add(
-        request
-    )
+        request.status = "requested"
+        request.decision = "delegate"
+        request.reason = reason
+        request.required_skill_name = (
+            skill_name
+        )
+        request.minimum_skill_level = (
+            minimum_level
+        )
+        request.max_budget_cents = (
+            available_budget
+        )
 
-    db.flush()
-
-    delegated_task = DelegatedTask(
-        delegation_request_id=
-            request.id,
-        project_id=project.id,
-        parent_task_id=
-            parent_task.id,
-        title=(
-            f"Apoyo especializado: "
-            f"{skill_name}"
-        ),
-        description=(
-            f"Subtarea delegada desde "
-            f"'{source_title}'. "
-            f"{source_description}"
-        ),
-        status="open",
-        complexity=max(
+        delegated_task.status = "open"
+        delegated_task.complexity = max(
             1,
             min(
                 100,
                 source_complexity,
             ),
-        ),
-        required_skill_name=
-            skill_name,
-        minimum_skill_level=
-            minimum_level,
-        max_budget_cents=
-            available_budget,
-    )
+        )
+        delegated_task.required_skill_name = (
+            skill_name
+        )
+        delegated_task.minimum_skill_level = (
+            minimum_level
+        )
+        delegated_task.max_budget_cents = (
+            available_budget
+        )
 
-    db.add(
-        delegated_task
-    )
+        record_activity(
+            db=db,
+            actor_type="system",
+            event_type=(
+                "delegation_reopened"
+            ),
+            project_id=project.id,
+            task_id=parent_task.id,
+            repliker_id=delegator.id,
+            title=(
+                "Delegacion reabierta"
+            ),
+            description=(
+                "La solicitud de delegacion "
+                "rechazada fue reevaluada "
+                "porque cambiaron las reglas "
+                "de elegibilidad."
+            ),
+        )
 
-    db.flush()
+        db.flush()
+
+    else:
+        request = DelegationRequest(
+            dedup_key=dedup_key,
+            project_id=project.id,
+            root_contract_id=
+                root_contract.id,
+            parent_task_id=
+                parent_task.id,
+            parent_request_id=(
+                parent_request.id
+                if parent_request
+                else None
+            ),
+            delegator_repliker_id=
+                delegator.id,
+            depth=next_depth,
+            status="requested",
+            decision="delegate",
+            reason=reason,
+            required_skill_name=
+                skill_name,
+            minimum_skill_level=
+                minimum_level,
+            max_budget_cents=
+                available_budget,
+        )
+
+        db.add(
+            request
+        )
+
+        db.flush()
+
+        delegated_task = DelegatedTask(
+            delegation_request_id=
+                request.id,
+            project_id=project.id,
+            parent_task_id=
+                parent_task.id,
+            title=(
+                f"Apoyo especializado: "
+                f"{skill_name}"
+            ),
+            description=(
+                f"Subtarea delegada desde "
+                f"'{source_title}'. "
+                f"{source_description}"
+            ),
+            status="open",
+            complexity=max(
+                1,
+                min(
+                    100,
+                    source_complexity,
+                ),
+            ),
+            required_skill_name=
+                skill_name,
+            minimum_skill_level=
+                minimum_level,
+            max_budget_cents=
+                available_budget,
+        )
+
+        db.add(
+            delegated_task
+        )
+
+        db.flush()
 
     record_activity(
         db=db,
