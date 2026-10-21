@@ -11,6 +11,9 @@ from sqlalchemy.orm import Session
 from app.agentic.qa_retry_graph import (
     decide_qa_followup,
 )
+from app.agentic.provider_retry import (
+    is_transient_provider_error,
+)
 from app.models.contract import (
     TaskContract,
 )
@@ -330,6 +333,32 @@ def build_retry_feedback(
     )[:12000]
 
 
+def _can_resume_existing_retry(
+    retry: QARetryRun | None,
+) -> bool:
+    if retry is None:
+        return False
+
+    if (
+        retry.status
+        == "execution_failed"
+    ):
+        return is_transient_provider_error(
+            RuntimeError(
+                retry.error_summary
+                or ""
+            )
+        )
+
+    return (
+        retry.status == "running"
+        and retry.execution_status
+        == "pending"
+        and retry.next_review_id
+        is None
+    )
+
+
 def retry_review(
     *,
     db: Session,
@@ -359,7 +388,16 @@ def retry_review(
         )
     )
 
-    if existing is not None:
+    resume_existing = (
+        _can_resume_existing_retry(
+            existing
+        )
+    )
+
+    if (
+        existing is not None
+        and not resume_existing
+    ):
         return existing
 
     if action == "complete":
@@ -380,33 +418,51 @@ def retry_review(
             "un reintento automatico."
         )
 
-    feedback = build_retry_feedback(
-        db=db,
-        review=review,
-    )
+    if resume_existing:
+        retry = existing
 
-    retry = QARetryRun(
-        contract_id=
-            review.contract_id,
-        source_review_id=
-            review.id,
-        next_review_id=
-            None,
-        attempt_number=
-            review.attempt_number + 1,
-        status=
-            "running",
-        execution_status=
-            "pending",
-        artifact_count=
-            0,
-        feedback=
-            feedback,
-        error_summary=
-            "",
-    )
+        feedback = (
+            retry.feedback
+            or build_retry_feedback(
+                db=db,
+                review=review,
+            )
+        )
 
-    db.add(retry)
+        retry.status = "running"
+        retry.execution_status = "pending"
+        retry.artifact_count = 0
+        retry.error_summary = ""
+        retry.completed_at = None
+
+    else:
+        feedback = build_retry_feedback(
+            db=db,
+            review=review,
+        )
+
+        retry = QARetryRun(
+            contract_id=
+                review.contract_id,
+            source_review_id=
+                review.id,
+            next_review_id=
+                None,
+            attempt_number=
+                review.attempt_number + 1,
+            status=
+                "running",
+            execution_status=
+                "pending",
+            artifact_count=
+                0,
+            feedback=
+                feedback,
+            error_summary=
+                "",
+        )
+
+        db.add(retry)
 
     # Persistimos que el retry empezo
     # antes de ejecutar un proceso externo.
@@ -617,7 +673,6 @@ def build_followup(
     if (
         action == "retry"
         and run_retry
-        and retry is None
     ):
         retry = retry_review(
             db=db,

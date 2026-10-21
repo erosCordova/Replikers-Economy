@@ -55,12 +55,14 @@ import './tema.css'
 import './temaAgentes.css'
 import './styles/PanelPrincipal.css'
 import './styles/DisenoUnificado.css'
+import './styles/ReplikersDark.css'
 
 
 type Section =
   | 'dashboard'
   | 'new-project'
   | 'projects'
+  | 'project-workspace'
   | 'marketplace'
   | 'ecosystem'
   | 'plan'
@@ -950,7 +952,7 @@ function App() {
         <section className="auth-brand">
           <div className="brand-pill">
             <Sparkles size={17} />
-            Plataforma de agentes
+            Plataforma de agentes autónomos
           </div>
 
           <div className="auth-brand-logo">
@@ -963,10 +965,7 @@ function App() {
           </h1>
 
           <p>
-            Una plataforma donde agentes de IA
-            especializados compiten, colaboran y
-            delegan trabajo para resolver objetivos
-            de clientes humanos.
+            Convierte una idea en un proyecto coordinado por agentes de IA autónomos, con ejecución, control de calidad y entrega verificable.
           </p>
 
           <div className="auth-flow">
@@ -993,7 +992,7 @@ function App() {
 
             <div>
               <CheckCircle2 size={20} />
-              <span>Resultado</span>
+              <span>Entrega</span>
             </div>
           </div>
         </section>
@@ -1021,13 +1020,13 @@ function App() {
 
           <h2>
             {authMode === 'login'
-              ? 'Bienvenido'
+              ? 'Bienvenido a Replikers'
               : 'Crear cuenta'}
           </h2>
 
           <p className="auth-subtitle">
             {authMode === 'login'
-              ? 'Ingresa a tu ecosistema de agentes.'
+              ? 'Accede a tus proyectos, Replikers y entregas.'
               : 'Una misma cuenta puede contratar proyectos y registrar Repliker.'}
           </p>
 
@@ -1142,11 +1141,7 @@ function App() {
 
   return (
     <div
-      className={
-        section === 'dashboard'
-          ? 'app-shell presentation-shell'
-          : 'app-shell'
-      }
+      className="app-shell presentation-shell replikers-dark-shell"
     >
       <aside
         className={
@@ -1337,6 +1332,10 @@ function App() {
 
                 {section === 'projects' &&
                   'Mis proyectos'}
+
+                {section === 'project-workspace' &&
+                  (selectedTrackingProject?.title
+                    ?? 'Proyecto')}
 
                 {section === 'marketplace' &&
                   'Mercado'}
@@ -1708,12 +1707,16 @@ function App() {
 
                           <button
                             type="button"
-                            onClick={() =>
+                            onClick={() => {
                               setSelectedTrackingProject({
                                 id: project.id,
                                 title: project.title,
                               })
-                            }
+
+                              navigate(
+                                'project-workspace',
+                              )
+                            }}
                           >
                             Ver avance
                             <Activity size={15} />
@@ -1744,7 +1747,8 @@ function App() {
 
 
 
-          {selectedTrackingProject && (
+          {section === 'project-workspace'
+          && selectedTrackingProject && (
             <SeguimientoProyecto
               projectId={
                 selectedTrackingProject.id
@@ -1752,11 +1756,15 @@ function App() {
               projectTitle={
                 selectedTrackingProject.title
               }
-              onClose={() =>
+              onClose={() => {
                 setSelectedTrackingProject(
                   null,
                 )
-              }
+
+                navigate(
+                  'projects',
+                )
+              }}
             />
           )}
 
@@ -2241,7 +2249,26 @@ function App() {
                     </div>
                   </article>
 
-                  <div className="next-phase-card">
+                  <div
+                    className="next-phase-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      navigate('marketplace')
+                    }
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === 'Enter' ||
+                        event.key === ' '
+                      ) {
+                        event.preventDefault()
+                        navigate('marketplace')
+                      }
+                    }}
+                    style={{
+                      cursor: 'pointer',
+                    }}
+                  >
                     <div>
                       <Bot size={29} />
                     </div>

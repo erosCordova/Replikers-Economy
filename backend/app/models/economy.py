@@ -22,24 +22,16 @@ from app.database.base import Base
 
 
 LEDGER_ACCOUNT_KINDS = (
-    "user_available",
-    "user_pending",
-    "project_custody",
-    "platform_revenue",
-    "system_clearing",
+    'user_available',
+    'user_pending',
+    'project_custody',
+    'platform_revenue',
+    'system_clearing',
+    'repliker_available',
 )
 
 
-LEDGER_TRANSACTION_TYPES = (
-    "funding",
-    "allocation",
-    "earning",
-    "commission",
-    "refund",
-    "withdrawal",
-    "reversal",
-    "adjustment",
-)
+LEDGER_TRANSACTION_TYPES = ('funding', 'allocation', 'earning', 'commission', 'refund', 'withdrawal', 'reversal', 'adjustment', 'world_initial_grant', 'world_agent_transfer')
 
 
 class LedgerAccount(Base):
@@ -65,7 +57,8 @@ class LedgerAccount(Base):
                 "'user_pending', "
                 "'project_custody', "
                 "'platform_revenue', "
-                "'system_clearing'"
+                "'system_clearing', "
+                "'repliker_available'"
                 ")"
             ),
             name="ck_ledger_account_kind",
@@ -76,14 +69,22 @@ class LedgerAccount(Base):
                 "kind IN "
                 "('user_available', 'user_pending') "
                 "AND user_id IS NOT NULL "
-                "AND project_id IS NULL"
+                "AND project_id IS NULL "
+                "AND repliker_id IS NULL"
                 ") OR ("
                 "kind = 'project_custody' "
                 "AND project_id IS NOT NULL "
-                "AND user_id IS NULL"
+                "AND user_id IS NULL "
+                "AND repliker_id IS NULL"
                 ") OR ("
                 "kind IN "
                 "('platform_revenue', 'system_clearing') "
+                "AND user_id IS NULL "
+                "AND project_id IS NULL "
+                "AND repliker_id IS NULL"
+                ") OR ("
+                "kind = 'repliker_available' "
+                "AND repliker_id IS NOT NULL "
                 "AND user_id IS NULL "
                 "AND project_id IS NULL"
                 ")"
@@ -102,8 +103,12 @@ class LedgerAccount(Base):
             "kind",
             "currency",
         ),
+        Index(
+            "ix_ledger_account_repliker_currency",
+            "repliker_id",
+            "currency",
+        ),
     )
-
     id: Mapped[int] = mapped_column(
         primary_key=True,
         index=True,
@@ -146,6 +151,15 @@ class LedgerAccount(Base):
         index=True,
     )
 
+
+    repliker_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "replikers.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=True,
+    )
+
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -184,16 +198,7 @@ class LedgerTransaction(Base):
         ),
         CheckConstraint(
             (
-                "transaction_type IN ("
-                "'funding', "
-                "'allocation', "
-                "'earning', "
-                "'commission', "
-                "'refund', "
-                "'withdrawal', "
-                "'reversal', "
-                "'adjustment'"
-                ")"
+                "transaction_type IN ('funding', 'allocation', 'earning', 'commission', 'refund', 'withdrawal', 'reversal', 'adjustment', 'world_initial_grant', 'world_agent_transfer')"
             ),
             name="ck_ledger_transaction_type",
         ),

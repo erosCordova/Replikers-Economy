@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 from app.database.url import (
@@ -34,12 +35,13 @@ def build_engine() -> Engine:
         ] = False
 
     else:
+        # PostgreSQL remoto usa conexiones
+        # de vida corta. Esto evita que cada
+        # instancia local de Uvicorn reserve
+        # varias sesiones del pool de Supabase.
         engine_kwargs[
-            "pool_recycle"
-        ] = (
-            settings
-            .DB_POOL_RECYCLE_SECONDS
-        )
+            "poolclass"
+        ] = NullPool
 
     return create_engine(
         DATABASE_URL,

@@ -14,6 +14,9 @@ from app.agentic.model import (
     AgenticConfigurationError,
     get_chat_model,
 )
+from app.agentic.provider_retry import (
+    invoke_with_transient_retry,
+)
 from app.schemas.qa_ai import (
     QAReviewDecisionAI,
 )
@@ -55,7 +58,16 @@ REGLAS OBLIGATORIAS:
 17. evidence_summary debe describir la evidencia utilizada.
 18. No confies en afirmaciones del Repliker si no estan
     respaldadas por evidencia.
-19. Devuelve exclusivamente el resultado solicitado en JSON.
+19. Una prueba que reimplemente dentro del propio test
+    la API, base de datos, frontend o logica que pretende
+    validar NO es evidencia del entregable real.
+20. Para aceptar evidencia de pruebas, comprueba que esas
+    pruebas importen, llamen o ejecuten artefactos reales
+    del workspace.
+21. Si la prueba solo valida mocks o implementaciones
+    sustitutas creadas dentro del test, usa needs_review
+    o failed segun corresponda.
+22. Devuelve exclusivamente el resultado solicitado en JSON.
 """.strip()
 
 
@@ -198,8 +210,14 @@ def evaluate_qa_context(
     )
 
     try:
-        response = model.invoke(
-            messages
+        response = (
+            invoke_with_transient_retry(
+                lambda: model.invoke(
+                    messages
+                ),
+                max_attempts=5,
+                base_delay_seconds=2.0,
+            )
         )
 
     except Exception as exc:
@@ -248,17 +266,25 @@ def evaluate_qa_context(
         )
 
         try:
-            repair_response = model.invoke(
-                [
-                    SystemMessage(
-                        content=
-                            SYSTEM_INSTRUCTION
+            repair_messages = [
+                SystemMessage(
+                    content=
+                        SYSTEM_INSTRUCTION
+                ),
+                HumanMessage(
+                    content=
+                        repair_prompt
+                ),
+            ]
+
+            repair_response = (
+                invoke_with_transient_retry(
+                    lambda: model.invoke(
+                        repair_messages
                     ),
-                    HumanMessage(
-                        content=
-                            repair_prompt
-                    ),
-                ]
+                    max_attempts=5,
+                    base_delay_seconds=2.0,
+                )
             )
 
             repaired_text = (

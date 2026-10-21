@@ -24,6 +24,12 @@ from app.models.project_specialist import (
 from app.services.workspace_service import (
     read_durable_artifact_bytes,
 )
+from app.services.project_integration_service import (
+    DELIVERY_PREFIX,
+    INTEGRATION_MARKER_PATH,
+    ProjectIntegrationError,
+    validate_delivery_paths,
+)
 
 
 class DeliverySnapshotError(
@@ -111,6 +117,20 @@ def _archive_path(
         .replace("\\", "/")
         .lstrip("/")
     )
+
+    if relative.startswith(
+        DELIVERY_PREFIX
+    ):
+        visible = relative[
+            len(DELIVERY_PREFIX):
+        ]
+
+        if not visible:
+            raise DeliverySnapshotError(
+                "Ruta integrada vacia."
+            )
+
+        return visible
 
     return (
         f"tarea-{workspace.task_id}/"
@@ -335,6 +355,63 @@ def ensure_delivery_snapshot(
 
     else:
         artifacts = []
+
+    marker_rows = [
+        artifact
+        for artifact in artifacts
+        if artifact.relative_path
+        == INTEGRATION_MARKER_PATH
+    ]
+
+    if not marker_rows:
+        raise DeliverySnapshotError(
+            "No existe una entrega final "
+            "integrada del proyecto."
+        )
+
+    marker = max(
+        marker_rows,
+        key=lambda item: item.id,
+    )
+
+    integration_workspace = (
+        workspace_by_id.get(
+            marker.workspace_id
+        )
+    )
+
+    if integration_workspace is None:
+        raise DeliverySnapshotError(
+            "El workspace de integracion "
+            "no existe."
+        )
+
+    artifacts = [
+        artifact
+        for artifact in artifacts
+        if (
+            artifact.workspace_id
+            == integration_workspace.id
+            and artifact.relative_path
+            .startswith(
+                DELIVERY_PREFIX
+            )
+        )
+    ]
+
+    try:
+        validate_delivery_paths(
+            [
+                artifact.relative_path
+                for artifact
+                in artifacts
+            ]
+        )
+
+    except ProjectIntegrationError as exc:
+        raise DeliverySnapshotError(
+            str(exc)
+        ) from exc
 
     # ---------------------------------------------------------
     # IMPORTANTE:

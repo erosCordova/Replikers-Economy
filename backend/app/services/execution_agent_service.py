@@ -21,6 +21,7 @@ from app.agentic.execution_state import (
 )
 from app.agentic.provider_retry import (
     invoke_with_transient_retry,
+    is_transient_provider_error,
 )
 from app.models.contract import (
     ACTIVE_CONTRACT_STATUSES,
@@ -564,10 +565,106 @@ def execute_contract_once(
         )
 
     except Exception as exc:
+        error_text = str(
+            exc
+        )[:4000]
+
+        # El modelo puede interrumpirse despues
+        # de haber usado correctamente las tools.
+        # No debemos perder esos artifacts reales
+        # solamente porque el ultimo turno del
+        # proveedor termino con un 503/429 temporal.
+        recovered_artifacts = (
+            _changed_artifacts(
+                db=db,
+                workspace_id=
+                    workspace.id,
+                before=
+                    baseline,
+            )
+        )
+
+        recovered_count = len(
+            recovered_artifacts
+        )
+
+        transient_failure = (
+            is_transient_provider_error(
+                exc
+            )
+        )
+
+        if (
+            transient_failure
+            and recovered_count > 0
+        ):
+            log_tool_execution(
+                db=db,
+                workspace=
+                    workspace,
+                actor_repliker_id=
+                    repliker.id,
+                tool_name=
+                    "execution_agent_run",
+                status=
+                    "completed",
+                input_summary=(
+                    instruction[:2000]
+                ),
+                output_summary=(
+                    f"{recovered_count} "
+                    "artifact(s) reales fueron "
+                    "preservados despues de una "
+                    "interrupcion temporal del "
+                    "proveedor. La entrega pasa "
+                    "a QA para validacion."
+                ),
+                error_summary=(
+                    error_text
+                ),
+            )
+
+            db.commit()
+
+            return {
+                "project_id":
+                    contract.project_id,
+                "task_id":
+                    task.id,
+                "repliker_id":
+                    repliker.id,
+                "workspace_id":
+                    workspace.id,
+                "status":
+                    "completed",
+                "response_text":
+                    "",
+                "error":
+                    "",
+                "artifact_count":
+                    recovered_count,
+                "artifacts":
+                    recovered_artifacts,
+                "integration_verified":
+                    False,
+                "trace": [
+                    *trace,
+                    (
+                        "El proveedor IA sufrio "
+                        "una interrupcion temporal "
+                        "despues de producir trabajo. "
+                        "Los artifacts fueron "
+                        "preservados y enviados a QA."
+                    ),
+                ],
+            }
+
         log_tool_execution(
             db=db,
             workspace=
                 workspace,
+            actor_repliker_id=
+                repliker.id,
             tool_name=
                 "execution_agent_run",
             status=
@@ -576,7 +673,7 @@ def execute_contract_once(
                 instruction[:2000]
             ),
             error_summary=(
-                str(exc)[:4000]
+                error_text
             ),
         )
 
@@ -596,11 +693,13 @@ def execute_contract_once(
             "response_text":
                 "",
             "error":
-                str(exc)[:4000],
+                error_text,
             "artifact_count":
-                0,
+                recovered_count,
             "artifacts":
-                [],
+                recovered_artifacts,
+            "integration_verified":
+                False,
             "trace": [
                 *trace,
                 (

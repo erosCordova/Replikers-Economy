@@ -152,7 +152,10 @@ def _contract_specialists(
             TaskContract.project_id
             == project_id,
             TaskContract.status.in_(
-                ACTIVE_CONTRACT_STATUSES
+                (
+                    *ACTIVE_CONTRACT_STATUSES,
+                    "completed",
+                )
             ),
             Repliker.is_active
             .is_(True),
@@ -532,7 +535,10 @@ def enforce_project_specialist_gate(
                 TaskContract.project_id
                 == project.id,
                 TaskContract.status.in_(
-                    ACTIVE_CONTRACT_STATUSES
+                    (
+                        *ACTIVE_CONTRACT_STATUSES,
+                        "completed",
+                    )
                 ),
             )
         )

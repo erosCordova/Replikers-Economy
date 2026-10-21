@@ -22,6 +22,9 @@ from app.agentic.project_graph import (
 )
 from app.database.base import Base
 from app.models.project import Project
+from app.models.execution import (
+    ProjectDeliverySnapshot,
+)
 from app.models.project_specialist import (
     ProjectFinalReview,
     ProjectSpecialistOffer,
@@ -391,7 +394,7 @@ class Phase13A210FinalReviewGateTests(
 
         economy.assert_not_called()
 
-    def test_approved_review_allows_completion(
+    def test_approved_review_without_snapshot_does_not_complete(
         self,
     ):
         project, requirement = (
@@ -411,7 +414,7 @@ class Phase13A210FinalReviewGateTests(
             score=98,
             summary=(
                 "Proyecto aprobado "
-                "para entrega."
+                "por Vera."
             ),
             completed_at=datetime.now(
                 timezone.utc
@@ -431,12 +434,110 @@ class Phase13A210FinalReviewGateTests(
             result = (
                 finalize_project_if_ready(
                     db=self.db,
-                    project_id=project.id,
+                    project_id=
+                        project.id,
+                )
+            )
+
+        self.assertFalse(
+            result["completed"]
+        )
+
+        self.assertFalse(
+            result[
+                "delivery_snapshot_ready"
+            ]
+        )
+
+        self.assertEqual(
+            result[
+                "final_review_id"
+            ],
+            review.id,
+        )
+
+        self.assertEqual(
+            project.status,
+            "awaiting_final_review",
+        )
+
+        economy.assert_not_called()
+
+    def test_approved_review_with_snapshot_allows_completion(
+        self,
+    ):
+        project, requirement = (
+            self.create_project(
+                with_final_gate=True
+            )
+        )
+
+        review = ProjectFinalReview(
+            project_id=project.id,
+            requirement_id=
+                requirement.id,
+            reviewer_repliker_id=
+                self.vera.id,
+            attempt_number=1,
+            status="approved",
+            score=100,
+            summary=(
+                "Proyecto integrado "
+                "y aprobado."
+            ),
+            completed_at=datetime.now(
+                timezone.utc
+            ),
+        )
+
+        self.db.add(
+            review
+        )
+
+        self.db.flush()
+
+        snapshot = (
+            ProjectDeliverySnapshot(
+                project_id=
+                    project.id,
+                final_review_id=
+                    review.id,
+                review_attempt=1,
+                version_label="v1.0",
+                files_count=3,
+                total_size_bytes=256,
+                package_sha256=(
+                    "a" * 64
+                ),
+            )
+        )
+
+        self.db.add(
+            snapshot
+        )
+
+        self.db.commit()
+
+        with patch(
+            f"{LIFECYCLE_MODULE}."
+            "finalize_project_economy"
+        ) as economy:
+            result = (
+                finalize_project_if_ready(
+                    db=self.db,
+                    project_id=
+                        project.id,
                 )
             )
 
         self.assertTrue(
             result["completed"]
+        )
+
+        self.assertTrue(
+            result[
+                "delivery_snapshot_ready"
+            ]
         )
 
         self.assertEqual(

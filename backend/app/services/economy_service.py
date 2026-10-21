@@ -111,6 +111,7 @@ def _account_key(
     currency: str,
     user_id: int | None,
     project_id: int | None,
+    repliker_id: int | None = None,
 ) -> str:
     if kind == "user_available":
         return (
@@ -142,6 +143,12 @@ def _account_key(
             f"{currency}"
         )
 
+    if kind == "repliker_available":
+        return (
+            f"repliker:{repliker_id}:"
+            f"available:{currency}"
+        )
+
     raise EconomyError(
         "Tipo de cuenta desconocido."
     )
@@ -170,6 +177,7 @@ def ensure_account(
     currency: str,
     user_id: int | None = None,
     project_id: int | None = None,
+    repliker_id: int | None = None,
 ) -> LedgerAccount:
     if (
         kind
@@ -190,6 +198,7 @@ def ensure_account(
         if (
             user_id is None
             or project_id is not None
+            or repliker_id is not None
         ):
             raise EconomyError(
                 "La cuenta de usuario "
@@ -211,6 +220,7 @@ def ensure_account(
         if (
             project_id is None
             or user_id is not None
+            or repliker_id is not None
         ):
             raise EconomyError(
                 "La cuenta de custodia "
@@ -238,10 +248,37 @@ def ensure_account(
                 "no coincide con el proyecto."
             )
 
+
+    elif kind == "repliker_available":
+        ensure_simulation_mode()
+
+        if (
+            repliker_id is None
+            or user_id is not None
+            or project_id is not None
+        ):
+            raise EconomyError(
+                "La billetera requiere un Repliker valido."
+            )
+
+        if currency != "RCR":
+            raise EconomyError(
+                "Las billeteras de Replikers World "
+                "solo admiten creditos RCR."
+            )
+
+        from app.models.repliker import Repliker
+
+        if db.get(Repliker, repliker_id) is None:
+            raise EconomyError(
+                "Repliker no encontrado."
+            )
+
     else:
         if (
             user_id is not None
             or project_id is not None
+            or repliker_id is not None
         ):
             raise EconomyError(
                 "La cuenta de sistema "
@@ -253,6 +290,7 @@ def ensure_account(
         currency=currency,
         user_id=user_id,
         project_id=project_id,
+        repliker_id=repliker_id,
     )
 
     existing = db.scalar(
@@ -275,6 +313,7 @@ def ensure_account(
         currency=currency,
         user_id=user_id,
         project_id=project_id,
+        repliker_id=repliker_id,
         is_active=True,
     )
 

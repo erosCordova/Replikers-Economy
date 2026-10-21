@@ -1,22 +1,30 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
+} from 'react'
+
+import type {
+  CSSProperties,
 } from 'react'
 
 import {
   Activity,
+  AlertTriangle,
+  ArrowLeft,
   CheckCircle2,
   CircleDollarSign,
-  ClipboardCheck,
   Clock3,
-  Download,
+  FileCheck2,
+  FolderKanban,
   ListChecks,
-  LoaderCircle,
   PackageCheck,
   RefreshCw,
+  ShieldCheck,
   Users,
-  X,
+  WalletCards,
+  XCircle,
 } from 'lucide-react'
 
 import axios from 'axios'
@@ -88,37 +96,21 @@ interface TrackingDeliveryFile {
   media_type: string
   size_bytes: number
   sha256: string
-  download_url: string
 }
 
 
 interface TrackingDeliveryVersion {
   version: string
-
   review_id: number
   review_attempt: number
-
   score: number | null
   summary: string
-
-  vera_completed_at:
-    string | null
-
+  vera_completed_at: string | null
   client_decision: string
   client_comment: string
-
-  client_decided_at:
-    string | null
-
+  client_decided_at: string | null
   status: string
   is_current: boolean
-
-  snapshot_ready: boolean
-  files_count: number
-  total_size_bytes: number
-
-  package_sha256: string | null
-  package_url: string | null
 }
 
 
@@ -191,22 +183,16 @@ interface ProjectTracking {
   delivery: {
     version: string
     review_attempt: number | null
-
     versions_total: number
     history: TrackingDeliveryVersion[]
-
     ready: boolean
     technical_ready: boolean
     status: string
-
     client_decision: string
     client_comment: string
-    client_decision_review_attempt:
-      number | null
-    client_decided_at:
-      string | null
+    client_decision_review_attempt: number | null
+    client_decided_at: string | null
     client_action_required: boolean
-
     vera_approved: boolean
     vera_status: string
     corrections_requested: number
@@ -222,18 +208,25 @@ interface ProjectTracking {
 
 type Tab =
   | 'summary'
-  | 'progress'
-  | 'activity'
-  | 'tests'
+  | 'project'
+  | 'tasks'
   | 'team'
-  | 'budget'
+  | 'tests'
   | 'delivery'
+  | 'budget'
 
 
 interface Props {
   projectId: number
   projectTitle: string
   onClose: () => void
+}
+
+
+interface PhaseItem {
+  id: string
+  label: string
+  progress: number
 }
 
 
@@ -246,109 +239,106 @@ const tabs: Array<{
     label: 'Resumen',
   },
   {
-    id: 'progress',
-    label: 'Avance',
+    id: 'project',
+    label: 'Proyecto',
   },
   {
-    id: 'activity',
-    label: 'Actividad',
-  },
-  {
-    id: 'tests',
-    label: 'Pruebas',
+    id: 'tasks',
+    label: 'Tareas',
   },
   {
     id: 'team',
     label: 'Equipo',
   },
   {
-    id: 'budget',
-    label: 'Presupuesto',
+    id: 'tests',
+    label: 'QA',
   },
   {
     id: 'delivery',
-    label: 'Entrega',
+    label: 'Entregas',
+  },
+  {
+    id: 'budget',
+    label: 'Economía',
   },
 ]
 
 
-const progressLabels: Record<
-  string,
-  string
-> = {
-  planning:
-    'Planificación',
+const statusLabels:
+  Record<string, string> = {
+    draft:
+      'Borrador',
 
-  contracting:
-    'Contratación',
+    planned:
+      'Planificada',
 
-  execution:
-    'Ejecución',
+    planning:
+      'Planificando',
 
-  qa:
-    'Pruebas',
+    pending:
+      'Pendiente',
 
-  final_review:
-    'Revisión final',
-}
+    assigned:
+      'Asignada',
 
+    active:
+      'Activa',
 
-const statusLabels: Record<
-  string,
-  string
-> = {
-  draft:
-    'Borrador',
+    contracted:
+      'Contratada',
 
-  planned:
-    'Planificado',
+    executing:
+      'En desarrollo',
 
-  pending:
-    'Pendiente',
+    running:
+      'En desarrollo',
 
-  active:
-    'Activo',
+    completed:
+      'Completada',
 
-  executing:
-    'En ejecución',
+    prepared:
+      'Preparada',
 
-  running:
-    'En ejecución',
+    passed:
+      'Aprobada',
 
-  completed:
-    'Completado',
+    approved:
+      'Aprobada',
 
-  prepared:
-    'Preparado',
+    failed:
+      'Fallida',
 
-  passed:
-    'Aprobado',
+    needs_review:
+      'En revisión',
 
-  approved:
-    'Aprobado',
+    corrections_requested:
+      'Correcciones solicitadas',
 
-  failed:
-    'Fallido',
+    correcting:
+      'En corrección',
 
-  needs_review:
-    'Requiere revisión',
+    awaiting_final_review:
+      'Esperando a Vera',
 
-  corrections_requested:
-    'Correcciones solicitadas',
+    unpaid:
+      'Sin financiar',
 
-  correcting:
-    'En corrección',
+    partially_funded:
+      'Financiado parcialmente',
 
-  unpaid:
-    'Sin financiar',
+    funded:
+      'Financiado',
 
-  partially_funded:
-    'Financiado parcialmente',
+    escrowed:
+      'Financiado',
 
-  escrowed:
-    'Financiado',
-}
+    paid:
+      'Pagado',
 
+    settled:
+      'Liquidado',
+  }
 
 
 function specialtyLabel(
@@ -360,67 +350,136 @@ function specialtyLabel(
         'Generalista',
 
       'Product / Requirements':
-        'Producto y Requisitos',
+        'Producto y requisitos',
 
       'Software Architect':
-        'Arquitecto de Software',
+        'Arquitectura de software',
 
       'UX Research':
-        'Investigación de Experiencia de Usuario',
+        'Investigación UX',
 
       'UI Designer':
-        'Diseñador de Interfaz',
+        'Diseño de interfaz',
 
       'Frontend Developer':
-        'Desarrollador de Interfaz',
+        'Frontend',
 
       'Backend Developer':
-        'Desarrollador de Servidor',
+        'Backend',
 
       'Database Engineer':
-        'Ingeniero de Base de Datos',
+        'Base de datos',
 
       'Integration Specialist':
-        'Especialista en Integraciones',
+        'Integraciones',
 
       'Security Engineer':
-        'Ingeniero de Seguridad',
+        'Seguridad',
 
       'QA Engineer':
-        'Ingeniero de Pruebas',
+        'QA y pruebas',
 
       'DevOps Engineer':
-        'Ingeniero de Operaciones y Despliegue',
+        'DevOps',
 
       'Accessibility Specialist':
-        'Especialista en Accesibilidad',
+        'Accesibilidad',
 
       'SEO/Performance Specialist':
-        'Especialista en Posicionamiento y Rendimiento',
+        'SEO y rendimiento',
 
       'Content/Copy Specialist':
-        'Especialista en Contenido',
+        'Contenido',
 
       'Final Reviewer':
-        'Revisor Final',
+        'Revisión final',
     }
 
   return (
     labels[value]
+    ?? value
     ?? 'Especialista'
   )
 }
 
 
 function statusLabel(
-  value: string,
+  value?: string | null,
 ) {
+  if (!value) {
+    return 'Pendiente'
+  }
+
   return (
     statusLabels[
-      value.toLowerCase()
+      value
+        .trim()
+        .toLowerCase()
     ]
-    ?? 'En proceso'
+    ?? value
   )
+}
+
+
+function statusTone(
+  value?: string | null,
+) {
+  const status =
+    (
+      value
+      ?? ''
+    )
+      .toLowerCase()
+
+  if (
+    [
+      'completed',
+      'passed',
+      'approved',
+      'active',
+      'paid',
+      'settled',
+    ].includes(status)
+  ) {
+    return 'success'
+  }
+
+  if (
+    [
+      'failed',
+      'blocked',
+      'cancelled',
+      'canceled',
+    ].includes(status)
+  ) {
+    return 'danger'
+  }
+
+  if (
+    [
+      'needs_review',
+      'corrections_requested',
+      'correcting',
+      'awaiting_final_review',
+    ].includes(status)
+  ) {
+    return 'warning'
+  }
+
+  if (
+    [
+      'running',
+      'executing',
+      'assigned',
+      'contracted',
+      'prepared',
+      'planning',
+    ].includes(status)
+  ) {
+    return 'info'
+  }
+
+  return 'muted'
 }
 
 
@@ -428,7 +487,10 @@ function money(
   cents: number | null,
   currency: string,
 ) {
-  if (cents === null) {
+  if (
+    cents === null
+    || cents === undefined
+  ) {
     return 'No definido'
   }
 
@@ -436,7 +498,8 @@ function money(
     'es-PE',
     {
       style: 'currency',
-      currency,
+      currency:
+        currency || 'PEN',
     },
   ).format(
     cents / 100,
@@ -444,9 +507,28 @@ function money(
 }
 
 
-function dateLabel(
-  value: string,
+function percent(
+  value: number,
 ) {
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        value,
+      ),
+    ),
+  )
+}
+
+
+function dateLabel(
+  value?: string | null,
+) {
+  if (!value) {
+    return 'Pendiente'
+  }
+
   const date =
     new Date(value)
 
@@ -461,42 +543,71 @@ function dateLabel(
   return new Intl.DateTimeFormat(
     'es-PE',
     {
-      dateStyle: 'short',
+      dateStyle: 'medium',
       timeStyle: 'short',
     },
   ).format(date)
 }
 
 
-function fileSizeLabel(
-  bytes: number,
+function relativeDate(
+  value: string,
 ) {
-  if (bytes < 1024) {
-    return `${bytes} B`
+  const date =
+    new Date(value)
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return ''
   }
 
-  const kilobytes =
-    bytes / 1024
+  const diff =
+    Date.now()
+    - date.getTime()
 
-  if (kilobytes < 1024) {
+  const minutes =
+    Math.floor(
+      diff
+      / 60000,
+    )
+
+  if (
+    minutes < 60
+  ) {
     return (
-      `${kilobytes.toFixed(
-        kilobytes >= 10
-          ? 0
-          : 1,
-      )} KB`
+      minutes <= 1
+        ? 'hace un momento'
+        : `hace ${minutes} min`
     )
   }
 
-  const megabytes =
-    kilobytes / 1024
+  const hours =
+    Math.floor(
+      minutes / 60,
+    )
+
+  if (
+    hours < 24
+  ) {
+    return (
+      hours === 1
+        ? 'hace 1 hora'
+        : `hace ${hours} horas`
+    )
+  }
+
+  const days =
+    Math.floor(
+      hours / 24,
+    )
 
   return (
-    `${megabytes.toFixed(
-      megabytes >= 10
-        ? 0
-        : 1,
-    )} MB`
+    days === 1
+      ? 'hace 1 día'
+      : `hace ${days} días`
   )
 }
 
@@ -505,13 +616,19 @@ function errorMessage(
   error: unknown,
 ) {
   if (
-    axios.isAxiosError(error)
+    axios.isAxiosError(
+      error,
+    )
   ) {
     const detail =
-      error.response?.data?.detail
+      error
+        .response
+        ?.data
+        ?.detail
 
     if (
-      typeof detail === 'string'
+      typeof detail
+      === 'string'
     ) {
       return detail
     }
@@ -519,8 +636,148 @@ function errorMessage(
 
   return (
     'No se pudo cargar '
-    + 'el seguimiento del proyecto.'
+    + 'el proyecto.'
   )
+}
+
+
+function incidentTone(
+  severity: string,
+) {
+  const value =
+    severity
+      .toLowerCase()
+
+  if (
+    value.includes('high')
+    || value.includes('alta')
+    || value.includes('critical')
+    || value.includes('crítica')
+  ) {
+    return 'danger'
+  }
+
+  if (
+    value.includes('medium')
+    || value.includes('media')
+  ) {
+    return 'warning'
+  }
+
+  return 'info'
+}
+
+
+function phaseState(
+  phase: PhaseItem,
+  currentStage: string,
+) {
+  if (
+    phase.progress >= 1
+  ) {
+    return 'completed'
+  }
+
+  if (
+    phase.id === currentStage
+    || (
+      phase.progress > 0
+      && phase.progress < 1
+    )
+  ) {
+    return 'active'
+  }
+
+  return 'pending'
+}
+
+
+function phaseIcon(
+  state: string,
+) {
+  if (
+    state === 'completed'
+  ) {
+    return (
+      <CheckCircle2
+        size={18}
+      />
+    )
+  }
+
+  if (
+    state === 'active'
+  ) {
+    return (
+      <Activity
+        size={17}
+      />
+    )
+  }
+
+  return (
+    <span className="project-phase-dot" />
+  )
+}
+
+
+function tabIcon(
+  tab: Tab,
+) {
+  const props = {
+    size: 17,
+  }
+
+  switch (tab) {
+    case 'summary':
+      return (
+        <FolderKanban
+          {...props}
+        />
+      )
+
+    case 'project':
+      return (
+        <Activity
+          {...props}
+        />
+      )
+
+    case 'tasks':
+      return (
+        <ListChecks
+          {...props}
+        />
+      )
+
+    case 'team':
+      return (
+        <Users
+          {...props}
+        />
+      )
+
+    case 'tests':
+      return (
+        <ShieldCheck
+          {...props}
+        />
+      )
+
+    case 'delivery':
+      return (
+        <PackageCheck
+          {...props}
+        />
+      )
+
+    case 'budget':
+      return (
+        <WalletCards
+          {...props}
+        />
+      )
+  }
 }
 
 
@@ -532,7 +789,9 @@ export default function SeguimientoProyecto({
   const [
     tab,
     setTab,
-  ] = useState<Tab>('summary')
+  ] = useState<Tab>(
+    'summary',
+  )
 
   const [
     tracking,
@@ -571,16 +830,6 @@ export default function SeguimientoProyecto({
     setDecisionSuccess,
   ] = useState('')
 
-  const [
-    downloadingKey,
-    setDownloadingKey,
-  ] = useState('')
-
-  const [
-    downloadError,
-    setDownloadError,
-  ] = useState('')
-
 
   const loadTracking =
     useCallback(
@@ -602,7 +851,9 @@ export default function SeguimientoProyecto({
           setTracking(
             response.data,
           )
-        } catch (requestError) {
+        } catch (
+          requestError
+        ) {
           setError(
             errorMessage(
               requestError,
@@ -627,7 +878,9 @@ export default function SeguimientoProyecto({
       const interval =
         window.setInterval(
           () => {
-            void loadTracking(true)
+            void loadTracking(
+              true,
+            )
           },
           15000,
         )
@@ -644,125 +897,6 @@ export default function SeguimientoProyecto({
   )
 
 
-  async function downloadProtectedFile(
-    url: string,
-    fallbackName: string,
-    key: string,
-  ) {
-    if (!url) {
-      return
-    }
-
-    setDownloadingKey(
-      key,
-    )
-
-    setDownloadError('')
-
-    try {
-      const response =
-        await api.get<Blob>(
-          url,
-          {
-            responseType: 'blob',
-          },
-        )
-
-      let filename =
-        fallbackName
-
-      const disposition =
-        response.headers[
-          'content-disposition'
-        ]
-
-      if (
-        typeof disposition
-        === 'string'
-      ) {
-        const encodedMatch =
-          disposition.match(
-            /filename\*=UTF-8''([^;]+)/i,
-          )
-
-        const regularMatch =
-          disposition.match(
-            /filename="?([^";]+)"?/i,
-          )
-
-        if (
-          encodedMatch?.[1]
-        ) {
-          try {
-            filename =
-              decodeURIComponent(
-                encodedMatch[1],
-              )
-          } catch {
-            filename =
-              encodedMatch[1]
-          }
-
-        } else if (
-          regularMatch?.[1]
-        ) {
-          filename =
-            regularMatch[1].trim()
-        }
-      }
-
-      const blob =
-        response.data instanceof Blob
-          ? response.data
-          : new Blob([
-              response.data,
-            ])
-
-      const objectUrl =
-        URL.createObjectURL(
-          blob,
-        )
-
-      const link =
-        document.createElement(
-          'a',
-        )
-
-      link.href =
-        objectUrl
-
-      link.download =
-        filename
-
-      document.body.appendChild(
-        link,
-      )
-
-      link.click()
-      link.remove()
-
-      window.setTimeout(
-        () => {
-          URL.revokeObjectURL(
-            objectUrl,
-          )
-        },
-        1000,
-      )
-
-    } catch {
-      setDownloadError(
-        'No se pudo descargar el archivo. '
-        + 'Actualiza el seguimiento '
-        + 'e inténtalo nuevamente.',
-      )
-
-    } finally {
-      setDownloadingKey('')
-    }
-  }
-
-
   async function submitDecision(
     decision:
       | 'accepted'
@@ -777,13 +911,16 @@ export default function SeguimientoProyecto({
       && comment.length < 5
     ) {
       setDecisionError(
-        'Describe qué deseas corregir.',
+        'Describe claramente qué deseas corregir.',
       )
 
       return
     }
 
-    setSubmittingDecision(true)
+    setSubmittingDecision(
+      true,
+    )
+
     setDecisionError('')
     setDecisionSuccess('')
 
@@ -801,441 +938,941 @@ export default function SeguimientoProyecto({
       setDecisionSuccess(
         decision === 'accepted'
           ? 'Entrega aceptada correctamente.'
-          : 'Solicitud de corrección enviada a R00.',
+          : 'Solicitud de corrección enviada.',
       )
 
-      await loadTracking(true)
-    } catch (requestError) {
+      await loadTracking(
+        true,
+      )
+    } catch (
+      requestError
+    ) {
       setDecisionError(
         errorMessage(
           requestError,
         ),
       )
     } finally {
-      setSubmittingDecision(false)
+      setSubmittingDecision(
+        false,
+      )
     }
   }
 
 
+  const phases =
+    useMemo(
+      () => {
+        if (!tracking) {
+          return []
+        }
+
+        const marketProgress =
+          tracking
+            .progress_basis
+            .contracting > 0
+            ? 1
+            : tracking
+                .progress_basis
+                .planning >= 1
+              ? 0.4
+              : 0
+
+        return [
+          {
+            id:
+              'planning',
+            label:
+              'Planificación',
+            progress:
+              tracking
+                .progress_basis
+                .planning,
+          },
+          {
+            id:
+              'market',
+            label:
+              'Mercado',
+            progress:
+              marketProgress,
+          },
+          {
+            id:
+              'contracting',
+            label:
+              'Contratación',
+            progress:
+              tracking
+                .progress_basis
+                .contracting,
+          },
+          {
+            id:
+              'execution',
+            label:
+              'Ejecución',
+            progress:
+              tracking
+                .progress_basis
+                .execution,
+          },
+          {
+            id:
+              'qa',
+            label:
+              'QA',
+            progress:
+              tracking
+                .progress_basis
+                .qa,
+          },
+          {
+            id:
+              'final_review',
+            label:
+              'Vera',
+            progress:
+              tracking
+                .progress_basis
+                .final_review,
+          },
+          {
+            id:
+              'delivery',
+            label:
+              'Entrega',
+            progress:
+              tracking
+                .delivery
+                .ready
+                ? 1
+                : 0,
+          },
+        ] satisfies PhaseItem[]
+      },
+      [
+        tracking,
+      ],
+    )
+
+
+  if (
+    loading
+  ) {
+    return (
+      <section className="project-workspace-state">
+        <RefreshCw
+          size={28}
+          className="tracking-spin"
+        />
+
+        <h3>
+          Preparando espacio del proyecto
+        </h3>
+
+        <p>
+          Cargando información real del proyecto...
+        </p>
+      </section>
+    )
+  }
+
+
+  if (
+    error
+    || !tracking
+  ) {
+    return (
+      <section className="project-workspace-state error">
+        <AlertTriangle
+          size={30}
+        />
+
+        <h3>
+          No se pudo abrir el proyecto
+        </h3>
+
+        <p>
+          {error}
+        </p>
+
+        <button
+          type="button"
+          onClick={() =>
+            void loadTracking()
+          }
+        >
+          <RefreshCw
+            size={17}
+          />
+          Reintentar
+        </button>
+
+        <button
+          type="button"
+          className="secondary"
+          onClick={onClose}
+        >
+          <ArrowLeft
+            size={17}
+          />
+          Volver
+        </button>
+      </section>
+    )
+  }
+
+
+  const qaTotal =
+    Math.max(
+      tracking.qa.latest_reviews,
+      tracking.qa.passed
+      + tracking.qa.failed
+      + tracking.qa.pending,
+    )
+
+
+  const qaPercent =
+    qaTotal > 0
+      ? percent(
+          (
+            tracking.qa.passed
+            / qaTotal
+          )
+          * 100,
+        )
+      : 0
+
+
+  const budgetLimit =
+    tracking
+      .budget
+      .budget_limit_cents
+
+
+  const budgetPercent =
+    budgetLimit
+    && budgetLimit > 0
+      ? percent(
+          (
+            tracking
+              .budget
+              .contracted_cents
+            / budgetLimit
+          )
+          * 100,
+        )
+      : 0
+
+
+  const healthIsGood =
+    tracking
+      .report
+      .incidents_total === 0
+    && tracking
+      .qa
+      .failed === 0
+
+
+  const healthLabel =
+    healthIsGood
+      ? 'Saludable'
+      : tracking
+          .report
+          .incidents_total > 0
+        ? 'Requiere atención'
+        : 'En seguimiento'
+
+
+  const progressStyle = {
+    '--project-progress':
+      `${percent(
+        tracking.progress_percent,
+      )}%`,
+  } as CSSProperties
+
+
   return (
-    <div
-      className="tracking-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Seguimiento del proyecto"
-    >
-      <div className="tracking-window">
-        <header className="tracking-header">
-          <div>
-            <span className="tracking-kicker">
-              SEGUIMIENTO DEL PROYECTO
-            </span>
-
-            <h2>
-              {tracking?.project_title
-                ?? projectTitle}
-            </h2>
-
-            <p>
-              Información real del trabajo,
-              pruebas, equipo y presupuesto.
-            </p>
-          </div>
-
-          <div className="tracking-header-actions">
-            <button
-              type="button"
-              className="tracking-refresh"
-              onClick={() =>
-                void loadTracking()
-              }
-              aria-label="Actualizar seguimiento"
-            >
-              <RefreshCw
-                size={18}
-              />
-            </button>
-
-            <button
-              type="button"
-              className="tracking-close"
-              onClick={onClose}
-              aria-label="Cerrar seguimiento"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </header>
-
-        {loading && (
-          <div className="tracking-loading">
-            <RefreshCw
-              size={24}
-              className="tracking-spin"
+    <section className="project-workspace">
+      <header className="project-workspace-header">
+        <div>
+          <button
+            type="button"
+            className="project-back"
+            onClick={onClose}
+          >
+            <ArrowLeft
+              size={17}
             />
+            Proyectos
+          </button>
 
-            Cargando seguimiento...
+          <div className="project-title-row">
+            <div>
+              <span className="project-overline">
+                PROYECTO #{tracking.project_id}
+              </span>
+
+              <h1>
+                {
+                  tracking.project_title
+                  || projectTitle
+                }
+              </h1>
+            </div>
+
+            <span
+              className={
+                `project-status-main `
+                + statusTone(
+                  tracking.project_status,
+                )
+              }
+            >
+              <span />
+              {statusLabel(
+                tracking.project_status,
+              )}
+            </span>
           </div>
-        )}
+        </div>
 
-        {!loading && error && (
-          <div className="tracking-error">
-            {error}
-          </div>
-        )}
+        <button
+          type="button"
+          className="project-refresh"
+          onClick={() =>
+            void loadTracking()
+          }
+        >
+          <RefreshCw
+            size={17}
+          />
+          Actualizar
+        </button>
+      </header>
 
-        {!loading
-        && !error
-        && tracking && (
-          <>
-            <section className="tracking-progress-hero">
-              <div className="tracking-percentage">
+
+      <section className="project-overview-grid">
+        <article className="project-card project-progress-card">
+          <span className="project-card-label">
+            Progreso del proyecto
+          </span>
+
+          <div className="project-progress-content">
+            <div
+              className="project-progress-ring"
+              style={progressStyle}
+            >
+              <div>
                 <strong>
                   {tracking.progress_percent}%
                 </strong>
 
                 <span>
-                  avance real
+                  completado
                 </span>
               </div>
+            </div>
 
-              <div className="tracking-progress-copy">
-                <div className="tracking-stage-row">
-                  <span>
-                    Etapa actual
-                  </span>
+            <div className="project-progress-details">
+              <div>
+                <span className="legend-dot cyan" />
+                <span>
+                  Tareas completadas
+                </span>
 
-                  <strong>
-                    {tracking.stage_label}
-                  </strong>
-                </div>
-
-                <div className="tracking-main-bar">
-                  <div
-                    style={{
-                      width:
-                        `${tracking.progress_percent}%`,
-                    }}
-                  />
-                </div>
-
-                <p>
-                  {tracking.next_action}
-                </p>
+                <strong>
+                  {
+                    tracking.tasks.completed
+                  }
+                  /
+                  {
+                    tracking.tasks.total
+                  }
+                </strong>
               </div>
-            </section>
 
-            <nav className="tracking-tabs">
-              {tabs.map(
-                (item) => (
-                  <button
-                    key={item.id}
-                    type="button"
+              <div>
+                <span className="legend-dot violet" />
+                <span>
+                  QA aprobadas
+                </span>
+
+                <strong>
+                  {
+                    tracking.qa.passed
+                  }
+                  /
+                  {
+                    qaTotal
+                  }
+                </strong>
+              </div>
+
+              <div>
+                <span className="legend-dot amber" />
+                <span>
+                  Archivos de entrega
+                </span>
+
+                <strong>
+                  {
+                    tracking.delivery
+                      .files_count
+                  }
+                </strong>
+              </div>
+            </div>
+          </div>
+        </article>
+
+
+        <article className="project-card project-stage-card">
+          <div className="project-card-heading">
+            <div>
+              <span className="project-card-label">
+                Etapa actual del proyecto
+              </span>
+
+              <h2>
+                {tracking.stage_label}
+              </h2>
+
+              <p>
+                {tracking.next_action}
+              </p>
+            </div>
+
+            <Activity
+              size={25}
+            />
+          </div>
+
+          <div className="project-stage-mini">
+            {phases.map(
+              (
+                phase,
+                index,
+              ) => {
+                const state =
+                  phaseState(
+                    phase,
+                    tracking.stage,
+                  )
+
+                return (
+                  <div
                     className={
-                      tab === item.id
-                        ? 'active'
-                        : ''
+                      `project-mini-phase ${state}`
                     }
-                    onClick={() =>
-                      setTab(
-                        item.id,
-                      )
-                    }
+                    key={phase.id}
                   >
-                    {item.label}
-                  </button>
-                ),
-              )}
-            </nav>
-
-            <div className="tracking-content">
-              {tab === 'summary' && (
-                <section className="tracking-summary">
-                  <div className="tracking-metric-grid">
-                    <article>
-                      <ListChecks
-                        size={21}
-                      />
-
-                      <span>
-                        Tareas
-                      </span>
-
-                      <strong>
-                        {
-                          tracking
-                            .tasks
-                            .completed
-                        }
-                        /
-                        {
-                          tracking
-                            .tasks
-                            .total
-                        }
-                      </strong>
-                    </article>
-
-                    <article>
-                      <ClipboardCheck
-                        size={21}
-                      />
-
-                      <span>
-                        Pruebas aprobadas
-                      </span>
-
-                      <strong>
-                        {
-                          tracking
-                            .qa
-                            .passed
-                        }
-                      </strong>
-                    </article>
-
-                    <article>
-                      <Users
-                        size={21}
-                      />
-
-                      <span>
-                        Equipo
-                      </span>
-
-                      <strong>
-                        {
-                          tracking
-                            .team
-                            .total
-                        }
-                      </strong>
-                    </article>
-
-                    <article>
-                      <CircleDollarSign
-                        size={21}
-                      />
-
-                      <span>
-                        Contratado
-                      </span>
-
-                      <strong>
-                        {money(
-                          tracking
-                            .budget
-                            .contracted_cents,
-                          tracking
-                            .budget
-                            .currency,
+                    <div className="project-mini-phase-top">
+                      <span className="project-mini-node">
+                        {phaseIcon(
+                          state,
                         )}
-                      </strong>
-                    </article>
-                  </div>
+                      </span>
 
-                  <article className="tracking-report-card">
+                      {index <
+                        phases.length
+                        - 1 && (
+                        <span className="project-mini-line" />
+                      )}
+                    </div>
+
+                    <strong>
+                      {phase.label}
+                    </strong>
+
+                    <small>
+                      {state === 'completed'
+                        ? 'Completada'
+                        : state === 'active'
+                          ? 'En curso'
+                          : 'Pendiente'}
+                    </small>
+                  </div>
+                )
+              },
+            )}
+          </div>
+        </article>
+
+
+        <article
+          className={
+            `project-card project-health-card ${
+              healthIsGood
+                ? 'healthy'
+                : 'attention'
+            }`
+          }
+        >
+          <div className="health-icon">
+            <Activity
+              size={26}
+            />
+          </div>
+
+          <span className="project-card-label">
+            Estado general
+          </span>
+
+          <h2>
+            {healthLabel}
+          </h2>
+
+          <p>
+            {
+              tracking.report.summary
+              || (
+                healthIsGood
+                  ? 'El proyecto avanza sin incidencias críticas.'
+                  : 'Existen elementos que requieren seguimiento.'
+              )
+            }
+          </p>
+        </article>
+      </section>
+
+
+      <section className="project-kpi-grid">
+        <article className="project-kpi blue">
+          <div>
+            <ListChecks
+              size={21}
+            />
+          </div>
+
+          <section>
+            <strong>
+              {tracking.tasks.completed}
+              /
+              {tracking.tasks.total}
+            </strong>
+
+            <span>
+              Tareas completadas
+            </span>
+
+            <div className="mini-progress">
+              <i
+                style={{
+                  width:
+                    tracking.tasks.total > 0
+                      ? `${
+                          percent(
+                            (
+                              tracking.tasks.completed
+                              / tracking.tasks.total
+                            )
+                            * 100,
+                          )
+                        }%`
+                      : '0%',
+                }}
+              />
+            </div>
+          </section>
+        </article>
+
+
+        <article className="project-kpi violet">
+          <div>
+            <ShieldCheck
+              size={21}
+            />
+          </div>
+
+          <section>
+            <strong>
+              {tracking.qa.passed}
+              /
+              {qaTotal}
+            </strong>
+
+            <span>
+              QA aprobadas
+            </span>
+
+            <div className="mini-progress">
+              <i
+                style={{
+                  width:
+                    `${qaPercent}%`,
+                }}
+              />
+            </div>
+          </section>
+        </article>
+
+
+        <article className="project-kpi amber">
+          <div>
+            <Users
+              size={21}
+            />
+          </div>
+
+          <section>
+            <strong>
+              {tracking.team.total}
+            </strong>
+
+            <span>
+              Replikers activos
+            </span>
+
+            <div className="project-avatar-stack">
+              {tracking
+                .team
+                .members
+                .slice(
+                  0,
+                  4,
+                )
+                .map(
+                  (
+                    member,
+                  ) => (
+                    <span
+                      key={
+                        member
+                          .repliker_id
+                      }
+                      title={
+                        member.name
+                      }
+                    >
+                      {
+                        member
+                          .name
+                          .slice(
+                            0,
+                            1,
+                          )
+                          .toUpperCase()
+                      }
+                    </span>
+                  ),
+                )}
+            </div>
+          </section>
+        </article>
+
+
+        <article className="project-kpi green">
+          <div>
+            <CircleDollarSign
+              size={21}
+            />
+          </div>
+
+          <section>
+            <strong>
+              {money(
+                tracking
+                  .budget
+                  .contracted_cents,
+                tracking
+                  .budget
+                  .currency,
+              )}
+            </strong>
+
+            <span>
+              Presupuesto contratado
+            </span>
+
+            <div className="mini-progress">
+              <i
+                style={{
+                  width:
+                    `${budgetPercent}%`,
+                }}
+              />
+            </div>
+          </section>
+        </article>
+      </section>
+
+
+      <nav className="project-tabs">
+        {tabs.map(
+          (
+            item,
+          ) => (
+            <button
+              type="button"
+              key={item.id}
+              className={
+                tab === item.id
+                  ? 'active'
+                  : ''
+              }
+              onClick={() =>
+                setTab(
+                  item.id,
+                )
+              }
+            >
+              {tabIcon(
+                item.id,
+              )}
+
+              {item.label}
+            </button>
+          ),
+        )}
+      </nav>
+
+
+      <div className="project-tab-content">
+        {tab === 'summary' && (
+          <>
+            <section className="project-summary-layout">
+              <article className="project-panel project-task-preview">
+                <div className="project-panel-heading">
+                  <div>
                     <span>
-                      REPORTE DEL PROYECTO
+                      TRABAJO DEL PROYECTO
                     </span>
 
                     <h3>
-                      {tracking.report.status ===
-                      'estable'
-                        ? 'Sin incidencias críticas'
-                        : 'Requiere atención'}
+                      Tareas
                     </h3>
+                  </div>
 
-                    <p>
-                      {tracking.report.summary}
-                    </p>
-
-                    <strong>
-                      {
-                        tracking.report
-                          .incidents_total
-                      }{' '}
-                      incidencia(s)
-                    </strong>
-                  </article>
-
-                  <article className="tracking-status-card">
-                    <div>
-                      <Activity
-                        size={22}
-                      />
-                    </div>
-
-                    <section>
-                      <span>
-                        ESTADO ACTUAL
-                      </span>
-
-                      <h3>
-                        {
-                          tracking
-                            .stage_label
-                        }
-                      </h3>
-
-                      <p>
-                        {
-                          tracking
-                            .next_action
-                        }
-                      </p>
-                    </section>
-                  </article>
-                </section>
-              )}
-
-              {tab === 'progress' && (
-                <section className="tracking-progress-section">
-                  <h3>
-                    Avance por etapa
-                  </h3>
-
-                  {Object.entries(
-                    tracking.progress_basis,
-                  ).map(
-                    (
-                      [
-                        key,
-                        value,
-                      ],
-                    ) => {
-                      const percent =
-                        Math.round(
-                          value
-                          * 100,
-                        )
-
-                      return (
-                        <div
-                          className="tracking-stage"
-                          key={key}
-                        >
-                          <div>
-                            <span>
-                              {
-                                progressLabels[
-                                  key
-                                ]
-                                ?? key
-                              }
-                            </span>
-
-                            <strong>
-                              {percent}%
-                            </strong>
-                          </div>
-
-                          <div className="tracking-stage-bar">
-                            <div
-                              style={{
-                                width:
-                                  `${percent}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTab(
+                        'tasks',
                       )
-                    },
-                  )}
+                    }
+                  >
+                    Ver todas
+                  </button>
+                </div>
 
-                  <div className="tracking-task-list">
-                    {tracking.tasks.items.map(
-                      (task) => (
+                <div className="project-task-table">
+                  <div className="project-task-table-head">
+                    <span>
+                      Tarea
+                    </span>
+
+                    <span>
+                      Especialidad
+                    </span>
+
+                    <span>
+                      Estado
+                    </span>
+
+                    <span>
+                      Presupuesto
+                    </span>
+                  </div>
+
+                  {tracking
+                    .tasks
+                    .items
+                    .slice(
+                      0,
+                      6,
+                    )
+                    .map(
+                      (
+                        task,
+                      ) => (
                         <article
-                          key={task.id}
+                          className="project-task-row"
+                          key={
+                            task.id
+                          }
                         >
                           <div>
-                            <strong>
-                              {task.title}
-                            </strong>
-
-                            <span>
-                              {specialtyLabel(task.required_specialty)}
+                            <span className="project-task-number">
+                              {String(
+                                task.id,
+                              ).padStart(
+                                2,
+                                '0',
+                              )}
                             </span>
+
+                            <strong>
+                              {
+                                task.title
+                              }
+                            </strong>
                           </div>
 
-                          <span className="tracking-status-pill">
+                          <span>
+                            {specialtyLabel(
+                              task.required_specialty,
+                            )}
+                          </span>
+
+                          <span
+                            className={
+                              `project-pill ${
+                                statusTone(
+                                  task.status,
+                                )
+                              }`
+                            }
+                          >
                             {statusLabel(
                               task.status,
                             )}
                           </span>
+
+                          <strong>
+                            {money(
+                              task.max_budget_cents,
+                              tracking
+                                .budget
+                                .currency,
+                            )}
+                          </strong>
                         </article>
                       ),
                     )}
-                  </div>
-                </section>
-              )}
+                </div>
+              </article>
 
-              {tab === 'activity' && (
-                <section className="tracking-activity-section">
-                  {tracking
-                    .recent_activity
-                    .length === 0 ? (
-                    <div className="tracking-empty">
-                      <Activity
-                        size={30}
-                      />
 
-                      Aún no hay actividad registrada.
+              <aside className="project-summary-side">
+                <article className="project-panel">
+                  <div className="project-panel-heading">
+                    <div>
+                      <span>
+                        EQUIPO
+                      </span>
+
+                      <h3>
+                        Replikers
+                      </h3>
                     </div>
-                  ) : (
-                    tracking
-                      .recent_activity
-                      .map(
-                        (event) => (
-                          <article
-                            key={
-                              event.id
-                            }
-                            className="tracking-activity-item"
-                          >
-                            <div className="tracking-activity-dot" />
 
-                            <section>
-                              <strong>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTab(
+                          'team',
+                        )
+                      }
+                    >
+                      Ver equipo
+                    </button>
+                  </div>
+
+                  <div className="project-team-preview">
+                    {tracking
+                      .team
+                      .members
+                      .length === 0 ? (
+                      <div className="project-empty-small">
+                        Aún no hay especialistas contratados.
+                      </div>
+                    ) : (
+                      tracking
+                        .team
+                        .members
+                        .slice(
+                          0,
+                          4,
+                        )
+                        .map(
+                          (
+                            member,
+                          ) => (
+                            <div
+                              key={
+                                member
+                                  .repliker_id
+                              }
+                            >
+                              <span className="project-person-avatar">
                                 {
-                                  event
-                                    .title
+                                  member
+                                    .name
+                                    .slice(
+                                      0,
+                                      1,
+                                    )
+                                    .toUpperCase()
                                 }
-                              </strong>
+                              </span>
 
-                              <p>
-                                {
-                                  event
-                                    .description
+                              <section>
+                                <strong>
+                                  {
+                                    member
+                                      .name
+                                  }
+                                </strong>
+
+                                <small>
+                                  {specialtyLabel(
+                                    member.specialty,
+                                  )}
+                                </small>
+                              </section>
+
+                              <span
+                                className={
+                                  `project-pill ${
+                                    statusTone(
+                                      member.status,
+                                    )
+                                  }`
                                 }
-                              </p>
-
-                              <span>
-                                {dateLabel(
-                                  event
-                                    .created_at,
+                              >
+                                {statusLabel(
+                                  member.status,
                                 )}
                               </span>
-                            </section>
-                          </article>
-                        ),
-                      )
-                  )}
-                </section>
-              )}
+                            </div>
+                          ),
+                        )
+                    )}
+                  </div>
+                </article>
 
-              {tab === 'tests' && (
-                <section className="tracking-tests-section">
-                  <div className="tracking-metric-grid">
-                    <article>
-                      <CheckCircle2
-                        size={21}
-                      />
 
+                <article className="project-panel project-qa-preview">
+                  <div className="project-panel-heading">
+                    <div>
                       <span>
-                        Aprobadas
+                        CALIDAD
                       </span>
+
+                      <h3>
+                        QA y alertas
+                      </h3>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTab(
+                          'tests',
+                        )
+                      }
+                    >
+                      Ver QA
+                    </button>
+                  </div>
+
+                  <div className="qa-summary-numbers">
+                    <div>
+                      <CheckCircle2
+                        size={19}
+                      />
 
                       <strong>
                         {
@@ -1244,34 +1881,16 @@ export default function SeguimientoProyecto({
                             .passed
                         }
                       </strong>
-                    </article>
-
-                    <article>
-                      <Clock3
-                        size={21}
-                      />
 
                       <span>
-                        Pendientes
+                        aprobadas
                       </span>
+                    </div>
 
-                      <strong>
-                        {
-                          tracking
-                            .qa
-                            .pending
-                        }
-                      </strong>
-                    </article>
-
-                    <article>
-                      <X
-                        size={21}
+                    <div>
+                      <XCircle
+                        size={19}
                       />
-
-                      <span>
-                        Fallidas
-                      </span>
 
                       <strong>
                         {
@@ -1280,767 +1899,1328 @@ export default function SeguimientoProyecto({
                             .failed
                         }
                       </strong>
-                    </article>
-                  </div>
 
-                  <div className="tracking-incidents">
-                    <h3>
-                      Incidencias
-                    </h3>
-
-                    {tracking.report.incidents.length ===
-                    0 ? (
-                      <div className="tracking-empty compact">
-                        No hay incidencias abiertas.
-                      </div>
-                    ) : (
-                      tracking.report.incidents.map(
-                        (
-                          incident,
-                          index,
-                        ) => (
-                          <article
-                            key={
-                              `${incident.kind}-${index}`
-                            }
-                            className="tracking-incident"
-                          >
-                            <div>
-                              <strong>
-                                {incident.title}
-                              </strong>
-
-                              {incident.task_title && (
-                                <span>
-                                  {
-                                    incident
-                                      .task_title
-                                  }
-                                </span>
-                              )}
-                            </div>
-
-                            <p>
-                              {incident.detail}
-                            </p>
-                          </article>
-                        ),
-                      )
-                    )}
-                  </div>
-
-                  <article className="tracking-vera-card">
-                    <span>
-                      REVISIÓN FINAL DE VERA
-                    </span>
-
-                    {tracking.final_review ? (
-                      <>
-                        <h3>
-                          {statusLabel(
-                            tracking
-                              .final_review
-                              .status,
-                          )}
-                        </h3>
-
-                        <p>
-                          {
-                            tracking
-                              .final_review
-                              .summary
-                            ||
-                            'Revisión registrada sin resumen.'
-                          }
-                        </p>
-
-                        <div>
-                          <span>
-                            Puntuación
-                          </span>
-
-                          <strong>
-                            {
-                              tracking
-                                .final_review
-                                .score
-                              ?? 'Pendiente'
-                            }
-                          </strong>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <h3>
-                          Pendiente
-                        </h3>
-
-                        <p>
-                          Vera todavía no ha realizado
-                          la revisión final.
-                        </p>
-                      </>
-                    )}
-                  </article>
-                </section>
-              )}
-
-              {tab === 'team' && (
-                <section className="tracking-team-grid">
-                  {tracking
-                    .team
-                    .members
-                    .length === 0 ? (
-                    <div className="tracking-empty">
-                      <Users
-                        size={30}
-                      />
-
-                      Aún no hay Repliker contratados.
+                      <span>
+                        fallidas
+                      </span>
                     </div>
-                  ) : (
-                    tracking
-                      .team
-                      .members
-                      .map(
-                        (member) => (
-                          <article
-                            key={
-                              member
-                                .repliker_id
-                            }
-                          >
-                            <div className="tracking-avatar">
+                  </div>
+
+                  {tracking
+                    .report
+                    .incidents
+                    .slice(
+                      0,
+                      2,
+                    )
+                    .map(
+                      (
+                        incident,
+                        index,
+                      ) => (
+                        <div
+                          className={
+                            `project-alert-row ${
+                              incidentTone(
+                                incident.severity,
+                              )
+                            }`
+                          }
+                          key={
+                            `${incident.kind}-${index}`
+                          }
+                        >
+                          <AlertTriangle
+                            size={17}
+                          />
+
+                          <section>
+                            <strong>
                               {
-                                member
-                                  .name
-                                  .slice(
-                                    0,
-                                    1,
-                                  )
+                                incident.title
                               }
-                            </div>
+                            </strong>
 
-                            <div>
-                              <strong>
-                                {
-                                  member
-                                    .name
-                                }
-                              </strong>
+                            <small>
+                              {
+                                incident.detail
+                              }
+                            </small>
+                          </section>
+                        </div>
+                      ),
+                    )}
+                </article>
+              </aside>
+            </section>
 
-                              <span>
-                                {specialtyLabel(member.specialty)}
-                              </span>
 
-                              {member
-                                .is_final_reviewer && (
-                                <small>
-                                  Vera · revisión final
-                                </small>
-                              )}
-                            </div>
-                          </article>
-                        ),
-                      )
-                  )}
-                </section>
-              )}
+            <article className="project-panel project-delivery-readiness">
+              <div>
+                <PackageCheck
+                  size={23}
+                />
 
-              {tab === 'budget' && (
-                <section className="tracking-budget-grid">
-                  <article>
-                    <span>
-                      Presupuesto máximo
-                    </span>
-
-                    <strong>
-                      {money(
-                        tracking
-                          .budget
-                          .budget_limit_cents,
-                        tracking
-                          .budget
-                          .currency,
-                      )}
-                    </strong>
-                  </article>
-
-                  <article>
-                    <span>
-                      Cotización
-                    </span>
-
-                    <strong>
-                      {money(
-                        tracking
-                          .budget
-                          .quoted_amount_cents,
-                        tracking
-                          .budget
-                          .currency,
-                      )}
-                    </strong>
-                  </article>
-
-                  <article>
-                    <span>
-                      Contratado
-                    </span>
-
-                    <strong>
-                      {money(
-                        tracking
-                          .budget
-                          .contracted_cents,
-                        tracking
-                          .budget
-                          .currency,
-                      )}
-                    </strong>
-                  </article>
-
-                  <article>
-                    <span>
-                      Financiado
-                    </span>
-
-                    <strong>
-                      {money(
-                        tracking
-                          .budget
-                          .funded_cents,
-                        tracking
-                          .budget
-                          .currency,
-                      )}
-                    </strong>
-                  </article>
-
-                  <article>
-                    <span>
-                      Disponible
-                    </span>
-
-                    <strong>
-                      {money(
-                        tracking
-                          .budget
-                          .remaining_budget_cents,
-                        tracking
-                          .budget
-                          .currency,
-                      )}
-                    </strong>
-                  </article>
-
-                  <article>
-                    <span>
-                      Estado del pago
-                    </span>
-
-                    <strong>
-                      {statusLabel(
-                        tracking
-                          .budget
-                          .payment_status,
-                      )}
-                    </strong>
-                  </article>
-                </section>
-              )}
-
-              {tab === 'delivery' && (
-                <section className="tracking-delivery-section">
-                  <PackageCheck
-                    size={42}
-                  />
-
-                  <span
-                    className={
-                      tracking.delivery.ready
-                        ? 'tracking-delivery-ready'
-                        : ''
-                    }
-                  >
-                    {tracking.delivery.ready
-                      ? 'LISTO PARA ENTREGA'
-                      : 'ENTREGA PENDIENTE'}
+                <section>
+                  <span>
+                    PREPARACIÓN PARA ENTREGA FINAL
                   </span>
 
                   <h3>
-                    Versión {
-                      tracking.delivery.version
-                    }
+                    {tracking.delivery.ready
+                      ? 'Proyecto listo para entregar'
+                      : 'Entrega en preparación'}
                   </h3>
+                </section>
+              </div>
 
-                  <p>
-                    {
-                      tracking.delivery.message
-                    }
-                  </p>
+              <div className="delivery-checks">
+                <span
+                  className={
+                    tracking.tasks.completed
+                    === tracking.tasks.total
+                    && tracking.tasks.total > 0
+                      ? 'done'
+                      : ''
+                  }
+                >
+                  <CheckCircle2
+                    size={16}
+                  />
+                  Desarrollo
+                </span>
 
-                  {downloadError && (
-                    <div
-                      className="tracking-download-alert"
-                    >
-                      {downloadError}
-                    </div>
-                  )}
+                <span
+                  className={
+                    tracking.qa.failed === 0
+                    && tracking.qa.passed > 0
+                      ? 'done'
+                      : ''
+                  }
+                >
+                  <ShieldCheck
+                    size={16}
+                  />
+                  QA
+                </span>
 
-                  <div className="tracking-delivery-metrics">
-                    <article>
-                      <span>
-                        Vera
-                      </span>
+                <span
+                  className={
+                    tracking.delivery
+                      .vera_approved
+                      ? 'done'
+                      : ''
+                  }
+                >
+                  <CheckCircle2
+                    size={16}
+                  />
+                  Vera
+                </span>
 
-                      <strong>
-                        {
-                          tracking.delivery
-                            .vera_approved
-                          ? 'Aprobado'
-                          : statusLabel(
-                              tracking.delivery
-                                .vera_status,
-                            )
+                <span
+                  className={
+                    tracking.delivery.ready
+                      ? 'done'
+                      : ''
+                  }
+                >
+                  <PackageCheck
+                    size={16}
+                  />
+                  Entrega
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setTab(
+                    'delivery',
+                  )
+                }
+              >
+                Ver entrega
+              </button>
+            </article>
+          </>
+        )}
+
+
+        {tab === 'project' && (
+          <section className="project-detail-grid">
+            <article className="project-panel project-phase-panel">
+              <div className="project-panel-heading">
+                <div>
+                  <span>
+                    CICLO DE VIDA
+                  </span>
+
+                  <h3>
+                    Avance por etapas
+                  </h3>
+                </div>
+              </div>
+
+              <div className="project-phase-list">
+                {phases.map(
+                  (
+                    phase,
+                    index,
+                  ) => {
+                    const state =
+                      phaseState(
+                        phase,
+                        tracking.stage,
+                      )
+
+                    return (
+                      <article
+                        className={
+                          `project-phase-row ${state}`
                         }
-                      </strong>
-                    </article>
-
-                    <article>
-                      <span>
-                        Archivos
-                      </span>
-
-                      <strong>
-                        {
-                          tracking.delivery
-                            .files_count
+                        key={
+                          phase.id
                         }
-                      </strong>
-                    </article>
-
-                    <article>
-                      <span>
-                        Correcciones
-                      </span>
-
-                      <strong>
-                        {
-                          tracking.delivery
-                            .corrections_requested
-                        }
-                      </strong>
-                    </article>
-                  </div>
-
-                  <div className="tracking-version-history">
-                    <div className="tracking-version-heading">
-                      <div>
-                        <span>
-                          HISTORIAL DE VERSIONES
+                      >
+                        <span className="phase-index">
+                          {
+                            state
+                            === 'completed'
+                              ? (
+                                <CheckCircle2
+                                  size={19}
+                                />
+                              )
+                              : index + 1
+                          }
                         </span>
 
-                        <h3>
-                          Evolución de la entrega
-                        </h3>
+                        <div>
+                          <strong>
+                            {
+                              phase.label
+                            }
+                          </strong>
+
+                          <span>
+                            {state ===
+                            'completed'
+                              ? 'Completada'
+                              : state ===
+                                'active'
+                                ? 'En curso'
+                                : 'Pendiente'}
+                          </span>
+                        </div>
+
+                        <div className="phase-bar">
+                          <i
+                            style={{
+                              width:
+                                `${
+                                  percent(
+                                    phase.progress
+                                    * 100,
+                                  )
+                                }%`,
+                            }}
+                          />
+                        </div>
+
+                        <strong>
+                          {
+                            percent(
+                              phase.progress
+                              * 100,
+                            )
+                          }%
+                        </strong>
+                      </article>
+                    )
+                  },
+                )}
+              </div>
+            </article>
+
+
+            <article className="project-panel">
+              <div className="project-panel-heading">
+                <div>
+                  <span>
+                    ACTIVIDAD
+                  </span>
+
+                  <h3>
+                    Historial reciente
+                  </h3>
+                </div>
+              </div>
+
+              <div className="project-activity-list">
+                {tracking
+                  .recent_activity
+                  .length === 0 ? (
+                  <div className="project-empty-small">
+                    No hay actividad registrada.
+                  </div>
+                ) : (
+                  tracking
+                    .recent_activity
+                    .slice(
+                      0,
+                      12,
+                    )
+                    .map(
+                      (
+                        item,
+                      ) => (
+                        <article
+                          key={
+                            item.id
+                          }
+                        >
+                          <span className="activity-node" />
+
+                          <div>
+                            <strong>
+                              {
+                                item.title
+                              }
+                            </strong>
+
+                            <p>
+                              {
+                                item.description
+                              }
+                            </p>
+                          </div>
+
+                          <small>
+                            {relativeDate(
+                              item.created_at,
+                            )}
+                          </small>
+                        </article>
+                      ),
+                    )
+                  )}
+              </div>
+            </article>
+          </section>
+        )}
+
+
+        {tab === 'tasks' && (
+          <article className="project-panel project-all-tasks">
+            <div className="project-panel-heading">
+              <div>
+                <span>
+                  EJECUCIÓN
+                </span>
+
+                <h3>
+                  Todas las tareas
+                </h3>
+              </div>
+
+              <strong>
+                {tracking.tasks.total}
+                {' '}
+                tareas
+              </strong>
+            </div>
+
+            <div className="project-task-table">
+              <div className="project-task-table-head">
+                <span>
+                  Tarea
+                </span>
+
+                <span>
+                  Especialidad
+                </span>
+
+                <span>
+                  Estado
+                </span>
+
+                <span>
+                  Presupuesto
+                </span>
+              </div>
+
+              {tracking
+                .tasks
+                .items
+                .map(
+                  (
+                    task,
+                  ) => (
+                    <article
+                      className="project-task-row"
+                      key={
+                        task.id
+                      }
+                    >
+                      <div>
+                        <span className="project-task-number">
+                          {String(
+                            task.id,
+                          ).padStart(
+                            2,
+                            '0',
+                          )}
+                        </span>
+
+                        <strong>
+                          {
+                            task.title
+                          }
+                        </strong>
                       </div>
+
+                      <span>
+                        {specialtyLabel(
+                          task.required_specialty,
+                        )}
+                      </span>
+
+                      <span
+                        className={
+                          `project-pill ${
+                            statusTone(
+                              task.status,
+                            )
+                          }`
+                        }
+                      >
+                        {statusLabel(
+                          task.status,
+                        )}
+                      </span>
 
                       <strong>
-                        {
-                          tracking.delivery
-                            .versions_total
-                        }{' '}
-                        versión(es)
+                        {money(
+                          task.max_budget_cents,
+                          tracking
+                            .budget
+                            .currency,
+                        )}
                       </strong>
-                    </div>
+                    </article>
+                  ),
+                )}
+            </div>
+          </article>
+        )}
 
-                    {tracking.delivery.history.length ===
-                    0 ? (
-                      <div className="tracking-empty compact">
-                        La primera versión aparecerá
-                        cuando Vera apruebe una
-                        entrega.
-                      </div>
-                    ) : (
-                      <div className="tracking-version-list">
-                        {tracking.delivery.history
-                          .slice()
-                          .reverse()
-                          .map(
-                            (version) => (
-                              <article
-                                key={
-                                  version
-                                    .review_id
-                                }
-                                className={
-                                  version.is_current
-                                    ? 'current'
-                                    : ''
-                                }
-                              >
-                                <div className="tracking-version-top">
-                                  <strong>
-                                    {
-                                      version
-                                        .version
-                                    }
-                                  </strong>
 
-                                  {version.is_current && (
-                                    <span>
-                                      Versión actual
-                                    </span>
-                                  )}
-                                </div>
+        {tab === 'team' && (
+          <section className="project-team-grid">
+            {tracking
+              .team
+              .members
+              .length === 0 ? (
+              <article className="project-panel project-empty-large">
+                <Users
+                  size={36}
+                />
 
-                                <div className="tracking-version-details">
-                                  <span>
-                                    Vera
-                                  </span>
+                <h3>
+                  Aún no hay Replikers contratados
+                </h3>
 
-                                  <strong>
-                                    {version.score ??
-                                      'Sin puntuación'}
-                                  </strong>
-                                </div>
+                <p>
+                  El equipo aparecerá aquí cuando se completen las contrataciones.
+                </p>
+              </article>
+            ) : (
+              tracking
+                .team
+                .members
+                .map(
+                  (
+                    member,
+                  ) => (
+                    <article
+                      className="project-panel project-member-card"
+                      key={
+                        member
+                          .repliker_id
+                      }
+                    >
+                      <span className="project-person-avatar large">
+                        {
+                          member
+                            .name
+                            .slice(
+                              0,
+                              1,
+                            )
+                            .toUpperCase()
+                        }
+                      </span>
 
-                                {version.summary && (
-                                  <p>
-                                    {
-                                      version
-                                        .summary
-                                    }
-                                  </p>
-                                )}
+                      <div>
+                        <h3>
+                          {
+                            member.name
+                          }
+                        </h3>
 
-                                <div className="tracking-version-footer">
-                                  <span>
-                                    {version.client_decision ===
-                                    'accepted'
-                                      ? 'Aceptada por el cliente'
-                                      : version.client_decision ===
-                                        'corrections_requested'
-                                        ? 'El cliente solicitó correcciones'
-                                        : 'Esperando decisión del cliente'}
-                                  </span>
-
-                                  {version.vera_completed_at && (
-                                    <small>
-                                      {dateLabel(
-                                        version
-                                          .vera_completed_at,
-                                      )}
-                                    </small>
-                                  )}
-                                </div>
-
-                                <div
-                                  className="tracking-version-download"
-                                >
-                                  {version.snapshot_ready
-                                  && version.package_url ? (
-                                    <button
-                                      type="button"
-                                      className="tracking-download-button"
-                                      disabled={
-                                        downloadingKey
-                                        === `version-${version.review_id}`
-                                      }
-                                      onClick={() =>
-                                        void downloadProtectedFile(
-                                          version.package_url
-                                          ?? '',
-                                          (
-                                            `replikers-proyecto-${projectId}-`
-                                            + `${version.version}.zip`
-                                          ),
-                                          `version-${version.review_id}`,
-                                        )
-                                      }
-                                    >
-                                      {downloadingKey
-                                      === `version-${version.review_id}` ? (
-                                        <LoaderCircle
-                                          size={16}
-                                          className="tracking-spin"
-                                        />
-                                      ) : (
-                                        <Download
-                                          size={16}
-                                        />
-                                      )}
-
-                                      {downloadingKey
-                                      === `version-${version.review_id}`
-                                        ? 'Descargando...'
-                                        : 'Descargar versión (.zip)'}
-                                    </button>
-                                  ) : (
-                                    <span
-                                      className="tracking-package-pending"
-                                    >
-                                      Paquete aún no disponible
-                                    </span>
-                                  )}
-
-                                  {version.snapshot_ready && (
-                                    <small>
-                                      {version.files_count}{' '}
-                                      archivo(s) ·{' '}
-                                      {fileSizeLabel(
-                                        version.total_size_bytes,
-                                      )}
-                                    </small>
-                                  )}
-                                </div>
-
-                                {version.client_comment && (
-                                  <blockquote>
-                                    {
-                                      version
-                                        .client_comment
-                                    }
-                                  </blockquote>
-                                )}
-                              </article>
-                            ),
+                        <p>
+                          {specialtyLabel(
+                            member.specialty,
                           )}
+                        </p>
                       </div>
-                    )}
+
+                      <span
+                        className={
+                          `project-pill ${
+                            statusTone(
+                              member.status,
+                            )
+                          }`
+                        }
+                      >
+                        {statusLabel(
+                          member.status,
+                        )}
+                      </span>
+
+                      <div className="member-stats">
+                        <span>
+                          Contratos activos
+                        </span>
+
+                        <strong>
+                          {
+                            member
+                              .active_contracts
+                          }
+                        </strong>
+                      </div>
+
+                      {member
+                        .is_final_reviewer && (
+                        <div className="vera-badge">
+                          <ShieldCheck
+                            size={16}
+                          />
+                          Revisión final
+                        </div>
+                      )}
+                    </article>
+                  ),
+                )
+            )}
+          </section>
+        )}
+
+
+        {tab === 'tests' && (
+          <section className="project-qa-layout">
+            <article className="project-panel qa-score-panel">
+              <span>
+                ESTADO DE QA
+              </span>
+
+              <h2>
+                {qaPercent}%
+              </h2>
+
+              <p>
+                de las revisiones actuales han sido aprobadas
+              </p>
+
+              <div className="qa-large-bar">
+                <i
+                  style={{
+                    width:
+                      `${qaPercent}%`,
+                  }}
+                />
+              </div>
+
+              <div className="qa-count-grid">
+                <div>
+                  <CheckCircle2
+                    size={18}
+                  />
+
+                  <strong>
+                    {
+                      tracking
+                        .qa
+                        .passed
+                    }
+                  </strong>
+
+                  <span>
+                    Aprobadas
+                  </span>
+                </div>
+
+                <div>
+                  <XCircle
+                    size={18}
+                  />
+
+                  <strong>
+                    {
+                      tracking
+                        .qa
+                        .failed
+                    }
+                  </strong>
+
+                  <span>
+                    Fallidas
+                  </span>
+                </div>
+
+                <div>
+                  <Clock3
+                    size={18}
+                  />
+
+                  <strong>
+                    {
+                      tracking
+                        .qa
+                        .pending
+                    }
+                  </strong>
+
+                  <span>
+                    Pendientes
+                  </span>
+                </div>
+              </div>
+            </article>
+
+
+            <article className="project-panel">
+              <div className="project-panel-heading">
+                <div>
+                  <span>
+                    INCIDENCIAS
+                  </span>
+
+                  <h3>
+                    Problemas detectados
+                  </h3>
+                </div>
+
+                <strong>
+                  {
+                    tracking
+                      .report
+                      .incidents_total
+                  }
+                </strong>
+              </div>
+
+              <div className="project-incidents-list">
+                {tracking
+                  .report
+                  .incidents
+                  .length === 0 ? (
+                  <div className="project-empty-small success">
+                    <CheckCircle2
+                      size={20}
+                    />
+
+                    No existen incidencias abiertas.
                   </div>
+                ) : (
+                  tracking
+                    .report
+                    .incidents
+                    .map(
+                      (
+                        incident,
+                        index,
+                      ) => (
+                        <article
+                          className={
+                            `project-incident ${
+                              incidentTone(
+                                incident.severity,
+                              )
+                            }`
+                          }
+                          key={
+                            `${incident.kind}-${index}`
+                          }
+                        >
+                          <AlertTriangle
+                            size={19}
+                          />
 
-                  <div className="tracking-delivery-files">
-                    <h3>
-                      Archivos generados
-                    </h3>
+                          <div>
+                            <strong>
+                              {
+                                incident.title
+                              }
+                            </strong>
 
-                    {tracking.delivery.files.length ===
-                    0 ? (
-                      <div className="tracking-empty compact">
-                        Todavía no hay archivos
-                        registrados para entregar.
-                      </div>
-                    ) : (
-                      tracking.delivery.files.map(
-                        (file) => (
-                          <article
-                            key={
-                              file.artifact_id
-                            }
-                          >
-                            <div>
-                              <strong>
-                                {
-                                  file
-                                    .relative_path
-                                }
-                              </strong>
+                            <p>
+                              {
+                                incident.detail
+                              }
+                            </p>
 
-                              <span>
-                                Archivo generado
-                              </span>
-                            </div>
-
-                            <div
-                              className="tracking-delivery-file-actions"
-                            >
+                            {incident.task_title && (
                               <small>
-                                {fileSizeLabel(
-                                  file.size_bytes,
-                                )}
+                                Tarea: {
+                                  incident.task_title
+                                }
                               </small>
+                            )}
+                          </div>
+                        </article>
+                      ),
+                    )
+                  )}
+              </div>
+            </article>
+          </section>
+        )}
 
-                              <button
-                                type="button"
-                                className="tracking-download-button compact"
-                                disabled={
-                                  downloadingKey
-                                  === `file-${file.artifact_id}`
-                                }
-                                onClick={() =>
-                                  void downloadProtectedFile(
-                                    file.download_url,
-                                    (
-                                      file.relative_path
-                                        .split('/')
-                                        .pop()
-                                      || `archivo-${file.artifact_id}`
-                                    ),
-                                    `file-${file.artifact_id}`,
-                                  )
-                                }
-                              >
-                                {downloadingKey
-                                === `file-${file.artifact_id}` ? (
-                                  <LoaderCircle
-                                    size={15}
-                                    className="tracking-spin"
-                                  />
-                                ) : (
-                                  <Download
-                                    size={15}
-                                  />
-                                )}
 
-                                {downloadingKey
-                                === `file-${file.artifact_id}`
-                                  ? 'Descargando...'
-                                  : 'Descargar'}
-                              </button>
-                            </div>
-                          </article>
-                        ),
-                      )
-                    )}
-                  </div>
+        {tab === 'budget' && (
+          <section className="project-economy">
+            <article className="project-panel economy-main">
+              <div className="economy-heading">
+                <div>
+                  <span>
+                    ECONOMÍA DEL PROYECTO
+                  </span>
 
-                  <div className="tracking-client-decision">
+                  <h3>
+                    Presupuesto
+                  </h3>
+                </div>
+
+                <WalletCards
+                  size={26}
+                />
+              </div>
+
+              <strong className="economy-total">
+                {money(
+                  tracking
+                    .budget
+                    .contracted_cents,
+                  tracking
+                    .budget
+                    .currency,
+                )}
+              </strong>
+
+              <span>
+                contratado de {
+                  money(
+                    tracking
+                      .budget
+                      .budget_limit_cents,
+                    tracking
+                      .budget
+                      .currency,
+                  )
+                }
+              </span>
+
+              <div className="economy-bar">
+                <i
+                  style={{
+                    width:
+                      `${budgetPercent}%`,
+                  }}
+                />
+              </div>
+            </article>
+
+            <div className="economy-grid">
+              <article className="project-panel">
+                <span>
+                  Límite
+                </span>
+
+                <strong>
+                  {money(
+                    tracking
+                      .budget
+                      .budget_limit_cents,
+                    tracking
+                      .budget
+                      .currency,
+                  )}
+                </strong>
+              </article>
+
+              <article className="project-panel">
+                <span>
+                  Cotización R00
+                </span>
+
+                <strong>
+                  {money(
+                    tracking
+                      .budget
+                      .quoted_amount_cents,
+                    tracking
+                      .budget
+                      .currency,
+                  )}
+                </strong>
+              </article>
+
+              <article className="project-panel">
+                <span>
+                  Financiado
+                </span>
+
+                <strong>
+                  {money(
+                    tracking
+                      .budget
+                      .funded_cents,
+                    tracking
+                      .budget
+                      .currency,
+                  )}
+                </strong>
+              </article>
+
+              <article className="project-panel">
+                <span>
+                  Disponible
+                </span>
+
+                <strong>
+                  {money(
+                    tracking
+                      .budget
+                      .remaining_budget_cents,
+                    tracking
+                      .budget
+                      .currency,
+                  )}
+                </strong>
+              </article>
+
+              <article className="project-panel">
+                <span>
+                  Ganancias Replikers
+                </span>
+
+                <strong>
+                  {money(
+                    tracking
+                      .budget
+                      .earnings_cents,
+                    tracking
+                      .budget
+                      .currency,
+                  )}
+                </strong>
+              </article>
+
+              <article className="project-panel">
+                <span>
+                  Comisión
+                </span>
+
+                <strong>
+                  {money(
+                    tracking
+                      .budget
+                      .commission_cents,
+                    tracking
+                      .budget
+                      .currency,
+                  )}
+                </strong>
+              </article>
+            </div>
+          </section>
+        )}
+
+
+        {tab === 'delivery' && (
+          <section className="project-delivery-layout">
+            <article className="project-panel delivery-main-card">
+              <div className="delivery-status-icon">
+                <PackageCheck
+                  size={34}
+                />
+              </div>
+
+              <span>
+                ENTREGA DEL PROYECTO
+              </span>
+
+              <h2>
+                {tracking.delivery.ready
+                  ? 'Lista para el cliente'
+                  : 'En preparación'}
+              </h2>
+
+              <p>
+                {
+                  tracking.delivery.message
+                }
+              </p>
+
+              <div className="delivery-status-grid">
+                <div>
+                  <span>
+                    Versión
+                  </span>
+
+                  <strong>
+                    {
+                      tracking
+                        .delivery
+                        .version
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Vera
+                  </span>
+
+                  <strong>
+                    {
+                      tracking
+                        .delivery
+                        .vera_approved
+                        ? 'Aprobada'
+                        : statusLabel(
+                            tracking
+                              .delivery
+                              .vera_status,
+                          )
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Archivos
+                  </span>
+
+                  <strong>
+                    {
+                      tracking
+                        .delivery
+                        .files_count
+                    }
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Correcciones
+                  </span>
+
+                  <strong>
+                    {
+                      tracking
+                        .delivery
+                        .corrections_requested
+                    }
+                  </strong>
+                </div>
+              </div>
+            </article>
+
+
+            {tracking.final_review && (
+              <article className="project-panel vera-review-card">
+                <div>
+                  <ShieldCheck
+                    size={25}
+                  />
+
+                  <section>
                     <span>
-                      DECISIÓN DEL CLIENTE
+                      REVISIÓN DE VERA
                     </span>
 
                     <h3>
-                      Revisión de la entrega
+                      {statusLabel(
+                        tracking
+                          .final_review
+                          .status,
+                      )}
                     </h3>
+                  </section>
+                </div>
 
-                    {tracking.delivery.client_decision ===
-                    'accepted' ? (
-                      <div className="tracking-client-result accepted">
-                        <CheckCircle2
-                          size={21}
-                        />
+                <strong>
+                  {
+                    tracking
+                      .final_review
+                      .score
+                    ?? '—'
+                  }
+                  /100
+                </strong>
 
-                        <div>
-                          <strong>
-                            Entrega aceptada
-                          </strong>
+                <p>
+                  {
+                    tracking
+                      .final_review
+                      .summary
+                  }
+                </p>
+              </article>
+            )}
 
-                          <p>
-                            {
-                              tracking.delivery
-                                .client_comment
-                            }
-                          </p>
-                        </div>
-                      </div>
-                    ) : tracking.delivery
-                        .client_decision ===
-                        'corrections_requested'
-                        && !tracking.delivery
-                          .client_action_required ? (
-                      <div className="tracking-client-result corrections">
-                        <Clock3
-                          size={21}
-                        />
 
-                        <div>
-                          <strong>
-                            Correcciones solicitadas
-                          </strong>
+            <article className="project-panel">
+              <div className="project-panel-heading">
+                <div>
+                  <span>
+                    ARCHIVOS
+                  </span>
 
-                          <p>
-                            {
-                              tracking.delivery
-                                .client_comment
-                            }
-                          </p>
-                        </div>
-                      </div>
-                    ) : tracking.delivery
-                        .client_action_required ? (
-                      <>
-                        <p>
-                          Revisa esta versión y
-                          decide si cumple con lo
-                          solicitado.
-                        </p>
+                  <h3>
+                    Entregables
+                  </h3>
+                </div>
 
-                        <textarea
-                          className="tracking-client-comment"
-                          value={decisionComment}
-                          maxLength={4000}
-                          placeholder={
-                            'Comentario opcional al aceptar. '
-                            + 'Si solicitas correcciones, '
-                            + 'describe claramente los cambios.'
-                          }
-                          onChange={(event) => {
-                            setDecisionComment(
-                              event.target.value,
-                            )
+                <strong>
+                  {
+                    tracking
+                      .delivery
+                      .files_count
+                  }
+                </strong>
+              </div>
 
-                            setDecisionError('')
-                            setDecisionSuccess('')
-                          }}
-                        />
-
-                        {decisionError && (
-                          <div className="tracking-decision-alert error">
-                            {decisionError}
-                          </div>
-                        )}
-
-                        {decisionSuccess && (
-                          <div className="tracking-decision-alert success">
-                            {decisionSuccess}
-                          </div>
-                        )}
-
-                        <div className="tracking-decision-actions">
-                          <button
-                            type="button"
-                            className="accept"
-                            disabled={
-                              submittingDecision
-                            }
-                            onClick={() =>
-                              void submitDecision(
-                                'accepted',
-                              )
-                            }
-                          >
-                            <CheckCircle2
-                              size={17}
-                            />
-
-                            {submittingDecision
-                              ? 'Procesando...'
-                              : 'Aceptar entrega'}
-                          </button>
-
-                          <button
-                            type="button"
-                            className="correction"
-                            disabled={
-                              submittingDecision
-                            }
-                            onClick={() =>
-                              void submitDecision(
-                                'corrections_requested',
-                              )
-                            }
-                          >
-                            Solicitar corrección
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <p>
-                        Esta decisión se habilitará
-                        cuando Vera apruebe la
-                        versión final del proyecto.
-                      </p>
-                    )}
+              <div className="delivery-file-list">
+                {tracking
+                  .delivery
+                  .files
+                  .length === 0 ? (
+                  <div className="project-empty-small">
+                    Todavía no hay archivos listos para entregar.
                   </div>
+                ) : (
+                  tracking
+                    .delivery
+                    .files
+                    .map(
+                      (
+                        file,
+                      ) => (
+                        <article
+                          key={
+                            file
+                              .artifact_id
+                          }
+                        >
+                          <FileCheck2
+                            size={19}
+                          />
 
-                </section>
+                          <div>
+                            <strong>
+                              {
+                                file
+                                  .relative_path
+                              }
+                            </strong>
+
+                            <span>
+                              {
+                                file
+                                  .media_type
+                              }
+                            </span>
+                          </div>
+
+                          <small>
+                            {
+                              file
+                                .size_bytes
+                            } bytes
+                          </small>
+                        </article>
+                      ),
+                    )
+                  )}
+              </div>
+            </article>
+
+
+            <article className="project-panel">
+              <div className="project-panel-heading">
+                <div>
+                  <span>
+                    HISTORIAL
+                  </span>
+
+                  <h3>
+                    Versiones
+                  </h3>
+                </div>
+
+                <strong>
+                  {
+                    tracking
+                      .delivery
+                      .versions_total
+                  }
+                </strong>
+              </div>
+
+              <div className="delivery-version-list">
+                {tracking
+                  .delivery
+                  .history
+                  .length === 0 ? (
+                  <div className="project-empty-small">
+                    La primera versión aparecerá cuando exista una entrega aprobada.
+                  </div>
+                ) : (
+                  tracking
+                    .delivery
+                    .history
+                    .slice()
+                    .reverse()
+                    .map(
+                      (
+                        version,
+                      ) => (
+                        <article
+                          key={
+                            version
+                              .review_id
+                          }
+                          className={
+                            version
+                              .is_current
+                              ? 'current'
+                              : ''
+                          }
+                        >
+                          <div>
+                            <strong>
+                              {
+                                version
+                                  .version
+                              }
+                            </strong>
+
+                            <span>
+                              Vera: {
+                                version
+                                  .score
+                                ?? '—'
+                              }/100
+                            </span>
+                          </div>
+
+                          <span
+                            className={
+                              `project-pill ${
+                                statusTone(
+                                  version.status,
+                                )
+                              }`
+                            }
+                          >
+                            {version.is_current
+                              ? 'Actual'
+                              : statusLabel(
+                                  version.status,
+                                )}
+                          </span>
+
+                          <p>
+                            {
+                              version
+                                .summary
+                            }
+                          </p>
+
+                          <small>
+                            {dateLabel(
+                              version
+                                .vera_completed_at,
+                            )}
+                          </small>
+                        </article>
+                      ),
+                    )
+                  )}
+              </div>
+            </article>
+
+
+            <article className="project-panel client-decision-card">
+              <span>
+                DECISIÓN DEL CLIENTE
+              </span>
+
+              <h3>
+                Revisión de la entrega
+              </h3>
+
+              {tracking
+                .delivery
+                .client_decision
+                === 'accepted' ? (
+                <div className="client-result success">
+                  <CheckCircle2
+                    size={22}
+                  />
+
+                  <div>
+                    <strong>
+                      Entrega aceptada
+                    </strong>
+
+                    <p>
+                      {
+                        tracking
+                          .delivery
+                          .client_comment
+                      }
+                    </p>
+                  </div>
+                </div>
+              ) : tracking
+                  .delivery
+                  .client_decision
+                  === 'corrections_requested'
+                  && !tracking
+                    .delivery
+                    .client_action_required ? (
+                <div className="client-result warning">
+                  <Clock3
+                    size={22}
+                  />
+
+                  <div>
+                    <strong>
+                      Correcciones solicitadas
+                    </strong>
+
+                    <p>
+                      {
+                        tracking
+                          .delivery
+                          .client_comment
+                      }
+                    </p>
+                  </div>
+                </div>
+              ) : tracking
+                  .delivery
+                  .client_action_required ? (
+                <>
+                  <p>
+                    Revisa la entrega y decide si cumple con lo solicitado.
+                  </p>
+
+                  <textarea
+                    value={
+                      decisionComment
+                    }
+                    maxLength={
+                      4000
+                    }
+                    placeholder="Escribe un comentario para la entrega..."
+                    onChange={(
+                      event,
+                    ) => {
+                      setDecisionComment(
+                        event
+                          .target
+                          .value,
+                      )
+
+                      setDecisionError(
+                        '',
+                      )
+
+                      setDecisionSuccess(
+                        '',
+                      )
+                    }}
+                  />
+
+                  {decisionError && (
+                    <div className="project-form-alert danger">
+                      {
+                        decisionError
+                      }
+                    </div>
+                  )}
+
+                  {decisionSuccess && (
+                    <div className="project-form-alert success">
+                      {
+                        decisionSuccess
+                      }
+                    </div>
+                  )}
+
+                  <div className="client-decision-actions">
+                    <button
+                      type="button"
+                      className="accept"
+                      disabled={
+                        submittingDecision
+                      }
+                      onClick={() =>
+                        void submitDecision(
+                          'accepted',
+                        )
+                      }
+                    >
+                      <CheckCircle2
+                        size={17}
+                      />
+
+                      Aceptar entrega
+                    </button>
+
+                    <button
+                      type="button"
+                      className="correction"
+                      disabled={
+                        submittingDecision
+                      }
+                      onClick={() =>
+                        void submitDecision(
+                          'corrections_requested',
+                        )
+                      }
+                    >
+                      Solicitar correcciones
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p>
+                  Esta opción se habilitará cuando Vera apruebe la entrega.
+                </p>
               )}
-            </div>
-          </>
+            </article>
+          </section>
         )}
       </div>
-    </div>
+    </section>
   )
 }

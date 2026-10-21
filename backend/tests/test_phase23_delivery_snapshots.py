@@ -24,6 +24,11 @@ from app.services.project_delivery_snapshot_service import (
     ensure_delivery_snapshot,
     list_snapshot_files,
 )
+from app.services.project_integration_service import (
+    DELIVERY_PREFIX,
+    INTEGRATION_MARKER_PATH,
+    README_PATH,
+)
 from app.services.workspace_service import (
     workspace_root,
     write_text_file,
@@ -103,6 +108,41 @@ class Phase23DeliverySnapshotTests(
 
         self.db.commit()
 
+
+    def prepare_integrated_delivery(
+        self,
+        *,
+        relative_path: str,
+        content: str,
+    ):
+        write_text_file(
+            db=self.db,
+            workspace=self.workspace,
+            relative_path=README_PATH,
+            content="# Proyecto integrado\n",
+        )
+
+        artifact = write_text_file(
+            db=self.db,
+            workspace=self.workspace,
+            relative_path=(
+                DELIVERY_PREFIX
+                + relative_path
+            ),
+            content=content,
+        )
+
+        write_text_file(
+            db=self.db,
+            workspace=self.workspace,
+            relative_path=
+                INTEGRATION_MARKER_PATH,
+            content='{"status":"integrated"}',
+        )
+
+        self.db.commit()
+        return artifact
+
     def tearDown(self):
         try:
             root = workspace_root(
@@ -118,25 +158,21 @@ class Phase23DeliverySnapshotTests(
             self.db.close()
             self.engine.dispose()
 
+
     def test_snapshot_is_immutable(
         self,
     ):
-        artifact = write_text_file(
-            db=self.db,
-            workspace=self.workspace,
-            relative_path="resultado.txt",
-            content="VERSION UNO",
+        artifact = (
+            self.prepare_integrated_delivery(
+                relative_path="resultado.txt",
+                content="VERSION UNO",
+            )
         )
 
-        self.db.commit()
-
-        snapshot = (
-            ensure_delivery_snapshot(
-                db=self.db,
-                project_id=self.project.id,
-                final_review_id=
-                    self.review.id,
-            )
+        snapshot = ensure_delivery_snapshot(
+            db=self.db,
+            project_id=self.project.id,
+            final_review_id=self.review.id,
         )
 
         self.db.commit()
@@ -146,31 +182,38 @@ class Phase23DeliverySnapshotTests(
             snapshot_id=snapshot.id,
         )
 
-        self.assertEqual(
-            len(files),
-            1,
+        historical_file = next(
+            item
+            for item in files
+            if item.archive_path
+            == "resultado.txt"
         )
 
         self.assertEqual(
-            bytes(files[0].content),
+            bytes(historical_file.content),
             b"VERSION UNO",
         )
 
         write_text_file(
             db=self.db,
             workspace=self.workspace,
-            relative_path="resultado.txt",
+            relative_path=(
+                DELIVERY_PREFIX
+                + "resultado.txt"
+            ),
             content="VERSION DOS",
         )
 
         self.db.commit()
 
-        historical = (
-            list_snapshot_files(
+        historical = next(
+            item
+            for item in list_snapshot_files(
                 db=self.db,
-                snapshot_id=
-                    snapshot.id,
-            )[0]
+                snapshot_id=snapshot.id,
+            )
+            if item.archive_path
+            == "resultado.txt"
         )
 
         self.assertEqual(
@@ -183,27 +226,19 @@ class Phase23DeliverySnapshotTests(
             artifact.sha256,
         )
 
+
     def test_zip_contains_manifest_and_files(
         self,
     ):
-        write_text_file(
-            db=self.db,
-            workspace=self.workspace,
-            relative_path=
-                "entrega/final.txt",
-            content=
-                "ENTREGA FINAL",
+        self.prepare_integrated_delivery(
+            relative_path="entrega/final.txt",
+            content="ENTREGA FINAL",
         )
 
-        self.db.commit()
-
-        snapshot = (
-            ensure_delivery_snapshot(
-                db=self.db,
-                project_id=self.project.id,
-                final_review_id=
-                    self.review.id,
-            )
+        snapshot = ensure_delivery_snapshot(
+            db=self.db,
+            project_id=self.project.id,
+            final_review_id=self.review.id,
         )
 
         self.db.commit()
@@ -213,12 +248,9 @@ class Phase23DeliverySnapshotTests(
             snapshot=snapshot,
         )
 
-        digest = (
-            hashlib.sha256(
-                package
-            )
-            .hexdigest()
-        )
+        digest = hashlib.sha256(
+            package
+        ).hexdigest()
 
         self.assertEqual(
             digest,
@@ -229,9 +261,7 @@ class Phase23DeliverySnapshotTests(
             io.BytesIO(package),
             "r",
         ) as archive:
-            names = (
-                archive.namelist()
-            )
+            names = archive.namelist()
 
             self.assertIn(
                 "MANIFIESTO.json",
@@ -239,55 +269,46 @@ class Phase23DeliverySnapshotTests(
             )
 
             self.assertIn(
-                "tarea-5002/"
                 "entrega/final.txt",
+                names,
+            )
+
+            self.assertNotIn(
+                "tarea-5002/entrega/final.txt",
                 names,
             )
 
             self.assertEqual(
                 archive.read(
-                    "tarea-5002/"
                     "entrega/final.txt"
                 ),
                 b"ENTREGA FINAL",
             )
 
+
     def test_same_review_does_not_duplicate_snapshot(
         self,
     ):
-        write_text_file(
-            db=self.db,
-            workspace=self.workspace,
+        self.prepare_integrated_delivery(
             relative_path="a.txt",
             content="A",
         )
 
-        first = (
-            ensure_delivery_snapshot(
-                db=self.db,
-                project_id=self.project.id,
-                final_review_id=
-                    self.review.id,
-            )
+        first = ensure_delivery_snapshot(
+            db=self.db,
+            project_id=self.project.id,
+            final_review_id=self.review.id,
         )
 
-        second = (
-            ensure_delivery_snapshot(
-                db=self.db,
-                project_id=self.project.id,
-                final_review_id=
-                    self.review.id,
-            )
+        second = ensure_delivery_snapshot(
+            db=self.db,
+            project_id=self.project.id,
+            final_review_id=self.review.id,
         )
 
         self.assertEqual(
             first.id,
             second.id,
-        )
-
-        self.assertEqual(
-            first.version_label,
-            "v1.0",
         )
 
 

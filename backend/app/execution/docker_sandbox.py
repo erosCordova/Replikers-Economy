@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import os
+import shlex
 import shutil
 import subprocess
 import time
@@ -18,7 +20,7 @@ class SandboxError(RuntimeError):
 
 
 class SandboxUnavailableError(SandboxError):
-    """Docker rootless no esta disponible."""
+    """Docker no esta disponible para el sandbox."""
 
 
 class SandboxStartError(SandboxError):
@@ -67,11 +69,23 @@ class DockerSandboxRunner:
     def __init__(
         self,
         *,
-        context: str = "rootless",
+        context: str | None = None,
         python_image: str = "python:3.13-alpine",
         limits: SandboxLimits | None = None,
     ):
-        self.context = context
+        configured_context = (
+            context
+            or os.getenv(
+                "REPLIKERS_DOCKER_CONTEXT",
+                "",
+            )
+        ).strip()
+
+        self.context = (
+            configured_context
+            or None
+        )
+
         self.python_image = python_image
         self.limits = limits or SandboxLimits()
 
@@ -89,11 +103,19 @@ class DockerSandboxRunner:
         self.docker_binary = docker_binary
 
     def _prefix(self) -> list[str]:
-        return [
+        prefix = [
             self.docker_binary,
-            "--context",
-            self.context,
         ]
+
+        if self.context:
+            prefix.extend(
+                [
+                    "--context",
+                    self.context,
+                ]
+            )
+
+        return prefix
 
     def _docker(
         self,
@@ -320,7 +342,13 @@ class DockerSandboxRunner:
             args.extend(
                 [
                     "--volume",
-                    f"{root}:/workspace:ro",
+                    f"{root}:/workspace-src:ro",
+
+                    "--tmpfs",
+                    (
+                        "/workspace:"
+                        "rw,nosuid,nodev,size=64m"
+                    ),
 
                     "--workdir",
                     "/workspace",
@@ -346,7 +374,7 @@ class DockerSandboxRunner:
     ) -> SandboxResult:
         if not self.daemon_ready():
             raise SandboxUnavailableError(
-                "Docker rootless no responde."
+                "Docker no responde en el contexto configurado."
             )
 
         if not self.image_ready(
@@ -502,16 +530,26 @@ class DockerSandboxRunner:
             )
         )
 
+        target = (
+            "/workspace/"
+            + normalized
+        )
+
+        bootstrap = (
+            "cp -R /workspace-src/. /workspace/ "
+            "&& exec python -B "
+            + shlex.quote(
+                target
+            )
+        )
+
         return self._execute(
             operation="run_python",
             image=self.python_image,
             workspace_root=workspace_root,
             command=[
-                "python",
-                "-B",
-                (
-                    "/workspace/"
-                    + normalized
-                ),
+                "sh",
+                "-c",
+                bootstrap,
             ],
         )

@@ -616,7 +616,7 @@ class Phase13FinalCorrectionsTests(
             first_calls,
         )
 
-    def test_vera_can_review_again_after_correction(
+    def test_vera_approval_after_correction_waits_for_integration(
         self,
     ):
         self.transaction_states = []
@@ -673,7 +673,7 @@ class Phase13FinalCorrectionsTests(
 
         self.assertEqual(
             self.project.status,
-            "completed",
+            "awaiting_final_review",
         )
 
     def test_graph_executes_corrections_before_vera(
@@ -703,6 +703,28 @@ class Phase13FinalCorrectionsTests(
                     True,
                 "summary":
                     "Correcciones verificadas.",
+            }
+
+        def integration(**kwargs):
+            _ = kwargs
+
+            calls.append(
+                "integracion"
+            )
+
+            project.status = (
+                "awaiting_final_review"
+            )
+
+            return {
+                "completed": False,
+                "completed_tasks": 1,
+                "total_tasks": 1,
+                "final_review_required": True,
+                "final_review_status":
+                    "pending",
+                "final_review_id": None,
+                "integration_ready": True,
             }
 
         def final_review(**kwargs):
@@ -762,7 +784,7 @@ class Phase13FinalCorrectionsTests(
                             failed_contract_ids=[],
                         ),
                 integration=
-                    lambda **kwargs: {},
+                    integration,
                 active_contracts=
                     lambda **kwargs: [],
                 emit=
@@ -784,6 +806,7 @@ class Phase13FinalCorrectionsTests(
             calls,
             [
                 "correcciones",
+                "integracion",
                 "vera",
             ],
         )

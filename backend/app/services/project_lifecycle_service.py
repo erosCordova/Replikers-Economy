@@ -1440,15 +1440,54 @@ def finalize_project_if_ready(
         )
     )
 
+    delivery_snapshot_ready = True
+
+    if (
+        final_review_required
+        and final_review is not None
+        and final_review.status
+        == "approved"
+    ):
+        from app.models.execution import (
+            ProjectDeliverySnapshot,
+        )
+
+        delivery_snapshot = db.scalar(
+            select(
+                ProjectDeliverySnapshot
+            )
+            .where(
+                ProjectDeliverySnapshot
+                .final_review_id
+                == final_review.id
+            )
+            .limit(1)
+        )
+
+        delivery_snapshot_ready = (
+            delivery_snapshot
+            is not None
+            and delivery_snapshot
+            .files_count > 0
+            and bool(
+                delivery_snapshot
+                .package_sha256
+            )
+        )
+
     completed = (
         tasks_ready
         and final_approved
+        and delivery_snapshot_ready
     )
 
     if (
         tasks_ready
         and final_review_required
-        and not final_approved
+        and (
+            not final_approved
+            or not delivery_snapshot_ready
+        )
     ):
         if (
             final_review_status
@@ -1550,6 +1589,8 @@ def finalize_project_if_ready(
             if final_review is not None
             else None
         ),
+        "delivery_snapshot_ready":
+            delivery_snapshot_ready,
         "final_reviewer_id": (
             final_requirement
             .assigned_repliker_id

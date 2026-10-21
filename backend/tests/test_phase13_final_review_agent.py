@@ -210,7 +210,7 @@ class Phase13FinalReviewAgentTests(
         self.db.close()
         self.engine.dispose()
 
-    def test_vera_can_approve_project(
+    def test_vera_approval_waits_for_integrated_delivery(
         self,
     ):
         def evaluator(**kwargs):
@@ -253,16 +253,16 @@ class Phase13FinalReviewAgentTests(
             "approved",
         )
 
-        self.assertTrue(
+        self.assertFalse(
             result["completed"]
         )
 
         self.assertEqual(
             self.project.status,
-            "completed",
+            "awaiting_final_review",
         )
 
-        economy.assert_called_once()
+        economy.assert_not_called()
 
     def test_vera_can_request_corrections(
         self,

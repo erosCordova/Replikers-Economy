@@ -42,6 +42,9 @@ from app.services.project_delivery_snapshot_service import (
     DeliverySnapshotError,
     ensure_delivery_snapshot,
 )
+from app.services.project_integration_service import (
+    build_project_integration_context,
+)
 from app.services.activity_service import (
     record_activity,
 )
@@ -366,6 +369,12 @@ def _project_context(
         ],
         "tareas":
             task_context,
+        "integracion":
+            build_project_integration_context(
+                db=db,
+                project_id=
+                    project.id,
+            ),
     }
 
 

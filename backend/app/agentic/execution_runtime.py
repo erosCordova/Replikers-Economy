@@ -142,6 +142,12 @@ REGLAS DE EJECUCION
 15. La verificacion formal de aceptacion pertenece
     al sistema de QA. No falsifiques ni anticipes
     un resultado de QA.
+
+16. Si creas pruebas, deben importar o ejecutar la
+    implementacion REAL del entregable. Esta prohibido
+    crear dentro del test clases, APIs, bases de datos
+    o interfaces ficticias que reimplementen el sistema
+    solamente para conseguir pruebas verdes.
 """.strip()
 
     return (

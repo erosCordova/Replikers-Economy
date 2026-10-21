@@ -32,6 +32,9 @@ from app.services.final_review_correction_service import (
 from app.services.final_review_service import (
     run_project_final_review,
 )
+from app.services.project_integration_service import (
+    run_project_integration_stage,
+)
 from app.services.realtime_service import (
     record_workflow_event,
 )
@@ -81,7 +84,7 @@ DEFAULT_HANDLERS = (
             run_execution_stage,
         qa=run_qa_stage,
         integration=
-            finalize_project_if_ready,
+            run_project_integration_stage,
         active_contracts=
             active_contract_ids,
         emit=
@@ -1081,10 +1084,17 @@ def build_project_lifecycle_graph(
         if (
             project.status
             == "completed"
-            or status == "approved"
         ):
             current_stage = "completed"
             next_action = "none"
+
+        elif status == "approved":
+            current_stage = (
+                "awaiting_final_review"
+            )
+            next_action = (
+                "prepare_delivery"
+            )
 
         elif (
             status
@@ -1555,7 +1565,7 @@ def build_project_lifecycle_graph(
         corrections_router,
         {
             "review":
-                "final_review",
+                "integration",
             "done":
                 END,
         },
