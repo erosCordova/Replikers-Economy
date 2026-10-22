@@ -2,6 +2,7 @@
 /* RW_WORLD_NEGOTIATION_REPLAY_V1 */
 import { useState as useRWReplayState, useEffect as useRWReplayEffect } from "react";
 import { api as rwReplayApi } from "../api";
+import { createPortal } from "react-dom";
 import { api } from "../api";
 
 import {
@@ -12,6 +13,13 @@ import {
 } from "react";
 
 import "./MundoReplikersWorld.css";
+import {
+  Globe2, Bot, Store, FileText,
+  MessageSquare, Brain, Zap, Gem
+} from "lucide-react";
+import WorldVisualAnalytics from "./WorldVisualAnalytics";
+import WorldPixiAtmosphere from "./WorldPixiAtmosphere";
+import NeonCityArchitecture from "./NeonCityArchitecture";
 import { createContext, useContext } from "react";
 import useWorldEconomicAvatarActivity, { economicAvatarClass } from "./useWorldEconomicAvatarActivity";
 import WorldActivitySections from "./WorldActivitySections";
@@ -95,6 +103,24 @@ type Zone = {
   gy: number;
   description: string;
 };
+
+
+function RWNavIcon({ name }: { name: WorldSection }) {
+  const icons = {
+    Mundo: Globe2,
+    Agentes: Bot,
+    Mercado: Store,
+    Contratos: FileText,
+    Conversaciones: MessageSquare,
+    Estrategias: Brain,
+    Eventos: Zap,
+    Economía: Gem,
+  };
+
+  const Icon = icons[name];
+
+  return <Icon size={18} strokeWidth={1.9} aria-hidden="true" />;
+}
 
 const sections: {
   name: WorldSection;
@@ -870,14 +896,12 @@ function CityScene({
               strokeWidth="2"
             />
 
-            <text
+            <NeonCityArchitecture
+              id={zone.id}
               x={x}
-              y={y - 12}
-              textAnchor="middle"
-              fontSize="25"
-            >
-              {zone.icon}
-            </text>
+              y={y}
+              active={active}
+            />
 
             <rect
               x={x - 54}
@@ -1006,6 +1030,9 @@ export default function MundoReplikersWorld({
   onClose: () => void;
 }) {
   const rwEconomicAvatarActivity = useWorldEconomicAvatarActivity();
+
+  const [replayDock, setReplayDock] =
+    useState<HTMLDivElement | null>(null);
 
   const [section, setSection] =
     useState<WorldSection>("Mundo");
@@ -1217,7 +1244,7 @@ export default function MundoReplikersWorld({
     selectedDashboard?.wallet.available_cents;
 
   return (
-    <div className="rw-app">
+    <div className="rw-app rw-final-ui" data-section={section}>
       <aside className="rw-sidebar">
         <div className="rw-brand">
           <span className="rw-brand-icon">🌐</span>
@@ -1244,7 +1271,9 @@ export default function MundoReplikersWorld({
               }
               onClick={() => setSection(item.name)}
             >
-              <span>{item.icon}</span>
+              <span className="rw-final-nav-icon">
+                <RWNavIcon name={item.name} />
+              </span>
               {item.name}
             </button>
           ))}
@@ -1392,7 +1421,7 @@ export default function MundoReplikersWorld({
             </div>
 
             <div className="rw-scene" style={{ position: "relative" }}>
-              <RWWorldNegotiationReplay />
+              <RWWorldNegotiationReplay dock={replayDock} />
 
               <div className="rw-scene-sun" />
               <div className="rw-scene-cloud rw-cloud-one" />
@@ -1419,6 +1448,14 @@ export default function MundoReplikersWorld({
                 }}
               />
         </RWCityEconomicContext.Provider>
+              <WorldPixiAtmosphere
+                agents={visibleAgents.map((agent) => ({
+                  id: agent.repliker_id,
+                  name: agent.name,
+                  active: agent.is_active,
+                }))}
+                selectedId={selectedAgentId}
+              />
 
               <div className="rw-scene-tag">
                 🏙️ 8 zonas para explorar
@@ -1453,7 +1490,17 @@ export default function MundoReplikersWorld({
               ))}
             </div>
             <>
-<WorldActivitySections
+<WorldVisualAnalytics
+              section={section}
+              agents={visibleAgents}
+              dashboards={dashboards}
+              exampleMode={exampleMode}
+              onSelectAgent={(id) => {
+                setSelectedAgentId(id);
+                setSection("Agentes");
+              }}
+            />
+            <WorldActivitySections
               section={section}
               agents={visibleAgents}
               dashboards={dashboards}
@@ -1523,6 +1570,11 @@ export default function MundoReplikersWorld({
           </section>
 
           <aside className="rw-inspector">
+            <div
+              className="rw-replay-side-dock"
+              ref={setReplayDock}
+              style={{ marginBottom: 16 }}
+            />
             <div className="rw-section-top">
               <div>
                 <span className="rw-eyebrow">
@@ -1725,7 +1777,11 @@ type RWReplayState = {
   stage: RWReplayStage;
 };
 
-function RWWorldNegotiationReplay() {
+function RWWorldNegotiationReplay({
+  dock,
+}: {
+  dock: HTMLDivElement | null;
+}) {
   const [events, setEvents] =
     useRWReplayState<RWReplayEvent[]>([]);
 
@@ -1943,24 +1999,23 @@ function RWWorldNegotiationReplay() {
         zIndex: 25,
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          right: 12,
-          top: 12,
-          zIndex: 5,
-          pointerEvents: "auto",
-          maxWidth: "min(310px, 70%)",
-          padding: 10,
-          borderRadius: 14,
-          background: "rgba(255,255,255,.96)",
-          boxShadow:
-            "0 5px 22px rgba(22,45,80,.16)",
-          border: "1px solid #dbe6f4",
-          color: "#17365e",
-          fontSize: 12,
-        }}
-      >
+      {dock && createPortal(
+        <div
+          role="region"
+          aria-label="Historial de negociaciones"
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            pointerEvents: "auto",
+            padding: 13,
+            borderRadius: 12,
+            background: "linear-gradient(145deg, #0a2545, #06162d)",
+            border: "1px solid #267fc4",
+            boxShadow: "0 0 18px rgba(0,140,255,.19)",
+            color: "#e8f7ff",
+            fontSize: 12,
+          }}
+        >
         <div style={{ fontWeight: 800 }}>
           Historial de negociaciones
         </div>
@@ -1970,7 +2025,7 @@ function RWWorldNegotiationReplay() {
             fontSize: 11,
             marginTop: 3,
             marginBottom: 8,
-            color: "#5f7190",
+            color: "#9dc6e7",
           }}
         >
           Reproducción de eventos registrados.
@@ -2004,9 +2059,9 @@ function RWWorldNegotiationReplay() {
             fontSize: 12,
             fontWeight: 800,
             background:
-              replay ? "#fff0ef" : "#437ee9",
+              replay ? "#4a2036" : "#075fc5",
             color:
-              replay ? "#b02b33" : "#ffffff",
+              replay ? "#ffd1df" : "#ffffff",
             opacity:
               !replay && events.length === 0
                 ? 0.6
@@ -2029,7 +2084,7 @@ function RWWorldNegotiationReplay() {
             style={{
               marginTop: 6,
               fontSize: 11,
-              color: "#a33b27",
+              color: "#ffaaa0",
             }}
           >
             {loadError}
@@ -2050,7 +2105,9 @@ function RWWorldNegotiationReplay() {
             <div>{stageText}</div>
           </div>
         )}
-      </div>
+      </div>,
+        dock,
+      )}
 
       {event && (
         <>

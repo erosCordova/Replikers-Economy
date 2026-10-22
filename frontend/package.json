@@ -12,8 +12,10 @@
     "production:check": "node scripts/verificar-entorno-produccion.mjs"
   },
   "dependencies": {
+    "@pixi/react": "^8.0.5",
     "axios": "^1.20.0",
     "lucide-react": "^1.48.0",
+    "pixi.js": "^8.22.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

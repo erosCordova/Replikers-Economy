@@ -1,0 +1,259 @@
+/* REPLIKERS_UI_POLISH_V1 */
+
+/* Mantener las tres columnas equilibradas. */
+
+@media (min-width: 1200px) {
+  .rw-final-ui.rw-app {
+    grid-template-columns:
+      205px minmax(0, 1fr) 310px !important;
+    column-gap: 14px;
+    row-gap: 13px;
+    align-items: start;
+  }
+
+  .rw-final-ui .rw-city-card {
+    min-width: 0;
+    padding: 18px;
+  }
+
+  .rw-final-ui .rw-inspector {
+    min-width: 0;
+    padding: 16px;
+  }
+}
+
+/* Hacer visible la ciudad completa en pantalla. */
+
+.rw-final-ui[data-section="Mundo"] .rw-scene {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(420px, 62vh, 620px) !important;
+  min-height: 0 !important;
+  max-height: 620px !important;
+  overflow: hidden;
+}
+
+.rw-final-ui[data-section="Mundo"] svg.rw-city {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  flex: 0 0 auto;
+}
+
+/* Los elementos flotantes no amplían el mapa. */
+
+.rw-final-ui .rw-scene-sun,
+.rw-final-ui .rw-scene-cloud,
+.rw-final-ui .rw-scene-tag {
+  position: absolute;
+}
+
+.rw-final-ui .rw-scene-tag {
+  right: 12px;
+  bottom: 12px;
+  z-index: 7;
+}
+
+/* Indicadores más legibles y proporcionados. */
+
+.rw-final-ui .rw-stat {
+  min-height: 100px;
+  padding: 16px;
+}
+
+.rw-final-ui .rw-stat > span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.rw-final-ui .rw-stat > strong {
+  display: block;
+  margin: 10px 0;
+  font-size: clamp(20px, 1.7vw, 28px);
+}
+
+.rw-final-ui .rw-stat > small {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Mejorar jerarquía y espaciado. */
+
+.rw-final-ui .rw-section-top h2 {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.rw-final-ui .rw-city-card {
+  box-shadow:
+    0 0 24px #008aff20,
+    inset 0 1px #75deff1b;
+}
+
+.rw-final-ui .rw-inspector {
+  box-shadow:
+    0 0 21px #008aff19,
+    inset 0 1px #75deff1b;
+}
+
+.rw-final-ui .rw-agent-item {
+  padding: 12px;
+  min-height: 64px;
+}
+
+.rw-final-ui .rw-agent-names strong {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.rw-final-ui .rw-detail-row {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+
+.rw-final-ui .rw-replay-side-dock {
+  margin-bottom: 17px !important;
+}
+
+/* Las otras secciones no son vistas de la ciudad. */
+
+.rw-final-ui:not([data-section="Mundo"])
+  .rw-city-card > .rw-section-top {
+  display: none !important;
+}
+
+.rw-final-ui:not([data-section="Mundo"])
+  .rw-city-card {
+  padding-top: 5px;
+}
+
+.rw-final-ui:not([data-section="Mundo"])
+  .rw-final-analytics {
+  margin-top: 14px;
+}
+
+/* Evitar duplicar patrimonios y directorios. */
+
+.rw-final-ui[data-section="Economía"]
+  .rw-extra-panel,
+.rw-final-ui[data-section="Agentes"]
+  .rw-extra-panel {
+  display: none !important;
+}
+
+/* Optimizar visualización económica. */
+
+.rw-final-ui[data-section="Economía"]
+  .rw-final-analytics {
+  padding: 22px;
+}
+
+.rw-final-ui .rw-final-total {
+  padding: 24px;
+  border: 1px solid #318cce;
+}
+
+.rw-final-ui .rw-final-total strong {
+  font-size: clamp(27px, 2.7vw, 37px);
+  line-height: 1.2;
+}
+
+.rw-final-ui .rw-final-chart {
+  gap: 22px;
+  margin-top: 25px;
+}
+
+.rw-final-ui .rw-final-track {
+  height: 18px;
+}
+
+.rw-final-ui .rw-final-chart-label {
+  font-size: 13px;
+}
+
+/* Hacer que la navegación sea más clara. */
+
+.rw-final-ui .rw-nav-item {
+  gap: 12px;
+  padding: 12px 13px;
+}
+
+.rw-final-ui .rw-nav-item--active {
+  box-shadow:
+    0 0 13px #009aff88,
+    inset 0 0 10px #69d8ff20;
+}
+
+.rw-final-ui .rw-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #2b83bd #06152a;
+}
+
+/* Portátiles de anchura intermedia. */
+
+@media (min-width: 981px) and (max-width: 1199px) {
+  .rw-final-ui[data-section="Mundo"] .rw-scene {
+    height: 490px !important;
+    min-height: 0 !important;
+  }
+
+  .rw-final-ui[data-section="Mundo"] svg.rw-city {
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+}
+
+/* Tabletas y móviles. */
+
+@media (max-width: 980px) {
+  .rw-final-ui.rw-app {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .rw-final-ui .rw-content {
+    min-width: 0;
+  }
+
+  .rw-final-ui .rw-city-card,
+  .rw-final-ui .rw-inspector {
+    min-width: 0;
+  }
+
+  .rw-final-ui[data-section="Mundo"] .rw-scene {
+    height: clamp(340px, 56vw, 520px) !important;
+    min-height: 0 !important;
+  }
+
+  .rw-final-ui[data-section="Mundo"] svg.rw-city {
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+  .rw-final-ui .rw-stat-grid {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .rw-final-ui .rw-stat {
+    min-height: 82px;
+  }
+
+  .rw-final-ui[data-section="Mundo"] .rw-scene {
+    height: 335px !important;
+    min-height: 0 !important;
+  }
+
+  .rw-final-ui .rw-final-analytics {
+    padding: 13px !important;
+  }
+
+  .rw-final-ui .rw-final-chart-label {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,313 @@
+/* REPLIKERS_NEON_LAYOUT_V1 */
+/* Composicion visual sin cambios economicos. */
+
+@media (min-width: 981px) {
+
+  :is(.rww-world, .rw-overlay) .rw-app {
+    display: grid !important;
+    grid-template-columns:
+      190px
+      minmax(0, 1fr)
+      305px !important;
+    grid-template-rows:
+      auto
+      auto
+      minmax(0, 1fr)
+      auto;
+    column-gap: 14px;
+    row-gap: 14px;
+    align-items: start;
+    padding-right: 14px;
+    min-height: 100vh;
+    background: transparent;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-content {
+    display: contents !important;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-main-grid {
+    display: contents !important;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-sidebar {
+    grid-column: 1;
+    grid-row: 1 / 5;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    align-self: stretch;
+    position: sticky;
+    top: 68px;
+    height: calc(100vh - 68px);
+    z-index: 10;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-header {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    margin: 20px 0 0;
+    padding: 19px 23px;
+    border-radius: 16px;
+    border: 1px solid #15568e;
+    background:
+      radial-gradient(
+        ellipse at 75% 0%,
+        #135ca65c,
+        transparent 55%
+      ),
+      linear-gradient(120deg, #0b2344, #06162e);
+    box-shadow:
+      0 0 19px #007fff20,
+      inset 0 1px #89daff1b;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-stat-grid {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr)) !important;
+    margin: 0;
+    gap: 12px;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-city-card {
+    grid-column: 2;
+    grid-row: 3;
+    min-width: 0;
+    margin: 0;
+    padding: 18px;
+    align-self: start;
+    overflow: hidden;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-inspector {
+    grid-column: 3;
+    grid-row: 3;
+    min-width: 0;
+    margin: 0;
+    padding: 17px 14px;
+    position: sticky;
+    top: 84px;
+    max-height: calc(100vh - 104px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-footer {
+    grid-column: 2 / 4;
+    grid-row: 4;
+    padding: 8px 10px 20px;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-notice,
+  :is(.rww-world, .rw-overlay) .rw-loading,
+  :is(.rww-world, .rw-overlay) .rw-example-banner {
+    grid-column: 2 / 4;
+  }
+}
+
+/* Escena: un area central dominante */
+
+:is(.rww-world, .rw-overlay) .rw-scene {
+  min-height: 505px;
+  overflow: hidden;
+  border-radius: 15px;
+  border-color: #1688d6;
+  box-shadow:
+    0 0 24px #008aff40,
+    inset 0 0 42px #008fff25;
+}
+
+:is(.rww-world, .rw-overlay) .rw-city {
+  width: 100%;
+  min-height: 450px;
+}
+
+:is(.rww-world, .rw-overlay) .rw-city-card
+  .rw-section-top {
+  margin-bottom: 15px;
+}
+
+:is(.rww-world, .rw-overlay) .rw-section-top h2 {
+  color: #f2faff;
+}
+
+:is(.rww-world, .rw-overlay) .rw-stat {
+  min-height: 92px;
+  padding: 15px;
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, #0a2445, #071832);
+  border: 1px solid #23649d;
+  box-shadow:
+    inset 0 1px #86d8ff17,
+    0 0 17px #006cff1b;
+}
+
+:is(.rww-world, .rw-overlay) .rw-stat > strong {
+  font-size: clamp(18px, 2vw, 25px);
+  line-height: 1.2;
+}
+
+/* Panel de agentes de la derecha */
+
+:is(.rww-world, .rw-overlay) .rw-inspector
+  .rw-section-top {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #205486;
+}
+
+:is(.rww-world, .rw-overlay) .rw-inspector
+  .rw-agent-list {
+  gap: 9px;
+}
+
+:is(.rww-world, .rw-overlay) .rw-inspector
+  .rw-agent-item {
+  border-radius: 11px;
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease;
+}
+
+:is(.rww-world, .rw-overlay) .rw-inspector
+  .rw-agent-item:hover {
+  border-color: #39c9ff;
+  box-shadow: 0 0 16px #008fff55;
+}
+
+:is(.rww-world, .rw-overlay) .rw-replay-side-dock {
+  margin-bottom: 16px;
+}
+
+:is(.rww-world, .rw-overlay) .rw-replay-side-dock button {
+  cursor: pointer;
+  border: 1px solid #39bdff !important;
+  box-shadow: 0 0 14px #007eff4d;
+}
+
+:is(.rww-world, .rw-overlay) .rw-replay-side-dock button:disabled {
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Barra superior general */
+
+.rww-header {
+  position: sticky;
+  top: 0;
+  z-index: 110;
+  min-height: 68px;
+  box-sizing: border-box;
+  background: linear-gradient(
+    100deg,
+    #04142e,
+    #081f3c
+  ) !important;
+  border-bottom: 1px solid #1771b9 !important;
+  box-shadow: 0 4px 18px #006cff28;
+}
+
+.rww-brand strong {
+  color: #e8f6ff;
+  font-size: 18px;
+}
+
+.rww-brand small {
+  color: #7dbee8;
+}
+
+/* Adaptacion a portatiles */
+
+@media (min-width: 981px) and (max-width: 1240px) {
+  :is(.rww-world, .rw-overlay) .rw-app {
+    grid-template-columns:
+      172px
+      minmax(0, 1fr)
+      284px !important;
+    column-gap: 11px;
+    padding-right: 11px;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-stat {
+    padding: 12px;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-city-card {
+    padding: 13px;
+  }
+}
+
+/* Pantallas intermedias */
+
+@media (min-width: 721px) and (max-width: 980px) {
+  :is(.rww-world, .rw-overlay) .rw-main-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-sidebar {
+    position: relative;
+    height: auto;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-stat-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-inspector {
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* Moviles */
+
+@media (max-width: 720px) {
+  :is(.rww-world, .rw-overlay) .rw-app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-sidebar {
+    position: relative;
+    height: auto;
+    overflow: visible;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-inspector {
+    position: relative;
+    max-height: none;
+    overflow: visible;
+    top: auto;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-scene {
+    min-height: 320px;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-city {
+    min-height: 295px;
+  }
+
+  :is(.rww-world, .rw-overlay) .rw-stat-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.rww-world, .rw-overlay) .rw-inspector
+    .rw-agent-item {
+    transition: none;
+  }
+}

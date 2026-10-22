@@ -1,0 +1,630 @@
+/* REPLIKERS_NEON_DESIGN_V1 */
+/* Diseño visual. No modifica economía, permisos ni agentes. */
+
+:root {
+  color-scheme: dark;
+  --rw-neon-bg: #030b1a;
+  --rw-neon-panel: #07182f;
+  --rw-neon-panel-2: #0a2445;
+  --rw-neon-border: #19548e;
+  --rw-neon-blue: #00baff;
+  --rw-neon-text: #eaf7ff;
+  --rw-neon-muted: #8bb5d7;
+  --rw-neon-green: #2ae6af;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #030b1a;
+}
+
+.rww-app,
+:is(.rw-overlay, .rww-world) {
+  background:
+    radial-gradient(ellipse at 65% 0%, #10427a65, transparent 52%),
+    linear-gradient(145deg, #020816, #06152b 65%, #020817) !important;
+  color: var(--rw-neon-text) !important;
+}
+
+/* Estructura general */
+
+:is(.rw-overlay, .rww-world) .rw-app {
+  grid-template-columns: 214px minmax(0, 1fr);
+  min-height: 100vh;
+  background: transparent;
+}
+
+:is(.rw-overlay, .rww-world) .rw-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  gap: 19px;
+  padding: 23px 13px;
+  background:
+    linear-gradient(180deg, #04142d 0%, #030b1e 70%, #061630 100%);
+  border-right: 1px solid #1264a7;
+  box-shadow: 6px 0 25px #005bff19;
+}
+
+:is(.rw-overlay, .rww-world) .rw-content {
+  padding: 22px clamp(15px, 2vw, 32px);
+  min-width: 0;
+}
+
+/* Marca y navegación */
+
+:is(.rw-overlay, .rww-world) .rw-brand {
+  padding: 8px 4px 18px;
+  border-bottom: 1px solid #2166a34b;
+}
+
+:is(.rw-overlay, .rww-world) .rw-brand-icon {
+  color: #c9f9ff;
+  background: radial-gradient(circle at 40% 30%, #086bd5, #06214b);
+  border: 1px solid #2abaff;
+  box-shadow: 0 0 18px #009dff7c, inset 0 0 12px #5bdfff66;
+}
+
+:is(.rw-overlay, .rww-world) .rw-brand strong {
+  color: #f5fbff;
+  letter-spacing: 0.02em;
+}
+
+:is(.rw-overlay, .rww-world) .rw-brand small,
+:is(.rw-overlay, .rww-world) .rw-sidebar-label,
+:is(.rw-overlay, .rww-world) .rw-eyebrow {
+  color: #78caff;
+}
+
+:is(.rw-overlay, .rww-world) .rw-nav-item {
+  color: #b9d8f5;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  min-height: 44px;
+  transition:
+    background .2s,
+    box-shadow .2s,
+    border-color .2s;
+}
+
+:is(.rw-overlay, .rww-world) .rw-nav-item:hover {
+  color: #fff;
+  background: #103862;
+  border-color: #2675c177;
+}
+
+:is(.rw-overlay, .rww-world) .rw-nav-item--active {
+  background: linear-gradient(100deg, #065ee4, #064d9c);
+  color: #fff;
+  border: 1px solid #36c5ff;
+  box-shadow:
+    0 0 9px #00baffaa,
+    0 0 22px #005eff55,
+    inset 0 0 15px #6cd6ff33;
+}
+
+:is(.rw-overlay, .rww-world) .rw-sidebar-footer {
+  background: #071b35;
+  border: 1px solid #205685;
+  border-radius: 13px;
+  padding: 15px;
+}
+
+:is(.rw-overlay, .rww-world) .rw-sidebar-footer small {
+  color: #92bddd;
+}
+
+/* Encabezados */
+
+:is(.rw-overlay, .rww-world) .rw-header h1,
+:is(.rw-overlay, .rww-world) .rw-section-top h2 {
+  color: #f1faff;
+  text-shadow: 0 0 16px #1b86ff45;
+}
+
+:is(.rw-overlay, .rww-world) .rw-header p,
+:is(.rw-overlay, .rww-world) .rw-zone-info p {
+  color: #96b9d6;
+}
+
+:is(.rw-overlay, .rww-world) .rw-button {
+  border: 1px solid #2674b8;
+}
+
+:is(.rw-overlay, .rww-world) .rw-button--primary,
+:is(.rw-overlay, .rww-world) .rw-button--secondary {
+  color: #eefaff;
+  background: linear-gradient(115deg, #063e95, #0879c7);
+  box-shadow: 0 0 15px #0878ed55;
+}
+
+:is(.rw-overlay, .rww-world) .rw-button--close {
+  color: #bbd9f5;
+  background: #081b33;
+}
+
+/* Indicadores principales */
+
+:is(.rw-overlay, .rww-world) .rw-stat-grid {
+  gap: 12px;
+}
+
+:is(.rw-overlay, .rww-world) .rw-stat,
+:is(.rw-overlay, .rww-world) .rw-city-card,
+:is(.rw-overlay, .rww-world) .rw-inspector {
+  background:
+    linear-gradient(150deg, #0a2445, #06152d 84%);
+  border: 1px solid #19578f;
+  border-radius: 16px;
+  color: #edf8ff;
+  box-shadow:
+    0 0 20px #005dff20,
+    inset 0 1px #8ad7ff1c;
+}
+
+:is(.rw-overlay, .rww-world) .rw-stat > span {
+  color: #92bddf;
+}
+
+:is(.rw-overlay, .rww-world) .rw-stat > strong {
+  color: #f3fbff;
+  text-shadow: 0 0 15px #168cff50;
+  overflow-wrap: anywhere;
+}
+
+:is(.rw-overlay, .rww-world) .rw-stat > small {
+  color: #64c6dc;
+}
+
+:is(.rw-overlay, .rww-world) .rw-stat .rw-stat-simulation {
+  color: #2ce9b1;
+}
+
+:is(.rw-overlay, .rww-world) .rw-main-grid {
+  grid-template-columns: minmax(0, 1.65fr) minmax(290px, .75fr);
+  gap: 16px;
+}
+
+/* Mundo isométrico nocturno */
+
+:is(.rw-overlay, .rww-world) .rw-scene {
+  position: relative;
+  min-height: 470px;
+  background:
+    radial-gradient(circle at 48% 34%, #0b6cb66e, transparent 35%),
+    radial-gradient(circle at 81% 72%, #42128466, transparent 37%),
+    radial-gradient(circle at 10% 85%, #087c9070, transparent 40%),
+    linear-gradient(155deg, #020a1b, #0a2853, #030b20);
+  border: 1px solid #228cd0;
+  box-shadow:
+    0 0 23px #007cff3d,
+    inset 0 0 40px #008fff24;
+}
+
+:is(.rw-overlay, .rww-world) .rw-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .18;
+  background-image:
+    radial-gradient(#d5efff 1px, transparent 1px),
+    radial-gradient(#54c7ff 1px, transparent 1px);
+  background-size: 61px 67px, 91px 87px;
+  background-position: 3px 12px, 42px 23px;
+}
+
+:is(.rw-overlay, .rww-world) .rw-city {
+  position: relative;
+  z-index: 1;
+  min-height: 420px;
+  filter: saturate(1.55) contrast(1.1);
+}
+
+:is(.rw-overlay, .rww-world) #rw-ground stop:first-child {
+  stop-color: #124a72;
+}
+
+:is(.rw-overlay, .rww-world) #rw-ground stop:last-child {
+  stop-color: #092c51;
+}
+
+:is(.rw-overlay, .rww-world) #rw-water stop:first-child {
+  stop-color: #084368;
+}
+
+:is(.rw-overlay, .rww-world) #rw-water stop:last-child {
+  stop-color: #04192f;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone {
+  filter: drop-shadow(0 0 5px #00bfff66);
+  transition: filter .2s ease;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone:hover,
+:is(.rw-overlay, .rww-world) .rw-map-zone--selected {
+  filter: drop-shadow(0 0 11px #00bfffcc);
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone polygon:first-of-type {
+  fill: #154368;
+  stroke: #2b9de2;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone polygon:nth-of-type(2) {
+  fill: #092b4b;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone polygon:nth-of-type(3) {
+  fill: #0c3f6e;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone polygon:nth-of-type(4) {
+  stroke: #89deff;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-agent {
+  filter: drop-shadow(0 0 10px #00aaffaa);
+}
+
+:is(.rw-overlay, .rww-world) .rw-scene-sun {
+  width: 50px;
+  height: 50px;
+  background: #43bcff;
+  opacity: .32;
+  box-shadow:
+    0 0 38px #008dff,
+    0 0 80px #008dff77;
+}
+
+:is(.rw-overlay, .rww-world) .rw-scene-cloud {
+  opacity: .08;
+}
+
+:is(.rw-overlay, .rww-world) .rw-scene-tag {
+  color: #ccefff;
+  background: #062746e8;
+  border: 1px solid #249ac8;
+  box-shadow: 0 0 13px #0189ff88;
+}
+
+/* Zonas y agentes */
+
+:is(.rw-overlay, .rww-world) .rw-zone-info,
+:is(.rw-overlay, .rww-world) .rw-agent-details,
+:is(.rw-overlay, .rww-world) .rw-extra-panel {
+  color: #dcefff;
+  background: #081d39;
+  border: 1px solid #1a5289;
+}
+
+:is(.rw-overlay, .rww-world) .rw-zone-symbol,
+:is(.rw-overlay, .rww-world) .rw-event-icon {
+  background: #10375f;
+}
+
+:is(.rw-overlay, .rww-world) .rw-zone-info strong,
+:is(.rw-overlay, .rww-world) .rw-agent-details h3,
+:is(.rw-overlay, .rww-world) .rw-agent-names strong,
+:is(.rw-overlay, .rww-world) .rw-detail-row strong,
+:is(.rw-overlay, .rww-world) .rw-event strong,
+:is(.rw-overlay, .rww-world) .rw-activity-title strong,
+:is(.rw-overlay, .rww-world) .rw-extra-panel h3,
+:is(.rw-overlay, .rww-world) .rw-extra-entry strong,
+:is(.rw-overlay, .rww-world) .rw-extra-agent strong {
+  color: #edf8ff;
+}
+
+:is(.rw-overlay, .rww-world) .rw-zone-chip {
+  background: #081e3b;
+  color: #a8d8f5;
+  border: 1px solid #205b91;
+}
+
+:is(.rw-overlay, .rww-world) .rw-zone-chip--active {
+  color: #fff;
+  background: #074f9d;
+  border-color: #23c5ff;
+  box-shadow: 0 0 12px #009fff70;
+}
+
+:is(.rw-overlay, .rww-world) .rw-agent-item,
+:is(.rw-overlay, .rww-world) .rw-extra-agent,
+:is(.rw-overlay, .rww-world) .rw-extra-strategy {
+  color: #e5f3ff;
+  background: #0a213d;
+  border: 1px solid #205486;
+}
+
+:is(.rw-overlay, .rww-world) .rw-agent-item--selected {
+  color: #fff;
+  background: #0d3b72;
+  border-color: #26c4ff;
+  box-shadow: 0 0 18px #008dff4d;
+}
+
+:is(.rw-overlay, .rww-world) .rw-agent-names small,
+:is(.rw-overlay, .rww-world) .rw-detail-row span,
+:is(.rw-overlay, .rww-world) .rw-event small,
+:is(.rw-overlay, .rww-world) .rw-muted,
+:is(.rw-overlay, .rww-world) .rw-extra-panel p,
+:is(.rw-overlay, .rww-world) .rw-extra-entry small {
+  color: #8eb7d9;
+}
+
+:is(.rw-overlay, .rww-world) .rw-detail-row,
+:is(.rw-overlay, .rww-world) .rw-event,
+:is(.rw-overlay, .rww-world) .rw-extra-entry {
+  border-color: #19476e;
+}
+
+/* Secciones económicas existentes */
+
+:is(.rw-overlay, .rww-world) .rw-mode-tag {
+  color: #36eab1;
+  background: #073e38;
+  border: 1px solid #14776e;
+}
+
+:is(.rw-overlay, .rww-world) .rw-autonomous-activity-v1 {
+  background: linear-gradient(145deg, #081f3a, #07162c) !important;
+  color: #e6f5ff !important;
+  border-color: #205e96 !important;
+}
+
+:is(.rw-overlay, .rww-world) .rw-autonomous-activity-v1 > header > span {
+  background: #103453 !important;
+  color: #a6d6f3 !important;
+}
+
+:is(.rw-overlay, .rww-world) .rw-disclaimer {
+  color: #a8d3ee;
+  background: #0a2541;
+  border: 1px solid #226388;
+}
+
+:is(.rw-overlay, .rww-world) .rw-disclaimer p {
+  color: #a8d3ee;
+}
+
+:is(.rw-overlay, .rww-world) .rw-extra-note,
+:is(.rw-overlay, .rww-world) .rw-extra-muted,
+:is(.rw-overlay, .rww-world) .rw-extra-total,
+:is(.rw-overlay, .rww-world) .rw-loading {
+  color: #badff8;
+  background: #0a2747;
+}
+
+:is(.rw-overlay, .rww-world) .rw-footer {
+  color: #8bb4d7;
+}
+
+/* Login y pantalla principal */
+
+.rww-auth,
+.rww-loading,
+.rww-hub {
+  background:
+    radial-gradient(ellipse at 22% 12%, #0a4181, transparent 46%),
+    radial-gradient(ellipse at 85% 88%, #17145c, transparent 44%),
+    #020916 !important;
+}
+
+.rww-auth-card,
+.rww-hub-content {
+  color: #e8f6ff;
+  background: linear-gradient(145deg, #0c2546, #061329);
+  border: 1px solid #2076bb;
+  box-shadow: 0 0 35px #007cff40;
+}
+
+.rww-auth-card h1,
+.rww-hub-content h1,
+.rww-form label {
+  color: #f0faff;
+}
+
+.rww-description,
+.rww-hub-content p,
+.rww-note {
+  color: #9fc7e4;
+}
+
+.rww-form input {
+  color: #e6f6ff;
+  background: #061a34;
+  border-color: #286699;
+}
+
+.rww-primary {
+  background: linear-gradient(115deg, #075bf5, #00a9ef);
+  box-shadow: 0 0 21px #008aff55;
+}
+
+.rww-link {
+  color: #72d5ff;
+}
+
+.rww-header {
+  background: #061731;
+  border-bottom: 1px solid #1465a6;
+}
+
+.rww-brand strong {
+  color: #eaf7ff;
+}
+
+.rww-brand small {
+  color: #8cbbdc;
+}
+
+.rww-header button {
+  background: #0b2d55;
+  color: #e4f6ff;
+  border: 1px solid #237bb8;
+}
+
+.rw-launch {
+  background: linear-gradient(120deg, #0642bf, #018cda);
+  color: white;
+  border: 1px solid #26c4ff;
+  box-shadow: 0 0 20px #007fff88;
+}
+
+/* Accesibilidad y pantallas pequeñas */
+
+:is(.rw-overlay, .rww-world) button:focus-visible,
+:is(.rw-overlay, .rww-world) [role="button"]:focus-visible {
+  outline: 2px solid #76e6ff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1250px) {
+  :is(.rw-overlay, .rww-world) .rw-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :is(.rw-overlay, .rww-world) .rw-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  :is(.rw-overlay, .rww-world) .rw-app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :is(.rw-overlay, .rww-world) .rw-sidebar {
+    position: relative;
+    height: auto;
+    overflow-y: visible;
+    padding: 12px;
+  }
+  :is(.rw-overlay, .rww-world) .rw-navigation {
+    display: flex;
+    overflow-x: auto;
+  }
+  :is(.rw-overlay, .rww-world) .rw-nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+  }
+  :is(.rw-overlay, .rww-world) .rw-content {
+    padding: 14px 11px;
+  }
+  :is(.rw-overlay, .rww-world) .rw-scene {
+    min-height: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.rw-overlay, .rww-world) *,
+  :is(.rw-overlay, .rww-world) *::before,
+  :is(.rw-overlay, .rww-world) *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* REPLIKERS_NEON_SCENE_V2 */
+/* Aplica a la página principal y al portal superpuesto. */
+
+.rww-world {
+  min-height: calc(100vh - 72px);
+  background: #030b1a;
+}
+
+:is(.rw-overlay, .rww-world) .rw-app {
+  width: 100%;
+  color: #eaf7ff;
+}
+
+:is(.rw-overlay, .rww-world) .rw-scene {
+  isolation: isolate;
+  background-image:
+    linear-gradient(
+      180deg,
+      #02081722 0%,
+      #05254a30 55%,
+      #02081955 100%
+    ),
+    url("/rw-neon-nightscape.svg") !important;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone,
+:is(.rw-overlay, .rww-world) .rw-map-agent {
+  cursor: pointer;
+}
+
+:is(.rw-overlay, .rww-world) .rw-map-zone:hover,
+:is(.rw-overlay, .rww-world) .rw-map-agent:hover {
+  filter: drop-shadow(0 0 12px #27cfff);
+}
+
+.rww-header {
+  position: relative;
+  z-index: 5;
+  min-height: 70px;
+  background:
+    linear-gradient(100deg, #06172d, #071e3e) !important;
+  border-bottom: 1px solid #1777ba !important;
+  box-shadow: 0 3px 24px #006eff25;
+}
+
+.rww-mini-logo {
+  background: radial-gradient(circle, #148fff, #06245d);
+  border: 1px solid #42c6ff;
+  box-shadow: 0 0 18px #008fff77;
+}
+
+.rww-brand strong {
+  color: #f3fbff !important;
+}
+
+.rww-brand small {
+  color: #83cafa !important;
+}
+
+.rww-header button {
+  border: 1px solid #298ac6 !important;
+  background: #092d54 !important;
+  color: #e8f7ff !important;
+}
+
+:is(.rw-overlay, .rww-world) .rw-scene-tag {
+  backdrop-filter: blur(10px);
+}
+
+:is(.rw-overlay, .rww-world) .rw-stat:hover,
+:is(.rw-overlay, .rww-world) .rw-agent-item:hover {
+  border-color: #289be4;
+  box-shadow: 0 0 23px #007fff48;
+}
+
+@media (max-width: 780px) {
+  .rww-world .rw-sidebar {
+    position: relative;
+    height: auto;
+  }
+
+  .rww-world .rw-navigation {
+    overflow-x: auto;
+  }
+
+  .rww-world .rw-main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.rw-overlay, .rww-world) .rw-stat,
+  :is(.rw-overlay, .rww-world) .rw-map-zone,
+  :is(.rw-overlay, .rww-world) .rw-agent-item {
+    transition: none;
+  }
+}

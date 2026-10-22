@@ -1,0 +1,61 @@
+/* REPLIKERS NEON - ARCHITECTURE V1 */
+
+.rw-neon-architecture {
+  --rw-zone-accent: #28caff;
+  filter:
+    drop-shadow(0 0 3px var(--rw-zone-accent))
+    drop-shadow(0 6px 6px #010b1f);
+  transition: filter .25s ease;
+}
+
+.rw-map-zone:hover .rw-neon-architecture,
+.rw-neon-architecture--active {
+  filter:
+    drop-shadow(0 0 7px var(--rw-zone-accent))
+    drop-shadow(0 0 15px var(--rw-zone-accent));
+}
+
+.rw-neon-architecture .rw-neon-orb {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: rw-neon-orb-float 4s ease-in-out infinite;
+}
+
+.rw-neon-architecture .rw-neon-tower {
+  filter: drop-shadow(0 0 1.5px var(--rw-zone-accent));
+}
+
+.rw-map-zone > rect {
+  fill: #092744;
+  stroke: #219de4;
+  stroke-width: 1.3;
+  filter: drop-shadow(0 0 4px #008fff88);
+}
+
+.rw-map-zone--selected > rect {
+  fill: #075aa2;
+  stroke: #7eeaff;
+}
+
+.rw-map-zone > text {
+  fill: #f0faff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+@keyframes rw-neon-orb-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rw-neon-architecture *,
+  .rw-neon-architecture {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,161 @@
+/* REPLIKERS WORLD - PIXI ATMOSPHERE V1 */
+
+.rw-pixi-atmosphere {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none !important;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+
+.rw-pixi-atmosphere canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rw-pixi-atmosphere {
+    transition: none;
+  }
+}
+
+
+/* REPLIKERS PIXI DISTRICTS V1 */
+
+/* El motor Pixi sustituye el dibujo, no los botones. */
+.rw-pixi-city-ready .rw-map-zone > polygon:not(:first-of-type) {
+  opacity: 0.08;
+}
+
+.rw-pixi-city-ready .rw-map-zone > .rw-neon-architecture {
+  opacity: 0;
+}
+
+.rw-pixi-city-ready .rw-map-zone > text:first-of-type {
+  opacity: 0;
+}
+
+/* Se conservan las etiquetas inferiores de cada zona. */
+.rw-pixi-city-ready .rw-map-zone > rect {
+  fill: #071a37;
+  stroke: #228bca;
+}
+
+.rw-pixi-city-ready .rw-map-zone--selected > rect {
+  fill: #075eac;
+  stroke: #65dfff;
+}
+
+/* Nunca bloquear el mouse o el teclado. */
+.rw-pixi-city-ready .rw-pixi-atmosphere,
+.rw-pixi-city-ready .rw-pixi-atmosphere canvas {
+  pointer-events: none !important;
+}
+
+
+/* REPLIKERS_PIXI_AVATAR_VISIBILITY_V1 */
+
+/* Ocultar figuras SVG solo cuando PixiJS está listo.
+   Sus zonas de clic y navegación por teclado se conservan. */
+
+.rw-pixi-city-ready .rw-map-agent > circle,
+.rw-pixi-city-ready .rw-map-agent > path,
+.rw-pixi-city-ready .rw-map-agent > text {
+  opacity: 0;
+}
+
+.rw-pixi-city-ready .rw-map-zone > rect,
+.rw-pixi-city-ready .rw-map-zone > text {
+  opacity: 0;
+}
+
+/* Indicadores de foco para usuarios de teclado. */
+
+.rw-pixi-city-ready .rw-map-zone:focus-visible
+  > polygon:first-of-type {
+  stroke: #e0faff !important;
+  stroke-width: 5px !important;
+}
+
+.rw-pixi-city-ready .rw-map-agent:focus-visible
+  > circle:first-of-type {
+  opacity: 1 !important;
+  fill: transparent !important;
+  stroke: #b9f9ff !important;
+  stroke-width: 4px !important;
+}
+
+
+/* REPLIKERS_PIXI_DEPTH_FIX_V1 */
+
+/*
+  Cuando PixiJS está listo, el SVG original
+  permanece como capa de interacción y respaldo.
+  Solo se ocultan sus dibujos duplicados.
+*/
+
+.rw-pixi-city-ready svg.rw-city > ellipse,
+.rw-pixi-city-ready svg.rw-city > polygon,
+.rw-pixi-city-ready svg.rw-city > path {
+  opacity: 0 !important;
+}
+
+.rw-pixi-city-ready svg.rw-city > text {
+  opacity: 0 !important;
+}
+
+.rw-pixi-city-ready .rw-map-zone > polygon {
+  opacity: 0 !important;
+}
+
+.rw-pixi-city-ready .rw-map-zone
+  .rw-neon-architecture {
+  opacity: 0 !important;
+}
+
+.rw-pixi-city-ready .rw-map-zone > rect,
+.rw-pixi-city-ready .rw-map-zone > text {
+  opacity: 0 !important;
+}
+
+.rw-pixi-city-ready .rw-map-agent > circle,
+.rw-pixi-city-ready .rw-map-agent > path,
+.rw-pixi-city-ready .rw-map-agent > text {
+  opacity: 0 !important;
+}
+
+/* Mantener interacciones del SVG original. */
+
+.rw-pixi-city-ready .rw-map-zone,
+.rw-pixi-city-ready .rw-map-agent {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.rw-pixi-city-ready .rw-map-zone:focus-visible
+  > polygon:first-of-type {
+  opacity: .2 !important;
+  stroke: #a4f3ff !important;
+  stroke-width: 5px !important;
+}
+
+.rw-pixi-city-ready .rw-map-agent:focus-visible
+  > circle:first-of-type {
+  opacity: .65 !important;
+  fill: transparent !important;
+  stroke: #affaff !important;
+  stroke-width: 4px !important;
+}
+
+/* Pixi nunca bloquea el mouse. */
+
+.rw-pixi-city-ready .rw-pixi-atmosphere,
+.rw-pixi-city-ready .rw-pixi-atmosphere canvas {
+  pointer-events: none !important;
+}
