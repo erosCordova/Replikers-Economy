@@ -1,6 +1,7 @@
 
 /* REPLIKERS_WORLD_MAIN_APP_V2 */
 
+import axios from "axios";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
@@ -101,12 +102,35 @@ export default function WorldApp() {
       setWorldVisible(true);
 
       setPassword("");
-    } catch {
-      setError(
-        authMode === "login"
-          ? "No se pudo iniciar sesion. Revisa tus credenciales."
-          : "No se pudo registrar la cuenta. Revisa los datos."
-      );
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        const detail: unknown = err.response?.data?.detail;
+        const retryAfter = err.response?.headers?.["retry-after"];
+
+        const message =
+          typeof detail === "string"
+            ? detail
+            : "El servidor no proporciono detalles.";
+
+        if (status === 429) {
+          setError(
+            `Error HTTP 429: ${message}` +
+            (retryAfter ? ` Espera ${retryAfter} segundos.` : "")
+          );
+        } else if (status) {
+          setError(`Error HTTP ${status}: ${message}`);
+        } else {
+          setError(
+            "No hay conexion con el backend. " +
+            "Comprueba que FastAPI siga activo."
+          );
+        }
+      } else {
+        setError(
+          "No se pudo procesar la respuesta del servidor."
+        );
+      }
     } finally {
       setBusy(false);
     }

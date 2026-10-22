@@ -17,7 +17,7 @@ import useWorldEconomicAvatarActivity, { economicAvatarClass } from "./useWorldE
 import WorldActivitySections from "./WorldActivitySections";
 import WorldEventFeed from "./WorldEventFeed";
 import WorldEconomyFeed from "./WorldEconomyFeed";
-import WorldSchedulerStatus from "./WorldSchedulerStatus";
+import WorldLiveSupervisorStatus from "./WorldLiveSupervisorStatus";
 
 type Agent = {
   repliker_id: number;
@@ -1507,7 +1507,7 @@ export default function MundoReplikersWorld({
     </span>
   </header>
 
-  <WorldSchedulerStatus />
+  <WorldLiveSupervisorStatus />
   <WorldEventFeed />
         <>
 <WorldEconomyFeed />

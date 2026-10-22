@@ -1681,3 +1681,33 @@ for _rw_module_name_v4 in _rw_modules_v4:
                 _rw_target_v4,
                 "GET",
             ))
+
+
+# RW_LIVE_SUPERVISOR_DIRECT_HTTP_V3
+# Registro directo: evita el problema de _IncludedRouter.
+from app.api.routes import world_live_supervisor_http as _rw_live_http
+
+_rw_live_http_prefix = (
+    "/api/v1/world/scheduler/live/control/mine"
+)
+
+app.add_api_route(
+    _rw_live_http_prefix,
+    _rw_live_http.my_control_status,
+    methods=["GET"],
+    tags=["Replikers World - Supervisor"],
+)
+
+app.add_api_route(
+    _rw_live_http_prefix + "/start",
+    _rw_live_http.start_my_supervisor,
+    methods=["POST"],
+    tags=["Replikers World - Supervisor"],
+)
+
+app.add_api_route(
+    _rw_live_http_prefix + "/stop",
+    _rw_live_http.stop_my_supervisor,
+    methods=["POST"],
+    tags=["Replikers World - Supervisor"],
+)
